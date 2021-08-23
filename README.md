@@ -9,7 +9,7 @@ Playground of using the JPype
 2. Build java source to class ```javac <source_file> -d <Project_dir>/java/bin```
 
 ### python step
-Require) The arch of python interpreter have to be same with the jdk. (32bit / 64bit)
+Require) The **arch** of python interpreter have to **be same with** the jdk. (32bit / 64bit)
 1. Set classpath
 2. Run JVM ```jpype.startJVM(jpype.getDefaultJVMPath(), "-Djava.class.path=%s" % classpath)```
 3. Get package ```package_py = jpype.JPackage(<package_name>```
