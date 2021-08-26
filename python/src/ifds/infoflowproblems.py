@@ -7,18 +7,20 @@ import StaticFieldRef, ArrayRef, FieldRef, RefType, NoneType, InstanceFieldRef
 import CastExpr, InstanceOfExpr
 import StaticFieldTrackingMode
 import TypeUtils, BooleanType, ArrayTaintType
-import LengthExpr
+import LengthExpr, AssignStmt, Stmt
 import Collections
 import Aliasing
 import NewArrayExpr
 import Local
 import PrimType
 import HashSet
+import ByReferenceBoolean, BaseSelector
+import KillAll
 
 
 class NotifyingNormalFlowFunction(SolverNormalFlowFunction, AbstractInfoflowProblem):
 
-    def __init__(self):
+    def __init__(self, stmt):
         super().__init__()
         self.stmt = stmt
 
@@ -27,11 +29,101 @@ class NotifyingNormalFlowFunction(SolverNormalFlowFunction, AbstractInfoflowProb
             self.taintPropagationHandler.notifyFlowIn(self.stmt, source, self.manager, FlowFunctionType.NormalFlowFunction)
 
         res = self.computeTargetsInternal(d1, source)
-        return self.notifyOutFlowHandlers( stmt, d1, source, res, FlowFunctionType.NormalFlowFunction )
+        return self.notifyOutFlowHandlers( self.stmt, d1, source, res, FlowFunctionType.NormalFlowFunction )
 
     def computeTargetsInternal(self, d1, source):
         pass
 
+class NotifyingNormalFlowFunction2(NotifyingNormalFlowFunction): # have to fix, especially src
+
+    def __init__(self, stmt, src, dest):
+        super().__init__(stmt)
+        self.src = src
+        self.dest = dest
+
+    def computeTargetsInternal(self, d1, source):
+        newSource = None
+        if not source.isAbstractionActive() and self.src == source.getActivationUnit():
+            newSource = source.getActiveCopy()
+        else:
+            newSource = source
+
+        killSource = ByReferenceBoolean()
+        killAll = ByReferenceBoolean()
+        res = self.propagationRules.applyNormalFlowFunction( d1, newSource, self.stmt,
+                                                             self.dest, killSource, killAll )
+        if killAll.value:
+            return Collections.emptySet()
+
+        if isinstance( self.src, AssignStmt ):
+            assignStmt = self.src
+            right = assignStmt.getRightOp()
+            rightVals = BaseSelector.selectBaseList( right, True )
+
+            resAssign = self.createNewTaintOnAssignment( assignStmt, rightVals, d1,
+                                                         newSource )
+            if resAssign is not None and not resAssign.isEmpty():
+                if res is not None:
+                    res.addAll( resAssign )
+                    return res
+                else:
+                    res = resAssign
+
+        return Collections.emptySet() if res == None or res.isEmpty() else res
+
+class SolverCallFlowFunction:   # Have to fix!!
+
+    def __init__(self, aliasing, src, dest, stmt, ie, ):
+        self.aliasing = aliasing
+        self.src = src
+        self.dest = dest
+        self.stmt = stmt
+
+    def computeTargets(self, d1, source):
+        res = self.computeTargetsInternal(d1, source)
+        if res is not None and not res.isEmpty() and d1 is not None:
+            for abs in res:
+                aliasing.getAliasingStrategy().injectCallingContext(abs, solver, self.dest, self.src, source, d1)
+        return self.notifyOutFlowHandlers(self.stmt, d1, source, res, FlowFunctionType.CallFlowFunction)
+
+    def computeTargetsInternal(self, d1, source):
+        if self.manager.getConfig().getStopAfterFirstFlow() and not results.isEmpty():
+            return None
+        if source == getZeroValue():
+            return None
+
+        if isExcluded(self.dest):
+            return None
+
+        if self.taintPropagationHandler is not None:
+            self.taintPropagationHandler.notifyFlowIn(self.stmt, source, manager,
+                    FlowFunctionType.CallFlowFunction)
+
+        if not source.isAbstractionActive() and source.getActivationUnit() == src:
+            source = source.getActiveCopy()
+
+        killAll = ByReferenceBoolean()
+        res = self.propagationRules.applyCallFlowFunction(d1, source, self.stmt, self.dest, killAll)
+        if killAll.value:
+            return None
+
+        resMapping = self.mapAccessPathToCallee(self.dest, self.ie, paramLocals, thisLocal,
+                source.getAccessPath())
+        if resMapping == None:
+            return res
+
+        resAbs = HashSet(resMapping.size())
+        if res is not None and not res.isEmpty():
+            resAbs.addAll(res)
+        for ap in resMapping:
+            if ap is not None:
+                if aliasing.getAliasingStrategy().isLazyAnalysis() \
+                        or source.isImplicit() \
+                        or self.interproceduralCFG().methodReadsValue(self.dest, ap.getPlainValue()):
+                    newAbs = source.deriveNewAbstraction(ap, self.stmt)
+                    if newAbs is not None:
+                        resAbs.add(newAbs)
+        return resAbs
 
 class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
     def addTaintViaStmt(self, d1, assignStmt, source, taintSet, cutFirstField, method, targetType):
@@ -181,152 +273,37 @@ class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
                 self.interproceduralCFG().getMethodOf(assignStmt), targetType)
         res.add(newSource)
         return res
-    }
 
-    @Override
-    FlowFunction<Abstraction> getNormalFlowFunction( Unit src,  Unit dest):
-        // Get the call site
-        if (!(src,_ins Stmt))
-            return KillAll.v()
+    def getNormalFlowFunction(self, src, dest):
+        if not isinstance(src, Stmt):
+            return self.KillAll.v()
 
-        return new NotifyingNormalFlowFunction((Stmt) src):
+        return NotifyingNormalFlowFunction2(self.stmt, src, dest)
 
-            @Override
-            Set<Abstraction> computeTargetsInternal(Abstraction d1, Abstraction source):
-                // Check whether we must activate a taint
-                 Abstraction newSource
-                if (!source.isAbstractionActive() and src == source.getActivationUnit())
-                    newSource = source.getActiveCopy()
-                else
-                    newSource = source
-
-                // Apply the propagation rules
-                ByReferenceBoolean killSource = new ByReferenceBoolean()
-                ByReferenceBoolean killAll = new ByReferenceBoolean()
-                Set<Abstraction> res = propagationRules.applyNormalFlowFunction(d1, newSource, stmt,
-                        (Stmt) dest, killSource, killAll)
-                if (killAll.value)
-                    return Collections.<Abstraction>emptySet()
-
-                // Propagate over an assignment
-                if (src,_ins AssignStmt):
-                     AssignStmt assignStmt = (AssignStmt) src
-                     Value right = assignStmt.getRightOp()
-                     Value[] rightVals = BaseSelector.selectBaseList(right, True)
-
-                    // Create the new taints that may be created by this
-                    // assignment
-                    Set<Abstraction> resAssign = createNewTaintOnAssignment(assignStmt, rightVals, d1,
-                            newSource)
-                    if (resAssign is not None and !resAssign.isEmpty()):
-                        if (res is not None):
-                            res.addAll(resAssign)
-                            return res
-                        } else
-                            res = resAssign
-                    }
-                }
-
-                // Return what we have so far
-                return res == None or res.isEmpty() ? Collections.<Abstraction>emptySet() : res
-            }
-
-        }
-    }
-
-    @Override
-    FlowFunction<Abstraction> getCallFlowFunction( Unit src,  SootMethod dest):
-        if (!dest.isConcrete()):
+    def getCallFlowFunction(self, src, dest):
+        if not dest.isConcrete():
             logger.debug("Call skipped because target has no body::} ->:}", src, dest)
             return KillAll.v()
-        }
 
-         Stmt stmt = (Stmt) src
-         InvokeExpr ie = (stmt is not None and stmt.containsInvokeExpr()) ? stmt.getInvokeExpr() : None
+        stmt = src
+        ie = self.stmt.getInvokeExpr() if stmt is not None and self.stmt.containsInvokeExpr() else None
 
-         Local[] paramLocals = dest.getActiveBody().getParameterLocals().toArray(new Local[0])
+        paramLocals = dest.getActiveBody().getParameterLocals().toArray(Local[0])
 
-        // This is not cached by Soot, so accesses are more expensive
-        // than one might think
-         Local thisLocal = dest.isStatic() ? None : dest.getActiveBody().getThisLocal()
+        thisLocal = None if dest.isStatic() else dest.getActiveBody().getThisLocal()
 
-        // If we can't reason about aliases, there's little we can do here
-         Aliasing aliasing = manager.getAliasing()
-        if (aliasing == None)
+        aliasing = self.manager.getAliasing()
+        if aliasing == None:
             return KillAll.v()
 
-        return new SolverCallFlowFunction():
+        return SolverCallFlowFunction() # Todo: this inner class needs fix!!
 
-            @Override
-            Set<Abstraction> computeTargets(Abstraction d1, Abstraction source):
-                Set<Abstraction> res = computeTargetsInternal(d1, source)
-                if (res is not None and !res.isEmpty() and d1 is not None):
-                    for (Abstraction abs : res)
-                        aliasing.getAliasingStrategy().injectCallingContext(abs, solver, dest, src, source, d1)
-                }
-                return notifyOutFlowHandlers(stmt, d1, source, res, FlowFunctionType.CallFlowFunction)
-            }
-
-            Set<Abstraction> computeTargetsInternal(Abstraction d1, Abstraction source):
-                if (manager.getConfig().getStopAfterFirstFlow() and !results.isEmpty())
-                    return None
-                if (source == getZeroValue())
-                    return None
-
-                // Do not propagate into Soot library classes if that
-                // optimization is enabled
-                if (isExcluded(dest))
-                    return None
-
-                // Notify the handler if we have one
-                if (taintPropagationHandler is not None)
-                    taintPropagationHandler.notifyFlowIn(stmt, source, manager,
-                            FlowFunctionType.CallFlowFunction)
-
-                // We might need to activate the abstraction
-                if (!source.isAbstractionActive() and source.getActivationUnit() == src)
-                    source = source.getActiveCopy()
-
-                ByReferenceBoolean killAll = new ByReferenceBoolean()
-                Set<Abstraction> res = propagationRules.applyCallFlowFunction(d1, source, stmt, dest, killAll)
-                if (killAll.value)
-                    return None
-
-                // Map the source access path into the callee
-                Set<AccessPath> resMapping = mapAccessPathToCallee(dest, ie, paramLocals, thisLocal,
-                        source.getAccessPath())
-                if (resMapping == None)
-                    return res
-
-                // Translate the access paths into abstractions
-                Set<Abstraction> resAbs = new HashSet<Abstraction>(resMapping.size())
-                if (res is not None and !res.isEmpty())
-                    resAbs.addAll(res)
-                for (AccessPath ap : resMapping):
-                    if (ap is not None):
-                        // If the variable is never read in the callee,
-                        // there is no need to propagate it through
-                        if (aliasing.getAliasingStrategy().isLazyAnalysis() or source.isImplicit()
-                                or interproceduralCFG().methodReadsValue(dest, ap.getPlainValue())):
-                            Abstraction newAbs = source.deriveNewAbstraction(ap, stmt)
-                            if (newAbs is not None)
-                                resAbs.add(newAbs)
-                        }
-                    }
-                }
-
-                return resAbs
-            }
-        }
-    }
-
-    @Override
     FlowFunction<Abstraction> getReturnFlowFunction( Unit callSite,  SootMethod callee,
              Unit exitStmt,  Unit retSite):
         // Get the call site
         if (callSite is not None and !(callSite,_ins Stmt))
             return KillAll.v()
-         Stmt iCallStmt = (Stmt) callSite
+         Stmt iCallStmt = callSite
          boolean isReflectiveCallSite = callSite is not None
                 and interproceduralCFG().isReflectiveCallSite(callSite)
 
@@ -388,7 +365,7 @@ class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
 
                 ByReferenceBoolean killAll = new ByReferenceBoolean()
                 Set<Abstraction> res = propagationRules.applyReturnFlowFunction(callerD1s, newSource,
-                        (Stmt) exitStmt, (Stmt) retSite, (Stmt) callSite, killAll)
+                        exitStmt, retSite, callSite, killAll)
                 if (killAll.value)
                     return None
                 if (res == None)
@@ -417,7 +394,7 @@ class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
                                 and !isExceptionHandler(retSite)):
                             AccessPath ap = manager.getAccessPathFactory()
                                     .copyWithNewValue(newSource.getAccessPath(), leftOp)
-                            Abstraction abs = newSource.deriveNewAbstraction(ap, (Stmt) exitStmt)
+                            Abstraction abs = newSource.deriveNewAbstraction(ap, exitStmt)
                             if (abs is not None):
                                 res.add(abs)
 
@@ -492,7 +469,7 @@ class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
                                         newSource.getAccessPath(), originalCallArg,
                                         isReflectiveCallSite ? None : newSource.getAccessPath().getBaseType(),
                                         False)
-                                Abstraction abs = newSource.deriveNewAbstraction(ap, (Stmt) exitStmt)
+                                Abstraction abs = newSource.deriveNewAbstraction(ap, exitStmt)
 
                                 if (abs is not None):
                                     res.add(abs)
@@ -530,7 +507,7 @@ class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
                                     newSource.getAccessPath(), callerBaseLocal,
                                     isReflectiveCallSite ? None : newSource.getAccessPath().getBaseType(),
                                     False)
-                            Abstraction abs = newSource.deriveNewAbstraction(ap, (Stmt) exitStmt)
+                            Abstraction abs = newSource.deriveNewAbstraction(ap, exitStmt)
                             if (abs is not None):
                                 res.add(abs)
                             }
@@ -567,7 +544,7 @@ class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
         if (!(call,_ins Stmt))
             return KillAll.v()
 
-         Stmt iCallStmt = (Stmt) call
+         Stmt iCallStmt = call
          InvokeExpr invExpr = iCallStmt.getInvokeExpr()
 
         // If we can't reason about aliases, there's little we can do here
