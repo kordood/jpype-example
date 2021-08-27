@@ -7,40 +7,40 @@ class DefaultIFDSTabulationProblem(InterproceduralCFG, IFDSTabulationProblem):
 
     def __init__(self, icfg):
         self.icfg = icfg
-        self.flowFunctions = None
-        self.zeroValue = None
+        self.flow_functions = None
+        self.zero_value = None
 
-    def createFlowFunctionsFactory(self):
+    def create_flow_functions_factory(self):
         pass
 
-    def createZeroValue(self):
+    def create_zero_value(self):
         pass
 
-    def flowFunctions(self):
-        if self.flowFunctions is None:
-            self.flowFunctions = self.createFlowFunctionsFactory()
+    def flow_functions(self):
+        if self.flow_functions is None:
+            self.flow_functions = self.create_flow_functions_factory()
 
-        return self.flowFunctions
+        return self.flow_functions
 
-    def interproceduralCFG(self):
+    def interprocedural_cfg(self):
         return self.icfg
 
-    def zeroValue(self):
-        if self.zeroValue is None:
-            self.zeroValue = self.createZeroValue()
-        return self.zeroValue
+    def zero_value(self):
+        if self.zero_value is None:
+            self.zero_value = self.create_zero_value()
+        return self.zero_value
 
-    def followReturnsPastSeeds(self):
+    def follow_returns_past_seeds(self):
         return False
     
-    def autoAddZero(self):
+    def auto_add_zero(self):
         return True
 
-    def numThreads(self):
+    def num_threads(self):
         return os.cpu_count()
 
-    def computeValues(self):
+    def compute_values(self):
         return True
 
-    def recordEdges(self):
+    def record_edges(self):
         return False

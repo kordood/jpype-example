@@ -1,5 +1,5 @@
 import logging
-import DefaultJimpleIFDSTabulationProblem
+from defaultjimpleifdstabulationproblem import DefaultJimpleIFDSTabulationProblem
 import HashSet, HashMap, MyConcurrentHashMap
 import ConcurrentHashSet
 import DefinitionStmt
@@ -14,133 +14,143 @@ logger = logging.getLogger(__file__)
 class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
     
     def __init__(self, manager):
+        super().__init__(manager.getICFG())
         self.manager = manager
-        self.initialSeeds = HashMap()
-        self.taintWrapper = None
-        self.ncHandler = None
-        self.zeroValue = None
+        self.initial_seeds = HashMap()
+        self.taint_wrapper = None
+        self.nc_handler = None
+        self.zero_value = None
         self.solver = None
-        self.taintPropagationHandler = None
-        self.activationUnitsToCallSites = MyConcurrentHashMap()
-        super(manager.getICFG())
+        self.taint_propagation_handler = None
+        self.activation_units_to_call_sites = MyConcurrentHashMap()
 
-    def setSolver(self, solver):
+        self.def_stmt = None
+        self.decl_class = None
+
+    def set_solver(self, solver):
         self.solver = solver
 
-    def setZeroValue(self, zeroValue):
-        self.zeroValue = zeroValue
+    def set_zero_value(self, zero_value):
+        self.zero_value = zero_value
 
-    def followReturnsPastSeeds(self):
+    def follow_returns_past_seeds(self):
         return True
 
-    def setTaintWrapper(self, wrapper):
-        self.taintWrapper = wrapper
+    def set_taint_wrapper(self, wrapper):
+        self.taint_wrapper = wrapper
 
-    def setNativeCallHandler(self, handler):
-        self.ncHandler = handler
+    def set_native_call_handler(self, handler):
+        self.nc_handler = handler
 
-    def isInitialMethod(self, sm):
-        for u in self.initialSeeds.keySet():
-            if (self.interproceduralCFG().getMethodOf(u) == sm):
+    def is_initial_method(self, sm):
+        for u in self.initial_seeds.keySet():
+            if self.interprocedural_cfg().get_method_of(u) == sm:
                 return True
         return False
 
-    def initialSeeds(self):
-        return self.initialSeeds
+    def initial_seeds(self):
+        return self.initial_seeds
 
-    def autoAddZero(self):
+    def auto_add_zero(self):
         return False
 
-    def isCallSiteActivatingTaint(self, callSite, activationUnit):
+    def is_call_site_activating_taint(self, call_site, activation_unit):
         if not self.manager.getConfig().getFlowSensitiveAliasing():
             return False
 
-        if activationUnit == None:
+        if activation_unit is None:
             return False
-        callSites = self.activationUnitsToCallSites.get(activationUnit)
-        return callSites is not None and callSites.contains(callSite)
+        call_sites = self.activation_units_to_call_sites.get(activation_unit)
+        return call_sites is not None and call_sites.contains(call_site)
 
-    def registerActivationCallSite(self, callSite, callee, activationAbs):
+    def register_activation_call_site(self, call_site, callee, activation_abs):
         if not self.manager.getConfig().getFlowSensitiveAliasing():
             return False
-        activationUnit = activationAbs.getActivationUnit()
-        if activationUnit == None:
+        activation_unit = activation_abs.getactivation_unit()
+        if activation_unit is None:
             return False
 
-        callSites = self.activationUnitsToCallSites.putIfAbsentElseGet(activationUnit, ConcurrentHashSet())
-        if callSites.contains(callSite):
+        call_sites = self.activation_units_to_call_sites.putIfAbsentElseGet(activation_unit, ConcurrentHashSet())
+        if call_sites.contains(call_site):
             return False
 
-        if not activationAbs.isAbstractionActive():
-            if not callee.getActiveBody().getUnits().contains(activationUnit):
+        if not activation_abs.isAbstractionActive():
+            if not callee.getActiveBody().getUnits().contains(activation_unit):
                 found = False
-                for au in callSites:
+                for au in call_sites:
                     if callee.getActiveBody().getUnits().contains(au):
                         found = True
                         break
                 if not found:
                     return False
 
-        return callSites.add(callSite)
+        return call_sites.add(call_site)
 
-    def setActivationUnitsToCallSites(self, other):
-        self.activationUnitsToCallSites = other.activationUnitsToCallSites
+    def set_activation_units_to_call_sites(self, other):
+        self.activation_units_to_call_sites = other.activation_units_to_call_sites
 
-    def interproceduralCFG(self):
-        return super.interproceduralCFG()
+    def interprocedural_cfg(self):
+        return super(AbstractInfoflowProblem, self).interprocedural_cfg()
 
-    def addInitialSeeds(self, unit, seeds):
-        if self.initialSeeds.containsKey(unit):
-            self.initialSeeds.get(unit).addAll(seeds)
+    def add_initial_seeds(self, unit, seeds):
+        if self.initial_seeds.containsKey(unit):
+            self.initial_seeds.get(unit).addAll(seeds)
         else:
-            self.initialSeeds.put(unit, HashSet(seeds))
+            self.initial_seeds.put(unit, HashSet(seeds))
 
-    def hasInitialSeeds(self):
-        return not self.initialSeeds.isEmpty()
+    def has_initial_seeds(self):
+        return not self.initial_seeds.isEmpty()
 
-    def getInitialSeeds(self):
-        return self.initialSeeds
+    def get_initial_seeds(self):
+        return self.initial_seeds
 
-    def setTaintPropagationHandler(self, handler):
-        self.taintPropagationHandler = handler
+    def set_taint_propagation_handler(self, handler):
+        self.taint_propagation_handler = handler
 
-    def createZeroValue(self):
-        if self.zeroValue is None:
-            self.zeroValue = Abstraction.getZeroAbstraction(self.manager.getConfig().getFlowSensitiveAliasing())
-        return self.zeroValue
+    def create_zero_value(self):
+        if self.zero_value is None:
+            self.zero_value = Abstraction.getZeroAbstraction(self.manager.getConfig().getFlowSensitiveAliasing())
+        return self.zero_value
 
-    def getZeroValue(self):
-        return self.zeroValue
+    def get_zero_value(self):
+        return self.zero_value
 
-    def isExceptionHandler(self, u):
+    def is_exception_handler(self, u):
         if isinstance(u, DefinitionStmt):
-            self.defStmt = u
-            return isinstance(self.defStmt.getRightOp(), CaughtExceptionRef)
+            self.def_stmt = u
+            return isinstance(self.def_stmt.getRightOp(), CaughtExceptionRef)
         return False
 
-    def notifyOutFlowHandlers(self, stmt, d1, incoming, outgoing, functionType):
-        if self.taintPropagationHandler is not None and outgoing is not None and not outgoing.isEmpty():
-            outgoing = self.taintPropagationHandler.notifyFlowOut(stmt, d1, incoming, outgoing, self.manager, functionType)
+    def notify_out_flow_handlers(self, stmt, d1, incoming, outgoing, function_type):
+        if self.taint_propagation_handler is not None \
+                and outgoing is not None \
+                and not outgoing.isEmpty():
+            outgoing = self.taint_propagation_handler.notifyFlowOut(stmt,
+                                                                    d1,
+                                                                    incoming,
+                                                                    outgoing,
+                                                                    self.manager,
+                                                                    function_type)
         return outgoing
 
-    def computeValues(self):
+    def compute_values(self):
         return False
 
-    def getManager(self):
+    def get_manager(self):
         return self.manager
 
-    def isExcluded(self, sm):
+    def is_excluded(self, sm):
         if sm.hasTag(FlowDroidEssentialMethodTag.TAG_NAME):
             return False
 
         if self.manager.getConfig().getExcludeSootLibraryClasses():
-            self.declClass = sm.getDeclaringClass()
-            if self.declClass is not None and self.declClass.isLibraryClass():
+            self.decl_class = sm.getDeclaringClass()
+            if self.decl_class is not None and self.decl_class.isLibraryClass():
                 return True
 
         if self.manager.getConfig().getIgnoreFlowsInSystemPackages():
-            self.declClass = sm.getDeclaringClass()
-            if self.declClass is not None and SystemClassHandler.v().isClassInSystemPackage(self.declClass.getName()):
+            self.decl_class = sm.getDeclaringClass()
+            if self.decl_class is not None and SystemClassHandler.v().isClassInSystemPackage(self.decl_class.getName()):
                 return True
 
         return False

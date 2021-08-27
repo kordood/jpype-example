@@ -1,5 +1,3 @@
-from abc import *
-
 import StaticFieldRef, StaticFieldTrackingMode, ArrayRef, FieldRef, InstanceFieldRef
 import CastExpr, InstanceOfExpr, LengthExpr, NewArrayExpr, InstanceInvokeExpr
 import Stmt, AssignStmt, ReturnStmt, DefinitionStmt
@@ -18,6 +16,13 @@ import Value
 from infoflowproblems import InfoflowProblem
 
 
+def auto_instantiator(*args, **kwargs):
+    def decorator(cls):
+        return cls(*args, **kwargs)
+    return decorator
+
+
+@auto_instantiator()
 class FlowFunctions(InfoflowProblem):
 
     def __init__(self, **kwargs):
@@ -225,8 +230,8 @@ class FlowFunctions(InfoflowProblem):
         res = HashSet()
         targetAB = newSource if mappedAP.equals(newSource.getAccessPath()) \
             else newSource.deriveNewAbstraction(mappedAP, None)
-        self.addTaintViaStmt(d1, assignStmt, targetAB, res, cutFirstField,
-                self.interproceduralCFG().getMethodOf(assignStmt), targetType)
+        self.addTaintViaStmt( d1, assignStmt, targetAB, res, cutFirstField,
+                              self.interproceduralCFG().get_method_of( assignStmt ), targetType )
         res.add(newSource)
         return res
 
@@ -348,7 +353,7 @@ class FlowFunctions(InfoflowProblem):
                         newSource = source.getActiveCopy()
 
             if not newSource.isAbstractionActive() and newSource.getActivationUnit() is not None:
-                if self.interproceduralCFG().getMethodOf(newSource.getActivationUnit()) == self.callee:
+                if self.interproceduralCFG().get_method_of( newSource.getActivationUnit() ) == self.callee:
                     return None
 
             killAll = ByReferenceBoolean()
@@ -380,8 +385,8 @@ class FlowFunctions(InfoflowProblem):
                             res.add(abs)
                             if self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                                 for d1 in callerD1s:
-                                    self.aliasing.computeAliases(d1, self.iCallStmt, leftOp, res,
-                                            self.interproceduralCFG().getMethodOf(self.callSite), abs)
+                                    self.aliasing.computeAliases( d1, self.iCallStmt, leftOp, res,
+                                                                  self.interproceduralCFG().get_method_of( self.callSite ), abs )
 
                 sourceBase = newSource.getAccessPath().getPlainValue()
                 parameterAliases = False
@@ -454,8 +459,8 @@ class FlowFunctions(InfoflowProblem):
                 if abs.isImplicit() and not callerD1sConditional \
                         or self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                     for d1 in callerD1s:
-                        self.aliasing.computeAliases(d1, self.iCallStmt, None, res,
-                                self.interproceduralCFG().getMethodOf(self.callSite), abs)
+                        self.aliasing.computeAliases( d1, self.iCallStmt, None, res,
+                                                      self.interproceduralCFG().get_method_of( self.callSite ), abs )
 
                 if abs != newSource:
                     abs.setCorrespondingCallSite(self.iCallStmt)
@@ -587,9 +592,9 @@ class FlowFunctions(InfoflowProblem):
                                             or aliasing.canHaveAliases(iCallStmt,
                                                                        abs.getAccessPath().getCompleteValue(),
                                                                        abs):
-                                        aliasing.computeAliases(d1, iCallStmt,
-                                                abs.getAccessPath().getPlainValue(), res,
-                                                self.interproceduralCFG().getMethodOf(call), abs)
+                                        aliasing.computeAliases( d1, iCallStmt,
+                                                                 abs.getAccessPath().getPlainValue(), res,
+                                                                 self.interproceduralCFG().get_method_of( call ), abs )
                             break
 
                 for abs in res:

@@ -216,7 +216,7 @@ class IFDSSolver:
 
     def process_exit(self, edge):
         n = edge.getTarget()
-        method_that_needs_summary = self.icfg.getMethodOf(n)
+        method_that_needs_summary = self.icfg.get_method_of( n )
 
         d1 = edge.factAtSource()
         d2 = edge.factAtTarget()

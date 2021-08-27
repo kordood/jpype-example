@@ -53,9 +53,9 @@ class IFDSSolver:
         if l.isDebugEnabled():
             self.flow_function_cache_builder = flowFunctionCacheBuilder.recordStats()
             self.zero_value = tabulationProblem.zero_value()
-            self.icfg = tabulationProblem.interproceduralCFG()
+            self.icfg = tabulationProblem.interprocedural_cfg()
             self.flow_functions = ZeroedFlowFunctions( tabulationProblem.flow_functions(), self.zero_value )\
-                if tabulationProblem.autoAddZero() else tabulationProblem.flow_functions()
+                if tabulationProblem.auto_add_zero() else tabulationProblem.flow_functions()
         if self.flow_function_cache_builder != None:
             self.ff_cache = FlowFunctionCache( self.flow_functions, flowFunctionCacheBuilder )
             self.flow_functions = self.ff_cache
@@ -205,7 +205,7 @@ class IFDSSolver:
 
     def process_exit(self, edge):
         n = edge.getTarget()
-        method_that_needs_summary = self.icfg.getMethodOf(n)
+        method_that_needs_summary = self.icfg.get_method_of( n )
 
         d1 = edge.factAtSource()
         d2 = edge.factAtTarget()

@@ -4,15 +4,15 @@ from solverconfiguration import SolverConfiguration
 
 class IFDSTabulationProblem(InterproceduralCFG, SolverConfiguration):
 
-	def flowFunctions(self):
+	def flow_functions(self):
 		pass
 	
-	def interproceduralCFG(self):
+	def interprocedural_cfg(self):
 		pass
 
-	def initialSeeds(self):
+	def initial_seeds(self):
 		pass
 
-	def zeroValue(self):
+	def zero_value(self):
 		pass
 

@@ -1,16 +1,16 @@
 class SolverConfiguration:
 
-	def followReturnsPastSeeds(self):
+	def follow_returns_past_seeds(self):
 		pass
 
-	def autoAddZero(self):
+	def auto_add_zero(self):
 		pass
 
-	def numThreads(self):
+	def num_threads(self):
 		pass
 
-	def computeValues(self):
+	def compute_values(self):
 		pass
 
-	def recordEdges(self):
+	def record_edges(self):
 		pass

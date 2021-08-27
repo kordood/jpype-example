@@ -1,43 +1,43 @@
 class InterproceduralCFG:
 	
-	def getMethodOf(self, n):
+	def get_method_of(self, n):
 		pass
 
-	def getPredsOf(self, u):
+	def get_preds_of(self, u):
 		pass
 	
-	def getSuccsOf(self, n):
+	def get_succs_of(self, n):
 		pass
 
-	def getCalleesOfCallAt(self, n):
+	def get_callees_of_call_at(self, n):
 		pass
 
-	def getCallersOf(self, m):
+	def get_callers_of(self, m):
 		pass
 
-	def getCallsFromWithin(self, m):
+	def get_calls_from_within(self, m):
 		pass
 
-	def getStartPointsOf(self, m):
+	def get_start_points_of(self, m):
 		pass
 
-	def getReturnSitesOfCallAt(self, n):
+	def get_return_sites_of_call_at(self, n):
 		pass
 
-	def isCallStmt(self, stmt):
+	def is_call_stmt(self, stmt):
 		pass
 
-	def isExitStmt(self, stmt):
+	def is_exit_stmt(self, stmt):
 		pass
 	
-	def isStartPoint(self, stmt):
+	def is_start_point(self, stmt):
 		pass
 
-	def allNonCallStartNodes(self):
+	def all_non_call_start_nodes(self):
 		pass
 	
-	def isFallThroughSuccessor(self, stmt, succ):
+	def is_fall_through_successor(self, stmt, succ):
 		pass
 	
-	def isBranchTarget(self, stmt, succ):
+	def is_branch_target(self, stmt, succ):
 		pass
