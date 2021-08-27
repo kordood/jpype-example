@@ -17,115 +17,43 @@ import HashSet
 import ByReferenceBoolean, BaseSelector
 import KillAll
 
+from abc import *
 
-class NotifyingNormalFlowFunction(SolverNormalFlowFunction, AbstractInfoflowProblem):
+class InfoflowProblem(AbstractInfoflowProblem):
+    def __init__(self, manager, zeroValue, ruleManagerFactory):
+        super(InfoflowProblem, self).__init__(manager)
 
-    def __init__(self, stmt):
-        super().__init__()
-        self.stmt = stmt
+        self.zeroValue = self.createZeroValue() if zeroValue == None else zeroValue
+        self.results = self.TaintPropagationResults( manager )
+        self.propagationRules = ruleManagerFactory.createRuleManager( manager, self.zeroValue, self.results )
 
-    def _computeTargets(self, d1, source):
-        if self.taintPropagationHandler is not None:
-            self.taintPropagationHandler.notifyFlowIn(self.stmt, source, self.manager, FlowFunctionType.NormalFlowFunction)
+    def createFlowFunctionsFactory(self):
+        return self.FlowFunctions()
 
-        res = self.computeTargetsInternal(d1, source)
-        return self.notifyOutFlowHandlers( self.stmt, d1, source, res, FlowFunctionType.NormalFlowFunction )
 
-    def computeTargetsInternal(self, d1, source):
+    class NotifyingNormalFlowFunction(AbstractInfoflowProblem.NotifyingNormalFlowFunction, SolverNormalFlowFunction):
+
+        def __init__(self, stmt):
+            super().__init__()
+            self.stmt = stmt
+
+        def _computeTargets(self, d1, source):
+            if self.taintPropagationHandler is not None:
+                self.taintPropagationHandler.notifyFlowIn(self.stmt, source, self.manager, FlowFunctionType.NormalFlowFunction)
+
+            res = self.computeTargetsInternal(d1, source)
+            return self.notifyOutFlowHandlers( self.stmt, d1, source, res, FlowFunctionType.NormalFlowFunction )
+
+        def computeTargetsInternal(self, d1, source):
+            pass
+
+
+class FlowFunctionsFactory(FlowFunctions):
+
+    def __init__(self):
+        super(FlowFunctionsFactory, self).__init__()
         pass
 
-class NotifyingNormalFlowFunction2(NotifyingNormalFlowFunction): # have to fix, especially src
-
-    def __init__(self, stmt, src, dest):
-        super().__init__(stmt)
-        self.src = src
-        self.dest = dest
-
-    def computeTargetsInternal(self, d1, source):
-        newSource = None
-        if not source.isAbstractionActive() and self.src == source.getActivationUnit():
-            newSource = source.getActiveCopy()
-        else:
-            newSource = source
-
-        killSource = ByReferenceBoolean()
-        killAll = ByReferenceBoolean()
-        res = self.propagationRules.applyNormalFlowFunction( d1, newSource, self.stmt,
-                                                             self.dest, killSource, killAll )
-        if killAll.value:
-            return Collections.emptySet()
-
-        if isinstance( self.src, AssignStmt ):
-            assignStmt = self.src
-            right = assignStmt.getRightOp()
-            rightVals = BaseSelector.selectBaseList( right, True )
-
-            resAssign = self.createNewTaintOnAssignment( assignStmt, rightVals, d1,
-                                                         newSource )
-            if resAssign is not None and not resAssign.isEmpty():
-                if res is not None:
-                    res.addAll( resAssign )
-                    return res
-                else:
-                    res = resAssign
-
-        return Collections.emptySet() if res == None or res.isEmpty() else res
-
-class SolverCallFlowFunction:   # Have to fix!!
-
-    def __init__(self, aliasing, src, dest, stmt, ie, ):
-        self.aliasing = aliasing
-        self.src = src
-        self.dest = dest
-        self.stmt = stmt
-
-    def computeTargets(self, d1, source):
-        res = self.computeTargetsInternal(d1, source)
-        if res is not None and not res.isEmpty() and d1 is not None:
-            for abs in res:
-                aliasing.getAliasingStrategy().injectCallingContext(abs, solver, self.dest, self.src, source, d1)
-        return self.notifyOutFlowHandlers(self.stmt, d1, source, res, FlowFunctionType.CallFlowFunction)
-
-    def computeTargetsInternal(self, d1, source):
-        if self.manager.getConfig().getStopAfterFirstFlow() and not results.isEmpty():
-            return None
-        if source == getZeroValue():
-            return None
-
-        if isExcluded(self.dest):
-            return None
-
-        if self.taintPropagationHandler is not None:
-            self.taintPropagationHandler.notifyFlowIn(self.stmt, source, manager,
-                    FlowFunctionType.CallFlowFunction)
-
-        if not source.isAbstractionActive() and source.getActivationUnit() == src:
-            source = source.getActiveCopy()
-
-        killAll = ByReferenceBoolean()
-        res = self.propagationRules.applyCallFlowFunction(d1, source, self.stmt, self.dest, killAll)
-        if killAll.value:
-            return None
-
-        resMapping = self.mapAccessPathToCallee(self.dest, self.ie, paramLocals, thisLocal,
-                source.getAccessPath())
-        if resMapping == None:
-            return res
-
-        resAbs = HashSet(resMapping.size())
-        if res is not None and not res.isEmpty():
-            resAbs.addAll(res)
-        for ap in resMapping:
-            if ap is not None:
-                if aliasing.getAliasingStrategy().isLazyAnalysis() \
-                        or source.isImplicit() \
-                        or self.interproceduralCFG().methodReadsValue(self.dest, ap.getPlainValue()):
-                    newAbs = source.deriveNewAbstraction(ap, self.stmt)
-                    if newAbs is not None:
-                        resAbs.add(newAbs)
-        return resAbs
-
-class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
     def addTaintViaStmt(self, d1, assignStmt, source, taintSet, cutFirstField, method, targetType):
         self.leftValue = assignStmt.getLeftOp()
         self.rightValue = assignStmt.getRightOp()
@@ -278,11 +206,48 @@ class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
         if not isinstance(src, Stmt):
             return self.KillAll.v()
 
-        return NotifyingNormalFlowFunction2(self.stmt, src, dest)
+        return NotifyingNormalFlowFunction(self.stmt, src, dest)
+
+    class NotifyingNormalFlowFunction():  # have to fix, especially src
+
+        def __init__(self, stmt, src, dest):
+            super().__init__( stmt )
+            self.src = src
+            self.dest = dest
+
+        def computeTargetsInternal(self, d1, source):
+            newSource = None
+            if not source.isAbstractionActive() and self.src == source.getActivationUnit():
+                newSource = source.getActiveCopy()
+            else:
+                newSource = source
+
+            killSource = ByReferenceBoolean()
+            killAll = ByReferenceBoolean()
+            res = self.propagationRules.applyNormalFlowFunction( d1, newSource, self.stmt,
+                                                                 self.dest, killSource, killAll )
+            if killAll.value:
+                return Collections.emptySet()
+
+            if isinstance( self.src, AssignStmt ):
+                assignStmt = self.src
+                right = assignStmt.getRightOp()
+                rightVals = BaseSelector.selectBaseList( right, True )
+
+                resAssign = self.createNewTaintOnAssignment( assignStmt, rightVals, d1,
+                                                             newSource )
+                if resAssign is not None and not resAssign.isEmpty():
+                    if res is not None:
+                        res.addAll( resAssign )
+                        return res
+                    else:
+                        res = resAssign
+
+            return Collections.emptySet() if res == None or res.isEmpty() else res
 
     def getCallFlowFunction(self, src, dest):
         if not dest.isConcrete():
-            logger.debug("Call skipped because target has no body::} ->:}", src, dest)
+            #logger.debug("Call skipped because target has no body::} ->:}", src, dest)
             return KillAll.v()
 
         stmt = src
@@ -296,7 +261,59 @@ class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
         if aliasing == None:
             return KillAll.v()
 
-        return SolverCallFlowFunction() # Todo: this inner class needs fix!!
+        return self.SolverCallFlowFunction() # Todo: this inner class needs fix!!
+
+    class SolverCallFlowFunction(FlowFunctionsFactory):  # Have to fix!!
+
+        def __init__(self):
+            super(SolverCallFlowFunction, self).__init__()
+            pass
+
+        def computeTargets(self, d1, source):
+            res = self.computeTargetsInternal( d1, source )
+            if res is not None and not res.isEmpty() and d1 is not None:
+                for abs in res:
+                    aliasing.getAliasingStrategy().injectCallingContext( abs, self.solver, self.dest, self.src, source, d1 )
+            return self.notifyOutFlowHandlers( self.stmt, d1, source, res, FlowFunctionType.CallFlowFunction )
+
+        def computeTargetsInternal(self, d1, source):
+            if self.manager.getConfig().getStopAfterFirstFlow() and not results.isEmpty():
+                return None
+            if source == getZeroValue():
+                return None
+
+            if isExcluded( self.dest ):
+                return None
+
+            if self.taintPropagationHandler is not None:
+                self.taintPropagationHandler.notifyFlowIn( self.stmt, source, manager,
+                                                           FlowFunctionType.CallFlowFunction )
+
+            if not source.isAbstractionActive() and source.getActivationUnit() == src:
+                source = source.getActiveCopy()
+
+            killAll = ByReferenceBoolean()
+            res = self.propagationRules.applyCallFlowFunction( d1, source, self.stmt, self.dest, killAll )
+            if killAll.value:
+                return None
+
+            resMapping = self.mapAccessPathToCallee( self.dest, self.ie, paramLocals, thisLocal,
+                                                     source.getAccessPath() )
+            if resMapping == None:
+                return res
+
+            resAbs = HashSet( resMapping.size() )
+            if res is not None and not res.isEmpty():
+                resAbs.addAll( res )
+            for ap in resMapping:
+                if ap is not None:
+                    if aliasing.getAliasingStrategy().isLazyAnalysis() \
+                            or source.isImplicit() \
+                            or self.interproceduralCFG().methodReadsValue( self.dest, ap.getPlainValue() ):
+                        newAbs = source.deriveNewAbstraction( ap, self.stmt )
+                        if newAbs is not None:
+                            resAbs.add( newAbs )
+            return resAbs
 
     FlowFunction<Abstraction> getReturnFlowFunction( Unit callSite,  SootMethod callee,
              Unit exitStmt,  Unit retSite):
@@ -836,46 +853,12 @@ class FlowFunctionsFactory(FlowFunctions, NotifyingNormalFlowFunction):
         return res
     }
 }
-    }
 
-
-class InfoflowProblem(AbstractInfoflowProblem):
-
-    def __init__(self, manager, zeroValue, ruleManagerFactory):
-        self.propagationRules = None
-        self.results = None
-        super(manager)
-
-        self.zeroValue = self.createZeroValue() if zeroValue == None else zeroValue
-        self.results = TaintPropagationResults(manager)
-        self.propagationRules = ruleManagerFactory.createRuleManager(manager, self.zeroValue, self.results)
-
-    def createFlowFunctionsFactory(self):
-        return FlowFunctions()
-
-
-
-
-    @Override
-    def autoAddZero():
+    def autoAddZero(self):
         return False
-    }
 
-    /**
-     * Gets the results of the data flow analysis
-     */
-    TaintPropagationResults getResults():
+    def getResults(self):
         return self.results
-    }
 
-    /**
-     * Gets the rules that FlowDroid uses internally to conduct specific analysis
-     * tasks such as handling sources or sinks
-     * 
-     * @return The propagation rule manager
-     */
-    PropagationRuleManager getPropagationRules():
-        return propagationRules
-    }
-
-}
+    def getPropagationRules(self):
+        return self.propagationRules
