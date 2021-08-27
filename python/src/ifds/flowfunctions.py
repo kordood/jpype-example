@@ -13,6 +13,8 @@ import BaseSelector
 import KillAll
 import SolverNormalFlowFunction
 import FlowFunctionType
+import AccessPath
+import Value
 from infoflowproblems import InfoflowProblem
 
 
@@ -323,16 +325,16 @@ class FlowFunctions(InfoflowProblem):
 
         def computeTargets(self, source, d1, callerD1s):
             res = self.computeTargetsInternal(source, callerD1s)
-            return self.notifyOutFlowHandlers(exitStmt, d1, source, res, FlowFunctionType.ReturnFlowFunction)
+            return self.notifyOutFlowHandlers(self.exitStmt, d1, source, res, FlowFunctionType.ReturnFlowFunction)
 
         def computeTargetsInternal(self, source, callerD1s):
-            if self.manager.getConfig().getStopAfterFirstFlow() and not results.isEmpty():
+            if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
                 return None
-            if source == getZeroValue()
+            if source == self.getZeroValue():
                 return None
 
-            if (taintPropagationHandler is not None)
-                taintPropagationHandler.notifyFlowIn(exitStmt, source, manager, FlowFunctionType.ReturnFlowFunction)
+            if self.taintPropagationHandler is not None:
+                self.taintPropagationHandler.notifyFlowIn(self.exitStmt, source, self.manager, FlowFunctionType.ReturnFlowFunction)
             callerD1sConditional = False
             for d1 in callerD1s:
                 if d1.getAccessPath().isEmpty():
@@ -340,66 +342,66 @@ class FlowFunctions(InfoflowProblem):
                     break
             newSource = source
             if not source.isAbstractionActive():
-                if callSite is not None:
-                    if callSite == source.getActivationUnit() \
-                            or self.isCallSiteActivatingTaint(callSite, source.getActivationUnit()):
+                if self.callSite is not None:
+                    if self.callSite == source.getActivationUnit() \
+                            or self.isCallSiteActivatingTaint(self.callSite, source.getActivationUnit()):
                         newSource = source.getActiveCopy()
 
             if not newSource.isAbstractionActive() and newSource.getActivationUnit() is not None:
-                if self.interproceduralCFG().getMethodOf(newSource.getActivationUnit()) == callee:
+                if self.interproceduralCFG().getMethodOf(newSource.getActivationUnit()) == self.callee:
                     return None
 
             killAll = ByReferenceBoolean()
-            res = self.propagationRules.applyReturnFlowFunction(callerD1s, newSource, exitStmt, retSite,
-                                                                callSite, killAll)
+            res = self.propagationRules.applyReturnFlowFunction(callerD1s, newSource, self.exitStmt, self.retSite,
+                                                                self.callSite, killAll)
             if killAll.value:
                 return None
             if res is None:
                 res = HashSet()
 
-            if callSite == None:
+            if self.callSite == None:
                 return None
 
-            if aliasing.getAliasingStrategy().isLazyAnalysis() \
+            if self.aliasing.getAliasingStrategy().isLazyAnalysis() \
                     and Aliasing.canHaveAliases(newSource.getAccessPath()):
                 res.add(newSource)
 
-            if not newSource.getAccessPath().isStaticFieldRef() and not callee.isStaticInitializer():
-                if returnStmt is not None and isinstance(callSite, DefinitionStmt):
-                    retLocal = returnStmt.getOp()
-                    defnStmt = callSite
+            if not newSource.getAccessPath().isStaticFieldRef() and not self.callee.isStaticInitializer():
+                if self.returnStmt is not None and isinstance(self.callSite, DefinitionStmt):
+                    retLocal = self.returnStmt.getOp()
+                    defnStmt = self.callSite
                     leftOp = defnStmt.getLeftOp()
 
-                    if aliasing.mayAlias(retLocal, newSource.getAccessPath().getPlainValue()) \
-                            and not self.isExceptionHandler(retSite):
+                    if self.aliasing.mayAlias(retLocal, newSource.getAccessPath().getPlainValue()) \
+                            and not self.isExceptionHandler(self.retSite):
                         ap = self.manager.getAccessPathFactory().copyWithNewValue(newSource.getAccessPath(), leftOp)
-                        abs = newSource.deriveNewAbstraction(ap, exitStmt)
+                        abs = newSource.deriveNewAbstraction(ap, self.exitStmt)
                         if abs is not None:
                             res.add(abs)
-                            if aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
+                            if self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                                 for d1 in callerD1s:
-                                    aliasing.computeAliases(d1, iCallStmt, leftOp, res,
-                                            self.interproceduralCFG().getMethodOf(callSite), abs)
+                                    self.aliasing.computeAliases(d1, self.iCallStmt, leftOp, res,
+                                            self.interproceduralCFG().getMethodOf(self.callSite), abs)
 
                 sourceBase = newSource.getAccessPath().getPlainValue()
                 parameterAliases = False
                 originalCallArg = None
-                for i in range(callee.getParameterCount()):
-                    if isinstance(callSite, DefinitionStmt) and not isExceptionHandler(retSite):
-                        defnStmt = callSite
+                for i in range(self.callee.getParameterCount()):
+                    if isinstance(self.callSite, DefinitionStmt) and not self.isExceptionHandler(self.retSite):
+                        defnStmt = self.callSite
                         leftOp = defnStmt.getLeftOp()
                         originalCallArg = defnStmt.getInvokeExpr().getArg(i)
                         if originalCallArg == leftOp:
                             continue
 
-                    if aliasing.mayAlias(paramLocals[i], sourceBase):
+                    if self.aliasing.mayAlias(self.paramLocals[i], sourceBase):
                         parameterAliases = True
-                        originalCallArg = iCallStmt.getInvokeExpr().getArg(1 if isReflectiveCallSite else i)
+                        originalCallArg = self.iCallStmt.getInvokeExpr().getArg(1 if self.isReflectiveCallSite else i)
 
                         if not AccessPath.canContainValue(originalCallArg):
                             continue
-                        if not isReflectiveCallSite \
-                                and not manager.getTypeUtils().checkCast(source.getAccessPath(),
+                        if not self.isReflectiveCallSite \
+                                and not self.manager.getTypeUtils().checkCast(source.getAccessPath(),
                                                                          originalCallArg.getType()):
                             continue
 
@@ -412,37 +414,37 @@ class FlowFunctions(InfoflowProblem):
                         if not source.getAccessPath().getTaintSubFields():
                             continue
 
-                        if self.interproceduralCFG().methodWritesValue(callee, paramLocals[i]):
+                        if self.interproceduralCFG().methodWritesValue(self.callee, self.paramLocals[i]):
                             continue
 
-                        ap = manager.getAccessPathFactory().copyWithNewValue(
+                        ap = self.manager.getAccessPathFactory().copyWithNewValue(
                                 newSource.getAccessPath(), originalCallArg,
-                                None if isReflectiveCallSite else newSource.getAccessPath().getBaseType(),
+                                None if self.isReflectiveCallSite else newSource.getAccessPath().getBaseType(),
                                 False)
-                        abs = newSource.deriveNewAbstraction(ap, exitStmt)
+                        abs = newSource.deriveNewAbstraction(ap, self.exitStmt)
 
                         if abs is not None:
                             res.add(abs)
 
                 thisAliases = False
-                if isinstance(callSite, DefinitionStmt) and not isExceptionHandler(retSite):
-                    defnStmt = callSite
+                if isinstance(self.callSite, DefinitionStmt) and not self.isExceptionHandler(self.retSite):
+                    defnStmt = self.callSite
                     leftOp = defnStmt.getLeftOp()
-                    if thisLocal == leftOp:
+                    if self.thisLocal == leftOp:
                         thisAliases = True
 
                 if not parameterAliases and not thisAliases and source.getAccessPath().getTaintSubFields() \
                         and isinstance(self.iCallStmt.getInvokeExpr(), InstanceInvokeExpr) \
-                        and aliasing.mayAlias(thisLocal, sourceBase):
+                        and self.aliasing.mayAlias(self.thisLocal, sourceBase):
 
-                    if self.manager.getTypeUtils().checkCast(source.getAccessPath(), thisLocal.getType()):
+                    if self.manager.getTypeUtils().checkCast(source.getAccessPath(), self.thisLocal.getType()):
                         iIExpr = self.iCallStmt.getInvokeExpr()
 
                         callerBaseLocal = iIExpr.getArg(0)\
                             if self.interproceduralCFG().isReflectiveCallSite(iIExpr) else iIExpr.getBase()
                         ap = self.manager.getAccessPathFactory().copyWithNewValue(
                                 newSource.getAccessPath(), callerBaseLocal,
-                                None if isReflectiveCallSite else newSource.getAccessPath().getBaseType(),
+                                None if self.isReflectiveCallSite else newSource.getAccessPath().getBaseType(),
                                 False)
                         abs = newSource.deriveNewAbstraction(ap, self.exitStmt)
                         if abs is not None:
@@ -450,13 +452,13 @@ class FlowFunctions(InfoflowProblem):
 
             for abs in res:
                 if abs.isImplicit() and not callerD1sConditional \
-                        or aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
+                        or self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                     for d1 in callerD1s:
-                        aliasing.computeAliases(d1, self.iCallStmt, None, res,
-                                self.interproceduralCFG().getMethodOf(callSite), abs)
+                        self.aliasing.computeAliases(d1, self.iCallStmt, None, res,
+                                self.interproceduralCFG().getMethodOf(self.callSite), abs)
 
                 if abs != newSource:
-                    abs.setCorrespondingCallSite(iCallStmt)
+                    abs.setCorrespondingCallSite(self.iCallStmt)
             return res
 
     def getCallToReturnFlowFunction(self, call, returnSite):
@@ -477,12 +479,12 @@ class FlowFunctions(InfoflowProblem):
         isSink = self.manager.getSourceSinkManager().getSinkInfo(iCallStmt, self.manager, None) is not None \
             if (self.manager.getSourceSinkManager() is not None) \
             else False
-        isSource = self.manager.getSourceSinkManager().getSourceInfo(iCallStmt, manager) is not None \
+        isSource = self.manager.getSourceSinkManager().getSourceInfo(iCallStmt, self.manager) is not None \
             if self.manager.getSourceSinkManager() is not None \
             else False
 
         callee = invExpr.getMethod()
-        hasValidCallees = hasValidCallees(call)
+        hasValidCallees = self.hasValidCallees(call)
 
         return new SolverCallToReturnFlowFunction():
 
@@ -493,11 +495,11 @@ class FlowFunctions(InfoflowProblem):
                 return self.notifyOutFlowHandlers(call, d1, source, res, FlowFunctionType.CallToReturnFlowFunction)
 
             def computeTargetsInternal(self, d1, source):
-                if self.manager.getConfig().getStopAfterFirstFlow() and not results.isEmpty():
+                if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
                     return None
 
                 if self.taintPropagationHandler is not None:
-                    self.taintPropagationHandler.notifyFlowIn(call, source, manager,
+                    self.taintPropagationHandler.notifyFlowIn(call, source, self.manager,
                             FlowFunctionType.CallToReturnFlowFunction)
 
                 newSource = None
@@ -516,7 +518,7 @@ class FlowFunctions(InfoflowProblem):
                     return None
                 passOn = not killSource.value
 
-                if source == getZeroValue():
+                if source == self.getZeroValue():
                     return Collections.emptySet() if res == None or res.isEmpty() else res
 
                 if res == None:
@@ -531,17 +533,17 @@ class FlowFunctions(InfoflowProblem):
 
                 if passOn \
                         and isinstance(invExpr, InstanceInvokeExpr) \
-                        and (manager.getConfig().getInspectSources() or not isSource) \
-                        and (manager.getConfig().getInspectSinks() or not isSink) \
+                        and (self.manager.getConfig().getInspectSources() or not isSource) \
+                        and (self.manager.getConfig().getInspectSinks() or not isSink) \
                         and newSource.getAccessPath().isInstanceFieldRef() \
                         and (hasValidCallees \
-                            or (taintWrapper is not None and taintWrapper.isExclusive(iCallStmt, newSource))):
+                            or (self.taintWrapper is not None and self.taintWrapper.isExclusive(iCallStmt, newSource))):
 
                     callees = self.interproceduralCFG().getCalleesOfCallAt(call)
                     allCalleesRead = not callees.isEmpty()
                     for callee in callees:
                         if callee.isConcrete() and callee.hasActiveBody():
-                            calleeAPs = mapAccessPathToCallee(callee, invExpr, None, None, source.getAccessPath())
+                            calleeAPs = self.mapAccessPathToCallee(callee, invExpr, None, None, source.getAccessPath())
                             if calleeAPs is not None:
                                 for ap in calleeAPs:
                                     if ap is not None:
@@ -570,13 +572,13 @@ class FlowFunctions(InfoflowProblem):
 
                 passOn |= source.getTopPostdominator() is not None or source.getAccessPath().isEmpty()
                 if passOn:
-                    if newSource != getZeroValue():
+                    if newSource != self.getZeroValue():
                         res.add(newSource)
 
                 if callee.isNative():
                     for callVal in callArgs:
                         if callVal == newSource.getAccessPath().getPlainValue():
-                            nativeAbs = ncHandler.getTaintedValues(iCallStmt, newSource, callArgs)
+                            nativeAbs = self.ncHandler.getTaintedValues(iCallStmt, newSource, callArgs)
                             if nativeAbs is not None:
                                 res.addAll(nativeAbs)
 
@@ -639,7 +641,7 @@ class FlowFunctions(InfoflowProblem):
             if aliasing.mayAlias(ie.getArg(0), ap.getPlainValue()):
                 if res == None:
                     res = HashSet()
-                res.add(sefl.manager.getAccessPathFactory().copyWithNewValue(ap, callee.getActiveBody().getThisLocal()))
+                res.add(self.manager.getAccessPathFactory().copyWithNewValue(ap, callee.getActiveBody().getThisLocal()))
         elif callee.getParameterCount() > 0:
             isReflectiveCallSite = self.interproceduralCFG().isReflectiveCallSite(ie)
 
