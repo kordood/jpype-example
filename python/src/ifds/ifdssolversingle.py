@@ -175,7 +175,7 @@ class IFDSSolver:
                         self.propagate(d1, return_site_n, d3, n, False)
 
     def compute_call_flow_function(self, call_flow_function, d1, d2):
-        return call_flow_function.computeTargets(d2)
+        return call_flow_function.compute_targets( d2 )
 
     def apply_end_summary_on_call(self, d1, n, d2, return_site_ns, s_called_proc_n, d3):
         end_summary = self.end_summary(s_called_proc_n, d3)
@@ -212,7 +212,7 @@ class IFDSSolver:
         pass
 
     def compute_call_to_return_flow_function(self, call_to_return_flow_function, d1, d2):
-        return call_to_return_flow_function.computeTargets(d2)
+        return call_to_return_flow_function.compute_targets( d2 )
 
     def process_exit(self, edge):
         n = edge.getTarget()
@@ -277,10 +277,10 @@ class IFDSSolver:
 
             if callers.isEmpty():
                 ret_function = self.flow_functions.getReturnFlowFunction(None, method_that_needs_summary, n, None)
-                ret_function.computeTargets(d2)
+                ret_function.compute_targets( d2 )
 
     def compute_return_flow_function(self, ret_function, d1, d2, call_site, caller_side_ds):
-        return ret_function.computeTargets(d2)
+        return ret_function.compute_targets( d2 )
 
     def process_normal_flow(self, edge):
         d1 = edge.factAtSource()
@@ -300,7 +300,7 @@ class IFDSSolver:
                         self.propagate(d1, m, d3, None, False)
 
     def compute_normal_flow_function(self, flow_function, d1, d2):
-        return flow_function.computeTargets(d2)
+        return flow_function.compute_targets( d2 )
 
     def end_summary(self, m, d3):
         _map = self.end_summary.get(Pair(m, d3))

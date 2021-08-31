@@ -9,69 +9,67 @@ import HashSet
 import ByReferenceBoolean
 import BaseSelector
 import KillAll
-import SolverNormalFlowFunction
 import FlowFunctionType
 import AccessPath
 import Value
+from .functions.solvernormalflowfunction import SolverNormalFlowFunction
+from .functions.solvercallflowfunction import SolverCallFlowFunction
+from .functions.solverreturnflowfuntion import SolverReturnFlowFunction
+from .functions.solvercalltoreturnflowfunction import SolverCallToReturnFlowFunction
 from infoflowproblems import InfoflowProblem
 
 
-def auto_instantiator(*args, **kwargs):
-    def decorator(cls):
-        return cls(*args, **kwargs)
-    return decorator
+class FlowFunctions:
 
-
-@auto_instantiator()
-class FlowFunctions(InfoflowProblem):
-
-    def __init__(self, **kwargs):
-        super(FlowFunctions, self).__init__(**kwargs)
+    def __init__(self, infoflow):
+        self.infoflow = infoflow
 
     class NotifyingNormalFlowFunction(SolverNormalFlowFunction):
 
-        def __init__(self, stmt=None, src=None, dest=None):
-            super().__init__()
+        def __init__(self, flowfunctions, stmt, dest):
             self.stmt = stmt
-            self.src = src
             self.dest = dest
+            self.flowfunctions = flowfunctions
+            super().__init__()
 
-        def computeTargets(self, d1, source):
-            if self.taintPropagationHandler is not None:
-                self.taintPropagationHandler.notifyFlowIn(self.stmt, source, self.manager, FlowFunctionType.NormalFlowFunction)
+        def compute_targets(self, d1, source):
+            if self.flowfunctions.taint_propagation_handler is not None:
+                self.flowfunctions.taint_propagation_handler.notifyFlowIn(self.stmt, source,
+                                                                          self.flowfunctions.infoflow.manager,
+                                                                          FlowFunctionType.NormalFlowFunction)
 
-            res = self.computeTargetsInternal(d1, source)
-            return self.notifyOutFlowHandlers( self.stmt, d1, source, res, FlowFunctionType.NormalFlowFunction )
+            res = self.compute_targets_internal(d1, source)
+            return self.flowfunctions.infoflow.notify_out_flow_handlers(self.stmt, d1, source, res,
+                                                                        FlowFunctionType.NormalFlowFunction)
 
-        def computeTargetsInternal(self, d1, source):
-            newSource = None
-            if not source.isAbstractionActive() and self.src == source.getActivationUnit():
-                newSource = source.getActiveCopy()
+        def compute_targets_internal(self, d1, source):
+            new_source = None
+            if not source.isAbstractionActive() and self.flowfunctions.src == source.getActivationUnit():
+                new_source = source.getActiveCopy()
             else:
-                newSource = source
+                new_source = source
 
-            killSource = ByReferenceBoolean()
-            killAll = ByReferenceBoolean()
-            res = self.propagationRules.applyNormalFlowFunction( d1, newSource, self.stmt,
-                                                                 self.dest, killSource, killAll )
-            if killAll.value:
+            kill_source = ByReferenceBoolean()
+            kill_all = ByReferenceBoolean()
+            res = self.flowfunctions.infoflow.propagationRules.applyNormalFlowFunction(d1, new_source, self.stmt,
+                                                                                       self.flowfunctions.dest, kill_source, kill_all)
+            if kill_all.value:
                 return Collections.emptySet()
 
-            if isinstance( self.src, AssignStmt ):
-                assignStmt = self.src
-                right = assignStmt.getRightOp()
-                rightVals = BaseSelector.selectBaseList( right, True )
+            if isinstance(self.flowfunctions.src, AssignStmt):
+                assign_stmt = self.flowfunctions.src
+                right = assign_stmt.getRightOp()
+                right_vals = BaseSelector.selectBaseList(right, True)
 
-                resAssign = self.createNewTaintOnAssignment( assignStmt, rightVals, d1,
-                                                             newSource )
-                if resAssign is not None and not resAssign.isEmpty():
+                res_assign = self.flowfunctions.createNewTaintOnAssignment(assign_stmt, right_vals, d1, new_source)
+                if res_assign is not None and not res_assign.isEmpty():
                     if res is not None:
-                        res.addAll( resAssign )
+                        res.addAll(res_assign)
                         return res
                     else:
-                        res = resAssign
+                        res = res_assign
 
-            return Collections.emptySet() if res == None or res.isEmpty() else res
+            return Collections.emptySet() if res is None or res.isEmpty() else res
 
     """
     def getNormalFlowFunction(self, curr, succ):
@@ -87,159 +85,165 @@ class FlowFunctions(InfoflowProblem):
         pass
     """
 
-    def addTaintViaStmt(self, d1, assignStmt, source, taintSet, cutFirstField, method, targetType):
-        self.leftValue = assignStmt.getLeftOp()
-        self.rightValue = assignStmt.getRightOp()
+    def addTaintViaStmt(self, d1, assign_stmt, source, taint_set, cut_first_field, method, target_type):
+        left_value = assign_stmt.getLeftOp()
+        right_value = assign_stmt.getRightOp()
 
-        if isinstance(self.leftValue, StaticFieldRef) \
-            and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode._None:
+        if isinstance(left_value, StaticFieldRef) \
+            and self.infoflow.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode._None:
             return
 
-        newAbs = None
+        new_abs = None
         if not source.getAccessPath().isEmpty():
-            if isinstance(self.leftValue, ArrayRef and targetType is not None):
-                self.arrayRef = self.leftValue
-                targetType = TypeUtils.buildArrayOrAddDimension(targetType, self.arrayRef.getType().getArrayType())
+            if isinstance( left_value, ArrayRef and target_type is not None ):
+                array_ref = left_value
+                target_type = TypeUtils.buildArrayOrAddDimension( target_type, array_ref.getType().getArrayType() )
 
-            if isinstance(self.rightValue, CastExpr):
-                cast = assignStmt.getRightOp()
-                targetType = cast.getType()
-            elif isinstance(self.rightValue, InstanceOfExpr):
-                newAbs = source.deriveNewAbstraction(self.manager.getAccessPathFactory().createAccessPath(
-                    self.leftValue, BooleanType.v(), True, ArrayTaintType.ContentsAndLength), assignStmt)
+            if isinstance(right_value, CastExpr):
+                cast = assign_stmt.getRightOp()
+                target_type = cast.getType()
+            elif isinstance(right_value, InstanceOfExpr):
+                new_abs = source.deriveNewAbstraction(self.infoflow.manager.getAccessPathFactory().createAccessPath(
+                    left_value, BooleanType.v(), True, ArrayTaintType.ContentsAndLength), assign_stmt)
         else:
-            assert targetType == None
+            assert target_type is None
 
-        self.arrayTaintType = source.getAccessPath().getArrayTaintType()
-        if isinstance(self.leftValue, ArrayRef) and self.manager.getConfig().getEnableArraySizeTainting():
-            self.arrayTaintType = ArrayTaintType.Contents
+        array_taint_type = source.getAccessPath().getArrayTaintType()
+        if isinstance(left_value, ArrayRef) and self.infoflow.manager.getConfig().getEnableArraySizeTainting():
+            array_taint_type = ArrayTaintType.Contents
 
-        if newAbs is None:
+        if new_abs is None:
             if source.getAccessPath().isEmpty():
-                newAbs = source.deriveNewAbstraction(
-                        self.manager.getAccessPathFactory().createAccessPath(self.leftValue, True), assignStmt, True)
+                new_abs = source.deriveNewAbstraction(
+                        self.infoflow.manager.getAccessPathFactory().createAccessPath(left_value, True), assign_stmt, True)
             else:
-                ap = self.manager.getAccessPathFactory().copyWithNewValue(source.getAccessPath(),
-                        self.leftValue, targetType, cutFirstField, True, self.arrayTaintType)
-                newAbs = source.deriveNewAbstraction(ap, assignStmt)
+                ap = self.infoflow.manager.getAccessPathFactory().copyWithNewValue( source.getAccessPath(),
+                                                                                    left_value,
+                                                                                    target_type,
+                                                                                    cut_first_field,
+                                                                                    True,
+                                                                                    array_taint_type )
+                new_abs = source.deriveNewAbstraction( ap, assign_stmt )
 
-        if newAbs is not None:
-            if isinstance(self.leftValue, StaticFieldRef) \
-                and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode.ContextFlowInsensitive:
-                self.manager.getGlobalTaintManager().addToGlobalTaintState(newAbs)
+        if new_abs is not None:
+            if isinstance(left_value, StaticFieldRef) \
+                and self.infoflow.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode.ContextFlowInsensitive:
+                self.infoflow.manager.getGlobalTaintManager().addToGlobalTaintState(new_abs)
             else:
-                taintSet.add(newAbs)
-                aliasing = self.manager.getAliasing()
-                if aliasing is not None and aliasing.canHaveAliases(assignStmt, self.leftValue, newAbs):
-                    aliasing.computeAliases(d1, assignStmt, self.leftValue, taintSet, method, newAbs)
+                taint_set.add( new_abs )
+                aliasing = self.infoflow.manager.getAliasing()
+                if aliasing is not None and aliasing.canHaveAliases( assign_stmt, left_value, new_abs ):
+                    aliasing.computeAliases( d1, assign_stmt, left_value, taint_set, method, new_abs )
 
     def hasValidCallees(self, call):
-        callees = self.interproceduralCFG().getCalleesOfCallAt(call)
+        callees = self.infoflow.interprocedural_cfg().getCalleesOfCallAt(call)
+
         for callee in callees:
             if callee.isConcrete():
                 return True
         return False
 
-    def createNewTaintOnAssignment(self, assignStmt, rightVals, d1, newSource):
-        leftValue = assignStmt.getLeftOp()
-        rightValue = assignStmt.getRightOp()
-        addLeftValue = False
+    def createNewTaintOnAssignment(self, assign_stmt, right_vals, d1, new_source):
+        left_value = assign_stmt.getLeftOp()
+        right_value = assign_stmt.getRightOp()
+        add_left_value = False
 
-        if isinstance(rightValue, LengthExpr):
-            return Collections.singleton(newSource)
+        if isinstance(right_value, LengthExpr):
+            return Collections.singleton( new_source )
 
 
-        implicitTaint = newSource.getTopPostdominator() is not None and newSource.getTopPostdominator().getUnit() is not None
-        implicitTaint |= newSource.getAccessPath().isEmpty()
+        implicit_taint = new_source.getTopPostdominator() is not None \
+                        and new_source.getTopPostdominator().getUnit() is not None
+        implicit_taint |= new_source.getAccessPath().isEmpty()
 
-        if implicitTaint:
-            if d1 is None or d1.getAccessPath().isEmpty() and not isinstance(leftValue, FieldRef):
-                return Collections.singleton(newSource)
+        if implicit_taint:
+            if d1 is None or d1.getAccessPath().isEmpty() and not isinstance(left_value, FieldRef):
+                return Collections.singleton( new_source )
 
-            if newSource.getAccessPath().isEmpty():
-                addLeftValue = True
+            if new_source.getAccessPath().isEmpty():
+                add_left_value = True
 
-        aliasOverwritten = not addLeftValue \
-                           and not newSource.isAbstractionActive() \
-                           and Aliasing.baseMatchesStrict(rightValue, newSource) \
-                           and isinstance(rightValue.getType(), RefType) \
-                           and not newSource.dependsOnCutAP()
+        alias_overwritten = not add_left_value \
+                           and not new_source.isAbstractionActive() \
+                           and Aliasing.baseMatchesStrict( right_value, new_source ) \
+                           and isinstance(right_value.getType(), RefType) \
+                           and not new_source.dependsOnCutAP()
 
-        aliasing = self.manager.getAliasing()
-        if aliasing == None:
+        aliasing = self.infoflow.manager.getAliasing()
+        if aliasing is None:
             return None
 
-        cutFirstField = False
-        mappedAP = newSource.getAccessPath()
-        targetType = None
-        if not addLeftValue and not aliasOverwritten:
-            for rightVal in rightVals:
+        cut_first_field = False
+        mapped_ap = new_source.getAccessPath()
+        target_type = None
+        if not add_left_value and not alias_overwritten:
+            for rightVal in right_vals:
                 if isinstance(rightVal, FieldRef):
-                    rightRef = rightVal
-                    if isinstance(rightRef, InstanceFieldRef) \
-                            and isinstance(rightRef.getBase().getType(), NoneType):
+                    right_ref = rightVal
+                    if isinstance(right_ref, InstanceFieldRef) \
+                            and isinstance(right_ref.getBase().getType(), NoneType):
                         return None
 
-                    mappedAP = aliasing.mayAlias(newSource.getAccessPath(), rightRef)
+                    mapped_ap = aliasing.mayAlias( new_source.getAccessPath(), right_ref )
 
                     if isinstance(rightVal, StaticFieldRef):
-                        if self.manager.getConfig().getStaticFieldTrackingMode() is not StaticFieldTrackingMode._None \
-                                and mappedAP is not None:
-                            addLeftValue = True
-                            cutFirstField = True
+                        if self.infoflow.manager.getConfig().getStaticFieldTrackingMode() is not StaticFieldTrackingMode._None \
+                                and mapped_ap is not None:
+                            add_left_value = True
+                            cut_first_field = True
                     elif isinstance(rightVal, InstanceFieldRef):
-                        rightBase = rightRef.getBase()
-                        sourceBase = newSource.getAccessPath().getPlainValue()
-                        rightField = rightRef.getField()
+                        right_base = right_ref.getBase()
+                        source_base = new_source.getAccessPath().getPlainValue()
+                        right_field = right_ref.getField()
 
-                        if mappedAP is not None:
-                            addLeftValue = True
-                            cutFirstField = (mappedAP.getFieldCount() > 0
-                                    and mappedAP.getFirstField() == rightField)
-                        elif (aliasing.mayAlias(rightBase, sourceBase)
-                                and newSource.getAccessPath().getFieldCount() == 0
-                                and newSource.getAccessPath().getTaintSubFields()):
-                            addLeftValue = True
-                            targetType = rightField.getType()
-                            if (mappedAP == None):
-                                mappedAP = self.manager.getAccessPathFactory().createAccessPath(rightBase, True)
-                elif isinstance(rightVal, Local) and newSource.getAccessPath().isInstanceFieldRef():
-                    base = newSource.getAccessPath().getPlainValue()
+                        if mapped_ap is not None:
+                            add_left_value = True
+                            cut_first_field = (mapped_ap.getFieldCount() > 0
+                                    and mapped_ap.getFirstField() == right_field)
+                        elif (aliasing.mayAlias(right_base, source_base)
+                              and new_source.getAccessPath().getFieldCount() == 0
+                              and new_source.getAccessPath().getTaintSubFields()):
+                            add_left_value = True
+                            target_type = right_field.getType()
+                            if (mapped_ap is None):
+                                mapped_ap = self.infoflow.manager.getAccessPathFactory().createAccessPath(right_base, True)
+                elif isinstance(rightVal, Local) and new_source.getAccessPath().isInstanceFieldRef():
+                    base = new_source.getAccessPath().getPlainValue()
                     if aliasing.mayAlias(rightVal, base):
-                        addLeftValue = True
-                        targetType = newSource.getAccessPath().getBaseType()
-                elif aliasing.mayAlias(rightVal, newSource.getAccessPath().getPlainValue()):
-                    if not isinstance(assignStmt.getRightOp(), NewArrayExpr):
-                        if self.manager.getConfig().getEnableArraySizeTainting() \
-                                or not isinstance(rightValue, NewArrayExpr):
-                            addLeftValue = True
-                            targetType = newSource.getAccessPath().getBaseType()
+                        add_left_value = True
+                        target_type = new_source.getAccessPath().getBaseType()
+                elif aliasing.mayAlias( rightVal, new_source.getAccessPath().getPlainValue() ):
+                    if not isinstance( assign_stmt.getRightOp(), NewArrayExpr ):
+                        if self.infoflow.manager.getConfig().getEnableArraySizeTainting() \
+                                or not isinstance(right_value, NewArrayExpr):
+                            add_left_value = True
+                            target_type = new_source.getAccessPath().getBaseType()
 
-                if addLeftValue:
+                if add_left_value:
                     break
 
-        if not addLeftValue:
+        if not add_left_value:
             return None
 
-        if not newSource.isAbstractionActive() \
-                and isinstance(assignStmt.getLeftOp().getType(), PrimType) \
-                or TypeUtils.isStringType(assignStmt.getLeftOp().getType()) \
-                and not newSource.getAccessPath().getCanHaveImmutableAliases():
-            return Collections.singleton(newSource)
+        if not new_source.isAbstractionActive() \
+                and isinstance( assign_stmt.getLeftOp().getType(), PrimType ) \
+                or TypeUtils.isStringType( assign_stmt.getLeftOp().getType() ) \
+                and not new_source.getAccessPath().getCanHaveImmutableAliases():
+            return Collections.singleton( new_source )
 
         res = HashSet()
-        targetAB = newSource if mappedAP.equals(newSource.getAccessPath()) \
-            else newSource.deriveNewAbstraction(mappedAP, None)
-        self.addTaintViaStmt( d1, assignStmt, targetAB, res, cutFirstField,
-                              self.interproceduralCFG().get_method_of( assignStmt ), targetType )
-        res.add(newSource)
+        target_ab = new_source if mapped_ap.equals( new_source.getAccessPath() ) \
+            else new_source.deriveNewAbstraction( mapped_ap, None )
+        self.addTaintViaStmt( d1, assign_stmt, target_ab, res, cut_first_field,
+                              self.infoflow.interprocedural_cfg().get_method_of( assign_stmt ), target_type )
+        res.add( new_source )
         return res
 
     def getNormalFlowFunction(self, src, dest):
         if not isinstance(src, Stmt):
-            return self.KillAll.v()
+            return self.infoflow.KillAll.v()
 
-        return self.NotifyingNormalFlowFunction(self.stmt, src, dest)
+        return self.NotifyingNormalFlowFunction(self, src, dest)
 
     def getCallFlowFunction(self, src, dest):
         if not dest.isConcrete():
@@ -247,79 +251,31 @@ class FlowFunctions(InfoflowProblem):
             return KillAll.v()
 
         stmt = src
-        ie = self.stmt.getInvokeExpr() if stmt is not None and self.stmt.containsInvokeExpr() else None
+        ie = stmt.getInvokeExpr() if stmt is not None and stmt.containsInvokeExpr() else None
 
         paramLocals = dest.getActiveBody().getParameterLocals().toArray(Local[0])
 
         thisLocal = None if dest.isStatic() else dest.getActiveBody().getThisLocal()
 
-        aliasing = self.manager.getAliasing()
-        if aliasing == None:
+        aliasing = self.infoflow.manager.getAliasing()
+        if aliasing is None:
             return KillAll.v()
 
-        return self.SolverCallFlowFunction()
-
-    class SolverCallFlowFunction():
-
-        def computeTargets(self, d1, source):
-            res = self.computeTargetsInternal( d1, source )
-            if res is not None and not res.isEmpty() and d1 is not None:
-                for abs in res:
-                    self.aliasing.getAliasingStrategy().injectCallingContext( abs, self.solver, self.dest, self.src, source, d1 )
-            return self.notifyOutFlowHandlers( self.stmt, d1, source, res, FlowFunctionType.CallFlowFunction )
-
-        def computeTargetsInternal(self, d1, source):
-            if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
-                return None
-            if source == self.getZeroValue():
-                return None
-
-            if self.isExcluded( self.dest ):
-                return None
-
-            if self.taintPropagationHandler is not None:
-                self.taintPropagationHandler.notifyFlowIn( self.stmt, source, self.manager,
-                                                           FlowFunctionType.CallFlowFunction )
-
-            if not source.isAbstractionActive() and source.getActivationUnit() == self.src:
-                source = source.getActiveCopy()
-
-            killAll = ByReferenceBoolean()
-            res = self.propagationRules.applyCallFlowFunction( d1, source, self.stmt, self.dest, killAll )
-            if killAll.value:
-                return None
-
-            resMapping = self.mapAccessPathToCallee( self.dest, self.ie, self.paramLocals, self.thisLocal,
-                                                     source.getAccessPath() )
-            if resMapping == None:
-                return res
-
-            resAbs = HashSet( resMapping.size() )
-            if res is not None and not res.isEmpty():
-                resAbs.addAll( res )
-            for ap in resMapping:
-                if ap is not None:
-                    if self.aliasing.getAliasingStrategy().isLazyAnalysis() \
-                            or source.isImplicit() \
-                            or self.interproceduralCFG().methodReadsValue( self.dest, ap.getPlainValue() ):
-                        newAbs = source.deriveNewAbstraction( ap, self.stmt )
-                        if newAbs is not None:
-                            resAbs.add( newAbs )
-            return resAbs
+        return SolverCallFlowFunction(self)
 
     def getReturnFlowFunction(self, callSite, callee, exitStmt, retSite):
         if callSite is not None and not isinstance(callSite, Stmt):
             return KillAll.v()
         iCallStmt = callSite
         isReflectiveCallSite = callSite is not None \
-                               and self.interproceduralCFG().isReflectiveCallSite(callSite)
+                               and self.infoflow.interprocedural_cfg().isReflectiveCallSite(callSite)
 
         returnStmt = exitStmt if isinstance(exitStmt, ReturnStmt) else None
 
         paramLocals = callee.getActiveBody().getParameterLocals().toArray(Local[0])
 
-        aliasing = self.manager.getAliasing()
-        if (aliasing == None):
+        aliasing = self.infoflow.manager.getAliasing()
+        if (aliasing is None):
             return KillAll.v()
 
         thisLocal = None if callee.isStatic() else callee.getActiveBody().getThisLocal()
@@ -330,16 +286,16 @@ class FlowFunctions(InfoflowProblem):
 
         def computeTargets(self, source, d1, callerD1s):
             res = self.computeTargetsInternal(source, callerD1s)
-            return self.notifyOutFlowHandlers(self.exitStmt, d1, source, res, FlowFunctionType.ReturnFlowFunction)
+            return self.notify_out_flow_handlers(self.exitStmt, d1, source, res, FlowFunctionType.ReturnFlowFunction)
 
         def computeTargetsInternal(self, source, callerD1s):
-            if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
+            if self.infoflow.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
                 return None
             if source == self.getZeroValue():
                 return None
 
-            if self.taintPropagationHandler is not None:
-                self.taintPropagationHandler.notifyFlowIn(self.exitStmt, source, self.manager, FlowFunctionType.ReturnFlowFunction)
+            if self.taint_propagation_handler is not None:
+                self.taint_propagation_handler.notifyFlowIn(self.exitStmt, source, self.infoflow.manager, FlowFunctionType.ReturnFlowFunction)
             callerD1sConditional = False
             for d1 in callerD1s:
                 if d1.getAccessPath().isEmpty():
@@ -353,7 +309,7 @@ class FlowFunctions(InfoflowProblem):
                         newSource = source.getActiveCopy()
 
             if not newSource.isAbstractionActive() and newSource.getActivationUnit() is not None:
-                if self.interproceduralCFG().get_method_of( newSource.getActivationUnit() ) == self.callee:
+                if self.interproceduralCFG().get_method_of(newSource.getActivationUnit()) == self.callee:
                     return None
 
             killAll = ByReferenceBoolean()
@@ -364,7 +320,7 @@ class FlowFunctions(InfoflowProblem):
             if res is None:
                 res = HashSet()
 
-            if self.callSite == None:
+            if self.callSite is None:
                 return None
 
             if self.aliasing.getAliasingStrategy().isLazyAnalysis() \
@@ -379,14 +335,14 @@ class FlowFunctions(InfoflowProblem):
 
                     if self.aliasing.mayAlias(retLocal, newSource.getAccessPath().getPlainValue()) \
                             and not self.isExceptionHandler(self.retSite):
-                        ap = self.manager.getAccessPathFactory().copyWithNewValue(newSource.getAccessPath(), leftOp)
+                        ap = self.infoflow.manager.getAccessPathFactory().copyWithNewValue(newSource.getAccessPath(), leftOp)
                         abs = newSource.deriveNewAbstraction(ap, self.exitStmt)
                         if abs is not None:
                             res.add(abs)
                             if self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                                 for d1 in callerD1s:
-                                    self.aliasing.computeAliases( d1, self.iCallStmt, leftOp, res,
-                                                                  self.interproceduralCFG().get_method_of( self.callSite ), abs )
+                                    self.aliasing.computeAliases(d1, self.iCallStmt, leftOp, res,
+                                                                  self.interproceduralCFG().get_method_of(self.callSite), abs)
 
                 sourceBase = newSource.getAccessPath().getPlainValue()
                 parameterAliases = False
@@ -406,7 +362,7 @@ class FlowFunctions(InfoflowProblem):
                         if not AccessPath.canContainValue(originalCallArg):
                             continue
                         if not self.isReflectiveCallSite \
-                                and not self.manager.getTypeUtils().checkCast(source.getAccessPath(),
+                                and not self.infoflow.manager.getTypeUtils().checkCast(source.getAccessPath(),
                                                                          originalCallArg.getType()):
                             continue
 
@@ -422,7 +378,7 @@ class FlowFunctions(InfoflowProblem):
                         if self.interproceduralCFG().methodWritesValue(self.callee, self.paramLocals[i]):
                             continue
 
-                        ap = self.manager.getAccessPathFactory().copyWithNewValue(
+                        ap = self.infoflow.manager.getAccessPathFactory().copyWithNewValue(
                                 newSource.getAccessPath(), originalCallArg,
                                 None if self.isReflectiveCallSite else newSource.getAccessPath().getBaseType(),
                                 False)
@@ -442,12 +398,12 @@ class FlowFunctions(InfoflowProblem):
                         and isinstance(self.iCallStmt.getInvokeExpr(), InstanceInvokeExpr) \
                         and self.aliasing.mayAlias(self.thisLocal, sourceBase):
 
-                    if self.manager.getTypeUtils().checkCast(source.getAccessPath(), self.thisLocal.getType()):
+                    if self.infoflow.manager.getTypeUtils().checkCast(source.getAccessPath(), self.thisLocal.getType()):
                         iIExpr = self.iCallStmt.getInvokeExpr()
 
                         callerBaseLocal = iIExpr.getArg(0)\
                             if self.interproceduralCFG().isReflectiveCallSite(iIExpr) else iIExpr.getBase()
-                        ap = self.manager.getAccessPathFactory().copyWithNewValue(
+                        ap = self.infoflow.manager.getAccessPathFactory().copyWithNewValue(
                                 newSource.getAccessPath(), callerBaseLocal,
                                 None if self.isReflectiveCallSite else newSource.getAccessPath().getBaseType(),
                                 False)
@@ -459,8 +415,8 @@ class FlowFunctions(InfoflowProblem):
                 if abs.isImplicit() and not callerD1sConditional \
                         or self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                     for d1 in callerD1s:
-                        self.aliasing.computeAliases( d1, self.iCallStmt, None, res,
-                                                      self.interproceduralCFG().get_method_of( self.callSite ), abs )
+                        self.aliasing.computeAliases(d1, self.iCallStmt, None, res,
+                                                      self.interproceduralCFG().get_method_of(self.callSite), abs)
 
                 if abs != newSource:
                     abs.setCorrespondingCallSite(self.iCallStmt)
@@ -473,136 +429,25 @@ class FlowFunctions(InfoflowProblem):
         iCallStmt = call
         invExpr = iCallStmt.getInvokeExpr()
 
-        aliasing = self.manager.getAliasing()
-        if aliasing == None:
+        aliasing = self.infoflow.manager.getAliasing()
+        if aliasing is None:
             return KillAll.v()
 
         callArgs = Value[invExpr.getArgCount()]
         for i in range(invExpr.getArgCount()):
             callArgs[i] = invExpr.getArg(i)
 
-        isSink = self.manager.getSourceSinkManager().getSinkInfo(iCallStmt, self.manager, None) is not None \
-            if (self.manager.getSourceSinkManager() is not None) \
+        isSink = self.infoflow.manager.getSourceSinkManager().getSinkInfo(iCallStmt, self.infoflow.manager, None) is not None \
+            if (self.infoflow.manager.getSourceSinkManager() is not None) \
             else False
-        isSource = self.manager.getSourceSinkManager().getSourceInfo(iCallStmt, self.manager) is not None \
-            if self.manager.getSourceSinkManager() is not None \
+        isSource = self.infoflow.manager.getSourceSinkManager().getSourceInfo(iCallStmt, self.infoflow.manager) is not None \
+            if self.infoflow.manager.getSourceSinkManager() is not None \
             else False
 
         callee = invExpr.getMethod()
         hasValidCallees = self.hasValidCallees(call)
 
-        return new SolverCallToReturnFlowFunction():
-
-        class SolverCallToReturnFlowFunction():
-
-            def computeTargets(self, d1, source):
-                res = self.computeTargetsInternal(d1, source)
-                return self.notifyOutFlowHandlers(call, d1, source, res, FlowFunctionType.CallToReturnFlowFunction)
-
-            def computeTargetsInternal(self, d1, source):
-                if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
-                    return None
-
-                if self.taintPropagationHandler is not None:
-                    self.taintPropagationHandler.notifyFlowIn(call, source, self.manager,
-                            FlowFunctionType.CallToReturnFlowFunction)
-
-                newSource = None
-                if not source.isAbstractionActive() \
-                        and call == source.getActivationUnit() \
-                        or self.isCallSiteActivatingTaint(call, source.getActivationUnit()):
-                    newSource = source.getActiveCopy()
-                else:
-                    newSource = source
-
-                killSource = ByReferenceBoolean()
-                killAll = ByReferenceBoolean()
-                res = self.propagationRules.applyCallToReturnFlowFunction(d1, newSource, iCallStmt,
-                        killSource, killAll, True)
-                if killAll.value:
-                    return None
-                passOn = not killSource.value
-
-                if source == self.getZeroValue():
-                    return Collections.emptySet() if res == None or res.isEmpty() else res
-
-                if res == None:
-                    res = HashSet()
-
-                if newSource.getTopPostdominator() is not None \
-                        and newSource.getTopPostdominator().getUnit() is None:
-                    return Collections.singleton(newSource)
-
-                if newSource.getAccessPath().isStaticFieldRef():
-                    passOn = False
-
-                if passOn \
-                        and isinstance(invExpr, InstanceInvokeExpr) \
-                        and (self.manager.getConfig().getInspectSources() or not isSource) \
-                        and (self.manager.getConfig().getInspectSinks() or not isSink) \
-                        and newSource.getAccessPath().isInstanceFieldRef() \
-                        and (hasValidCallees \
-                            or (self.taintWrapper is not None and self.taintWrapper.isExclusive(iCallStmt, newSource))):
-
-                    callees = self.interproceduralCFG().getCalleesOfCallAt(call)
-                    allCalleesRead = not callees.isEmpty()
-                    for callee in callees:
-                        if callee.isConcrete() and callee.hasActiveBody():
-                            calleeAPs = self.mapAccessPathToCallee(callee, invExpr, None, None, source.getAccessPath())
-                            if calleeAPs is not None:
-                                for ap in calleeAPs:
-                                    if ap is not None:
-                                        if not self.interproceduralCFG().methodReadsValue(callee, ap.getPlainValue()):
-                                            allCalleesRead = False
-                                            break
-
-                        if self.isExcluded(callee):
-                            allCalleesRead = False
-                            break
-
-                    if allCalleesRead:
-                        if aliasing.mayAlias(invExpr.getBase(), newSource.getAccessPath().getPlainValue()):
-                            passOn = False
-                        if passOn:
-                            for i in range(callArgs.length):
-                                if aliasing.mayAlias(callArgs[i], newSource.getAccessPath().getPlainValue()):
-                                    passOn = False
-                                    break
-                        if newSource.getAccessPath().isStaticFieldRef():
-                            passOn = False
-
-                if source.getAccessPath().isStaticFieldRef():
-                    if not self.interproceduralCFG().isStaticFieldUsed(callee, source.getAccessPath().getFirstField()):
-                        passOn = True
-
-                passOn |= source.getTopPostdominator() is not None or source.getAccessPath().isEmpty()
-                if passOn:
-                    if newSource != self.getZeroValue():
-                        res.add(newSource)
-
-                if callee.isNative():
-                    for callVal in callArgs:
-                        if callVal == newSource.getAccessPath().getPlainValue():
-                            nativeAbs = self.ncHandler.getTaintedValues(iCallStmt, newSource, callArgs)
-                            if nativeAbs is not None:
-                                res.addAll(nativeAbs)
-
-                                for abs in nativeAbs:
-                                    if abs.getAccessPath().isStaticFieldRef() \
-                                            or aliasing.canHaveAliases(iCallStmt,
-                                                                       abs.getAccessPath().getCompleteValue(),
-                                                                       abs):
-                                        aliasing.computeAliases( d1, iCallStmt,
-                                                                 abs.getAccessPath().getPlainValue(), res,
-                                                                 self.interproceduralCFG().get_method_of( call ), abs )
-                            break
-
-                for abs in res:
-                    if abs != newSource:
-                        abs.setCorrespondingCallSite(iCallStmt)
-
-                return res
-
+        return SolverCallToReturnFlowFunction()
 
     def mapAccessPathToCallee(self, callee, ie, paramLocals, thisLocal, ap):
         if ap.isEmpty():
@@ -612,8 +457,8 @@ class FlowFunctions(InfoflowProblem):
 
         res = None
 
-        aliasing = self.manager.getAliasing()
-        if aliasing == None:
+        aliasing = self.infoflow.manager.getAliasing()
+        if aliasing is None:
             return None
 
         if aliasing.getAliasingStrategy().isLazyAnalysis() and Aliasing.canHaveAliases(ap):
@@ -633,38 +478,38 @@ class FlowFunctions(InfoflowProblem):
 
         if baseLocal is not None:
             if aliasing.mayAlias(baseLocal, ap.getPlainValue()):
-                if self.manager.getTypeUtils().hasCompatibleTypesForCall(ap, callee.getDeclaringClass()):
-                    if res == None:
+                if self.infoflow.manager.getTypeUtils().hasCompatibleTypesForCall(ap, callee.getDeclaringClass()):
+                    if res is None:
                         res = HashSet()
 
-                    if thisLocal == None:
+                    if thisLocal is None:
                         thisLocal = callee.getActiveBody().getThisLocal()
 
-                    res.add(self.manager.getAccessPathFactory().copyWithNewValue(ap, thisLocal))
+                    res.add(self.infoflow.manager.getAccessPathFactory().copyWithNewValue(ap, thisLocal))
 
         if isExecutorExecute:
             if aliasing.mayAlias(ie.getArg(0), ap.getPlainValue()):
-                if res == None:
+                if res is None:
                     res = HashSet()
-                res.add(self.manager.getAccessPathFactory().copyWithNewValue(ap, callee.getActiveBody().getThisLocal()))
+                res.add(self.infoflow.manager.getAccessPathFactory().copyWithNewValue(ap, callee.getActiveBody().getThisLocal()))
         elif callee.getParameterCount() > 0:
             isReflectiveCallSite = self.interproceduralCFG().isReflectiveCallSite(ie)
 
             for i in range(1 if isReflectiveCallSite else 0, ie.getArgCount()):
                 if aliasing.mayAlias(ie.getArg(i), ap.getPlainValue()):
-                    if res == None:
+                    if res is None:
                         res = HashSet()
 
-                    if paramLocals == None:
+                    if paramLocals is None:
                         paramLocals = callee.getActiveBody().getParameterLocals().toArray(Local[callee.getParameterCount()])
 
                     if isReflectiveCallSite:
                         for j in range(paramLocals.length):
-                            newAP = self.manager.getAccessPathFactory().copyWithNewValue(ap, paramLocals[j], None, False)
+                            newAP = self.infoflow.manager.getAccessPathFactory().copyWithNewValue(ap, paramLocals[j], None, False)
                             if newAP is not None:
                                 res.add(newAP)
                     else:
-                        newAP = self.manager.getAccessPathFactory().copyWithNewValue(ap, paramLocals[i])
+                        newAP = self.infoflow.manager.getAccessPathFactory().copyWithNewValue(ap, paramLocals[i])
                         if newAP is not None:
                             res.add(newAP)
         return res

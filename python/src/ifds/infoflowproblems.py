@@ -1,23 +1,5 @@
 from abstractinfoflowproblem import AbstractInfoflowProblem
-from solvernormalflowfunction import SolverNormalFlowFunction
 from flowfunctions import FlowFunctions
-import TaintPropagationResults
-import FlowFunctionType
-import StaticFieldRef, ArrayRef, FieldRef, RefType, NoneType, InstanceFieldRef
-import CastExpr, InstanceOfExpr
-import StaticFieldTrackingMode
-import TypeUtils, BooleanType, ArrayTaintType
-import LengthExpr, AssignStmt, Stmt
-import Collections
-import Aliasing
-import NewArrayExpr
-import Local
-import PrimType
-import HashSet
-import ByReferenceBoolean, BaseSelector
-import KillAll
-
-from abc import *
 
 
 class InfoflowProblem(AbstractInfoflowProblem):
@@ -29,13 +11,16 @@ class InfoflowProblem(AbstractInfoflowProblem):
         self.propagation_rules = rule_manager_factory.createRuleManager(manager, self.zero_value, self.results)
 
     def create_flow_functions_factory(self):
-        return FlowFunctions()
+        return FlowFunctions(self)
 
     def auto_add_zero(self):
         return False
 
+    """
+    Not using in python
+
     def get_results(self):
         return self.results
-
     def get_propagation_rules(self):
         return self.propagation_rules
+    """

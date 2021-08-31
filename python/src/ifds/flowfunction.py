@@ -1,4 +1,4 @@
 class FlowFunction:
 
-    def computeTargets(self, source):
+    def compute_targets(self, d1, source):
         pass
