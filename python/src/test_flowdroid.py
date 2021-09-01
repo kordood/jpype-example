@@ -32,8 +32,6 @@ def run_mainclass(instance, option):
     scheme = option.scheme
     output = option.output
 
-
-
     options = "-a %s -d -p %s -s %s -o %s" % (apk, sdk, scheme, output)
     instance.main(options.split(" "))    # set a string
 
