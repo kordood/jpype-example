@@ -95,9 +95,9 @@ class FlowFunctions:
 
         new_abs = None
         if not source.getAccessPath().isEmpty():
-            if isinstance( left_value, ArrayRef and target_type is not None ):
+            if isinstance(left_value, ArrayRef and target_type is not None):
                 array_ref = left_value
-                target_type = TypeUtils.buildArrayOrAddDimension( target_type, array_ref.getType().getArrayType() )
+                target_type = TypeUtils.buildArrayOrAddDimension(target_type, array_ref.getType().getArrayType())
 
             if isinstance(right_value, CastExpr):
                 cast = assign_stmt.getRightOp()
@@ -117,23 +117,23 @@ class FlowFunctions:
                 new_abs = source.deriveNewAbstraction(
                         self.infoflow.manager.getAccessPathFactory().createAccessPath(left_value, True), assign_stmt, True)
             else:
-                ap = self.infoflow.manager.getAccessPathFactory().copyWithNewValue( source.getAccessPath(),
+                ap = self.infoflow.manager.getAccessPathFactory().copyWithNewValue(source.getAccessPath(),
                                                                                     left_value,
                                                                                     target_type,
                                                                                     cut_first_field,
                                                                                     True,
-                                                                                    array_taint_type )
-                new_abs = source.deriveNewAbstraction( ap, assign_stmt )
+                                                                                    array_taint_type)
+                new_abs = source.deriveNewAbstraction(ap, assign_stmt)
 
         if new_abs is not None:
             if isinstance(left_value, StaticFieldRef) \
                 and self.infoflow.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode.ContextFlowInsensitive:
                 self.infoflow.manager.getGlobalTaintManager().addToGlobalTaintState(new_abs)
             else:
-                taint_set.add( new_abs )
+                taint_set.add(new_abs)
                 aliasing = self.infoflow.manager.getAliasing()
-                if aliasing is not None and aliasing.canHaveAliases( assign_stmt, left_value, new_abs ):
-                    aliasing.computeAliases( d1, assign_stmt, left_value, taint_set, method, new_abs )
+                if aliasing is not None and aliasing.canHaveAliases(assign_stmt, left_value, new_abs):
+                    aliasing.computeAliases(d1, assign_stmt, left_value, taint_set, method, new_abs)
 
     def hasValidCallees(self, call):
         callees = self.infoflow.interprocedural_cfg().getCalleesOfCallAt(call)
@@ -149,7 +149,7 @@ class FlowFunctions:
         add_left_value = False
 
         if isinstance(right_value, LengthExpr):
-            return Collections.singleton( new_source )
+            return Collections.singleton(new_source)
 
 
         implicit_taint = new_source.getTopPostdominator() is not None \
@@ -158,14 +158,14 @@ class FlowFunctions:
 
         if implicit_taint:
             if d1 is None or d1.getAccessPath().isEmpty() and not isinstance(left_value, FieldRef):
-                return Collections.singleton( new_source )
+                return Collections.singleton(new_source)
 
             if new_source.getAccessPath().isEmpty():
                 add_left_value = True
 
         alias_overwritten = not add_left_value \
                            and not new_source.isAbstractionActive() \
-                           and Aliasing.baseMatchesStrict( right_value, new_source ) \
+                           and Aliasing.baseMatchesStrict(right_value, new_source) \
                            and isinstance(right_value.getType(), RefType) \
                            and not new_source.dependsOnCutAP()
 
@@ -184,7 +184,7 @@ class FlowFunctions:
                             and isinstance(right_ref.getBase().getType(), NoneType):
                         return None
 
-                    mapped_ap = aliasing.mayAlias( new_source.getAccessPath(), right_ref )
+                    mapped_ap = aliasing.mayAlias(new_source.getAccessPath(), right_ref)
 
                     if isinstance(rightVal, StaticFieldRef):
                         if self.infoflow.manager.getConfig().getStaticFieldTrackingMode() is not StaticFieldTrackingMode._None \
@@ -212,8 +212,8 @@ class FlowFunctions:
                     if aliasing.mayAlias(rightVal, base):
                         add_left_value = True
                         target_type = new_source.getAccessPath().getBaseType()
-                elif aliasing.mayAlias( rightVal, new_source.getAccessPath().getPlainValue() ):
-                    if not isinstance( assign_stmt.getRightOp(), NewArrayExpr ):
+                elif aliasing.mayAlias(rightVal, new_source.getAccessPath().getPlainValue()):
+                    if not isinstance(assign_stmt.getRightOp(), NewArrayExpr):
                         if self.infoflow.manager.getConfig().getEnableArraySizeTainting() \
                                 or not isinstance(right_value, NewArrayExpr):
                             add_left_value = True
@@ -226,17 +226,17 @@ class FlowFunctions:
             return None
 
         if not new_source.isAbstractionActive() \
-                and isinstance( assign_stmt.getLeftOp().getType(), PrimType ) \
-                or TypeUtils.isStringType( assign_stmt.getLeftOp().getType() ) \
+                and isinstance(assign_stmt.getLeftOp().getType(), PrimType) \
+                or TypeUtils.isStringType(assign_stmt.getLeftOp().getType()) \
                 and not new_source.getAccessPath().getCanHaveImmutableAliases():
-            return Collections.singleton( new_source )
+            return Collections.singleton(new_source)
 
         res = HashSet()
-        target_ab = new_source if mapped_ap.equals( new_source.getAccessPath() ) \
-            else new_source.deriveNewAbstraction( mapped_ap, None )
-        self.addTaintViaStmt( d1, assign_stmt, target_ab, res, cut_first_field,
-                              self.infoflow.interprocedural_cfg().get_method_of( assign_stmt ), target_type )
-        res.add( new_source )
+        target_ab = new_source if mapped_ap.equals(new_source.getAccessPath()) \
+            else new_source.deriveNewAbstraction(mapped_ap, None)
+        self.addTaintViaStmt(d1, assign_stmt, target_ab, res, cut_first_field,
+                              self.infoflow.interprocedural_cfg().get_method_of(assign_stmt), target_type)
+        res.add(new_source)
         return res
 
     def getNormalFlowFunction(self, src, dest):

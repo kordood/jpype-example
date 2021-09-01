@@ -69,10 +69,10 @@ class IFDSSolver:
 
     def propagate(self, source_val, target, target_val, related_call_site, is_unbalanced_return):
         # Set val to memory manager
-        if self.memory_manager != None:
+        if self.memory_manager is not None:
             source_val = self.memory_manager.handleMemoryObject(source_val)
             target_val = self.memory_manager.handleMemoryObject(target_val)
-            if target_val == None:
+            if target_val is None:
                 return
 
         # Truncate if path size exceeds
@@ -83,11 +83,11 @@ class IFDSSolver:
         existing_val = self.add_function(edge)
 
         # Check existing value
-        if existing_val != None:
+        if existing_val is not None:
             # Add target value to neighbor in specific case
             if existing_val != target_val:
-                if self.memory_manager == None:
-                    is_essential = related_call_site != None and self.icfg.isCallStmt(related_call_site)
+                if self.memory_manager is None:
+                    is_essential = related_call_site is not None and self.icfg.isCallStmt(related_call_site)
                 else:
                     is_essential = self.memory_manager.isEssentialJoinPoint(target_val, related_call_site)
 
@@ -110,7 +110,7 @@ class IFDSSolver:
 
     def schedule_edge_processing(self, edge):
         # Have to kill?
-        if self.kill_flag != None or self.executor.isTerminating() or self.executor.is_terminated():
+        if self.kill_flag is not None or self.executor.isTerminating() or self.executor.is_terminated():
             return
 
         self.path_edge_processing_task(edge, self.solver_id)
@@ -132,16 +132,16 @@ class IFDSSolver:
         d1 = edge.factAtSource()
         n = edge.getTarget()
         d2 = edge.factAtTarget()
-        assert d2 != None
+        assert d2 is not None
 
         return_site_ns = self.icfg.getReturnSitesOfCallAt(n)
         callees = self.icfg.getCalleesOfCallAt(n)
 
-        if callees != None and not callees.isEmpty():
+        if callees is not None and not callees.isEmpty():
             if self.max_callees_per_call_site < 0 or callees.size() <= self.max_callees_per_call_site:
                 for callee in callees.stream().filter(lambda m: m.isConcrete()):
                     s_called_proc_n = callee # Have to fix
-                    if self.kill_flag != None:
+                    if self.kill_flag is not None:
                         return
 
                     function = self.flow_functions.getCallFlowFunction(n, s_called_proc_n)
@@ -150,7 +150,7 @@ class IFDSSolver:
                     if result is not None and not result.isEmpty():
                         start_points_of = self.icfg.getStartPointsOf(s_called_proc_n)
                         for d3 in result:
-                            if self.memory_manager != None:
+                            if self.memory_manager is not None:
                                 d3 = self.memory_manager.handleGeneratedMemoryObject(d2, d3)
                             if d3 is None:
                                 continue
@@ -175,7 +175,7 @@ class IFDSSolver:
                         self.propagate(d1, return_site_n, d3, n, False)
 
     def compute_call_flow_function(self, call_flow_function, d1, d2):
-        return call_flow_function.compute_targets( d2 )
+        return call_flow_function.compute_targets(d2)
 
     def apply_end_summary_on_call(self, d1, n, d2, return_site_ns, s_called_proc_n, d3):
         end_summary = self.end_summary(s_called_proc_n, d3)
@@ -212,11 +212,11 @@ class IFDSSolver:
         pass
 
     def compute_call_to_return_flow_function(self, call_to_return_flow_function, d1, d2):
-        return call_to_return_flow_function.compute_targets( d2 )
+        return call_to_return_flow_function.compute_targets(d2)
 
     def process_exit(self, edge):
         n = edge.getTarget()
-        method_that_needs_summary = self.icfg.get_method_of( n )
+        method_that_needs_summary = self.icfg.get_method_of(n)
 
         d1 = edge.factAtSource()
         d2 = edge.factAtTarget()
@@ -277,10 +277,10 @@ class IFDSSolver:
 
             if callers.isEmpty():
                 ret_function = self.flow_functions.getReturnFlowFunction(None, method_that_needs_summary, n, None)
-                ret_function.compute_targets( d2 )
+                ret_function.compute_targets(d2)
 
     def compute_return_flow_function(self, ret_function, d1, d2, call_site, caller_side_ds):
-        return ret_function.compute_targets( d2 )
+        return ret_function.compute_targets(d2)
 
     def process_normal_flow(self, edge):
         d1 = edge.factAtSource()
@@ -300,7 +300,7 @@ class IFDSSolver:
                         self.propagate(d1, m, d3, None, False)
 
     def compute_normal_flow_function(self, flow_function, d1, d2):
-        return flow_function.compute_targets( d2 )
+        return flow_function.compute_targets(d2)
 
     def end_summary(self, m, d3):
         _map = self.end_summary.get(Pair(m, d3))
