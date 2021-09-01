@@ -82,7 +82,7 @@ class FlowFunctions:
         if new_abs is not None:
             if isinstance(left_value, StaticFieldRef) \
                 and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode.ContextFlowInsensitive:
-                self.manager.getGlobalTaintManager().addToGlobalTaintState(new_abs)
+                self.manager.getGlobalTaintManager().add_to_global_taint_state( new_abs )
             else:
                 taint_set.add(new_abs)
                 aliasing = self.manager.getAliasing()

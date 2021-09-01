@@ -23,11 +23,6 @@ l = logging.getLogger(name=__name__)
 
 class IFDSSolver:
 
-    PredecessorShorteningMode = {'NeverShorten': 0,
-                                 'ShortenIfEqual': 1,
-                                 'AlwaysShorten': 2
-                                 }
-
     def __init__(self, tabulation_problem, flow_function_cache_builder: CacheBuilder):
 
 #        self.DEFAULT_CACHE_BUILDER = CacheBuilder.newBuilder().concurrencyLevel(
