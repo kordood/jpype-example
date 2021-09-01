@@ -7,10 +7,13 @@ import ByReferenceBoolean
 import FlowFunctionType
 import AccessPath
 from ..flowfunction import FlowFunction
-from ..flowfunctions import FlowFunctions
+from ..misc.copymember import copy_member
 
 
-class SolverReturnFlowFunction(FlowFunction, FlowFunctions):
+class SolverReturnFlowFunction(FlowFunction):
+
+    def __init__(self, flowfunctions):
+        copy_member(self, flowfunctions)
 
     def compute_targets(self, source, d1, callerD1s):
         res = self.computeTargetsInternal(source, callerD1s)
@@ -38,7 +41,7 @@ class SolverReturnFlowFunction(FlowFunction, FlowFunctions):
                     newSource = source.getActiveCopy()
 
         if not newSource.isAbstractionActive() and newSource.getActivationUnit() is not None:
-            if self.interproceduralCFG().get_method_of(newSource.getActivationUnit()) == self.callee:
+            if self.interprocedural_cfg().get_method_of(newSource.getActivationUnit()) == self.callee:
                 return None
 
         killAll = ByReferenceBoolean()
@@ -71,7 +74,7 @@ class SolverReturnFlowFunction(FlowFunction, FlowFunctions):
                         if self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                             for d1 in callerD1s:
                                 self.aliasing.computeAliases(d1, self.iCallStmt, leftOp, res,
-                                                              self.interproceduralCFG().get_method_of(self.callSite),
+                                                              self.interprocedural_cfg().get_method_of(self.callSite),
                                                               abs)
 
             sourceBase = newSource.getAccessPath().getPlainValue()
@@ -105,7 +108,7 @@ class SolverReturnFlowFunction(FlowFunction, FlowFunctions):
                     if not source.getAccessPath().getTaintSubFields():
                         continue
 
-                    if self.interproceduralCFG().methodWritesValue(self.callee, self.paramLocals[i]):
+                    if self.interprocedural_cfg().methodWritesValue(self.callee, self.paramLocals[i]):
                         continue
 
                     ap = self.manager.getAccessPathFactory().copyWithNewValue(
@@ -132,7 +135,7 @@ class SolverReturnFlowFunction(FlowFunction, FlowFunctions):
                     iIExpr = self.iCallStmt.getInvokeExpr()
 
                     callerBaseLocal = iIExpr.getArg(0) \
-                        if self.interproceduralCFG().isReflectiveCallSite(iIExpr) else iIExpr.getBase()
+                        if self.interprocedural_cfg().isReflectiveCallSite(iIExpr) else iIExpr.getBase()
                     ap = self.manager.getAccessPathFactory().copyWithNewValue(
                         newSource.getAccessPath(), callerBaseLocal,
                         None if self.isReflectiveCallSite else newSource.getAccessPath().getBaseType(),
@@ -146,7 +149,7 @@ class SolverReturnFlowFunction(FlowFunction, FlowFunctions):
                     or self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                 for d1 in callerD1s:
                     self.aliasing.computeAliases(d1, self.iCallStmt, None, res,
-                                                  self.interproceduralCFG().get_method_of(self.callSite), abs)
+                                                  self.interprocedural_cfg().get_method_of(self.callSite), abs)
 
             if abs != newSource:
                 abs.setCorrespondingCallSite(self.iCallStmt)

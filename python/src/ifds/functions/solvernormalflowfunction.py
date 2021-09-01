@@ -1,7 +1,51 @@
+import Stmt, AssignStmt, ReturnStmt, DefinitionStmt
+import Collections
+import ByReferenceBoolean
+import BaseSelector
+import FlowFunctionType
 from ..flowfunction import FlowFunction
+from ..misc.copymember import copy_member
 
 
 class SolverNormalFlowFunction(FlowFunction):
 
+	def __init__(self, flowfunctions, stmt, dest):
+		copy_member(self, flowfunctions)
+		self.stmt = stmt
+		self.dest = dest
+
 	def compute_targets(self, d1, source):
-		pass
+		if self.taint_propagation_handler is not None:
+			self.taint_propagation_handler.notifyFlowIn(self.stmt, source, self.manager,
+														FlowFunctionType.NormalFlowFunction)
+
+		res = self.compute_targets_internal(d1, source)
+		return self.notify_out_flow_handlers(self.stmt, d1, source, res, FlowFunctionType.NormalFlowFunction)
+
+	def compute_targets_internal(self, d1, source):
+		new_source = None
+		if not source.isAbstractionActive() and self.src == source.getActivationUnit():
+			new_source = source.getActiveCopy()
+		else:
+			new_source = source
+
+		kill_source = ByReferenceBoolean()
+		kill_all = ByReferenceBoolean()
+		res = self.propagationRules.applyNormalFlowFunction(d1, new_source, self.stmt, self.dest, kill_source, kill_all)
+		if kill_all.value:
+			return Collections.emptySet()
+
+		if isinstance(self.src, AssignStmt):
+			assign_stmt = self.src
+			right = assign_stmt.getRightOp()
+			right_vals = BaseSelector.selectBaseList(right, True)
+
+			res_assign = self.create_new_taint_on_assignment(assign_stmt, right_vals, d1, new_source)
+			if res_assign is not None and not res_assign.isEmpty():
+				if res is not None:
+					res.addAll(res_assign)
+					return res
+				else:
+					res = res_assign
+
+		return Collections.emptySet() if res is None or res.isEmpty() else res

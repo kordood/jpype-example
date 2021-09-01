@@ -4,8 +4,12 @@ import HashSet
 import ByReferenceBoolean
 import FlowFunctionType
 from ..flowfunction import FlowFunction
+from ..misc.copymember import copy_member
 
 class SolverCallToReturnFlowFunction(FlowFunction):
+
+    def __init__(self, flowfunctions):
+        copy_member(self, flowfunctions)
 
     def compute_targets(self, d1, source):
         res = self.computeTargetsInternal(d1, source)
@@ -56,7 +60,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                 and (self.hasValidCallees \
                      or (self.taintWrapper is not None and self.taintWrapper.isExclusive(self.iCallStmt, newSource))):
 
-            callees = self.interproceduralCFG().getCalleesOfCallAt(self.call)
+            callees = self.interprocedural_cfg().getCalleesOfCallAt(self.call)
             allCalleesRead = not callees.isEmpty()
             for callee in callees:
                 if callee.isConcrete() and callee.hasActiveBody():
@@ -64,7 +68,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     if calleeAPs is not None:
                         for ap in calleeAPs:
                             if ap is not None:
-                                if not self.interproceduralCFG().methodReadsValue(callee, ap.getPlainValue()):
+                                if not self.interprocedural_cfg().methodReadsValue(callee, ap.getPlainValue()):
                                     allCalleesRead = False
                                     break
 
@@ -84,7 +88,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     passOn = False
 
         if source.getAccessPath().isStaticFieldRef():
-            if not self.interproceduralCFG().isStaticFieldUsed(callee, source.getAccessPath().getFirstField()):
+            if not self.interprocedural_cfg().isStaticFieldUsed(callee, source.getAccessPath().getFirstField()):
                 passOn = True
 
         passOn |= source.getTopPostdominator() is not None or source.getAccessPath().isEmpty()
@@ -106,7 +110,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                                                                 abs):
                                 self.aliasing.computeAliases(d1, self.iCallStmt,
                                                          abs.getAccessPath().getPlainValue(), res,
-                                                         self.interproceduralCFG().get_method_of(self.call), abs)
+                                                         self.interprocedural_cfg().get_method_of(self.call), abs)
                     break
 
         for abs in res:

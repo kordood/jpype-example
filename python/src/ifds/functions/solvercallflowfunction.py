@@ -2,25 +2,26 @@ import HashSet
 import ByReferenceBoolean
 import FlowFunctionType
 from ..flowfunction import FlowFunction
+from ..misc.copymember import copy_member
 
 
 class SolverCallFlowFunction(FlowFunction):
     
     def __init__(self, flowfunctions):
-        self.flowfunctions = flowfunctions
+        copy_member(self, flowfunctions)
 
     def compute_targets(self, d1, source):
         res = self.compute_targets_internal(d1, source)
         if res is not None and not res.isEmpty() and d1 is not None:
             for abs in res:
-                self.flowfunctions.aliasing.getAliasingStrategy().injectCallingContext(abs,
-                                                                                       self.flowfunctions.solver,
-                                                                                       self.flowfunctions.dest,
-                                                                                       self.flowfunctions.src,
+                self.aliasing.getAliasingStrategy().injectCallingContext(abs,
+                                                                                       self.solver,
+                                                                                       self.dest,
+                                                                                       self.src,
                                                                                        source,
                                                                                        d1
                                                                                        )
-        return self.flowfunctions.infoflow.notify_out_flow_handlers(self.flowfunctions.stmt,
+        return self.notify_out_flow_handlers(self.stmt,
                                                         d1,
                                                         source,
                                                         res,
@@ -28,30 +29,30 @@ class SolverCallFlowFunction(FlowFunction):
                                                         )
 
     def compute_targets_internal(self, d1, source):
-        if self.flowfunctions.manager.getConfig().getStopAfterFirstFlow() and not self.flowfunctions.results.isEmpty():
+        if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
             return None
-        if source == self.flowfunctions.get_zero_value():
-            return None
-
-        if self.flowfunctions.isExcluded(self.flowfunctions.dest):
+        if source == self.get_zero_value():
             return None
 
-        if self.flowfunctions.taint_propagation_handler is not None:
-            self.flowfunctions.taint_propagation_handler.notifyFlowIn(self.flowfunctions.stmt, source, self.flowfunctions.manager,
+        if self.isExcluded(self.dest):
+            return None
+
+        if self.taint_propagation_handler is not None:
+            self.taint_propagation_handler.notifyFlowIn(self.stmt, source, self.manager,
                                                        FlowFunctionType.CallFlowFunction)
 
-        if not source.isAbstractionActive() and source.getActivationUnit() == self.flowfunctions.src:
+        if not source.isAbstractionActive() and source.getActivationUnit() == self.src:
             source = source.getActiveCopy()
 
         kill_all = ByReferenceBoolean()
-        res = self.flowfunctions.propagation_rules.applyCallFlowFunction(d1, source, self.flowfunctions.stmt, self.flowfunctions.dest, kill_all)
+        res = self.propagation_rules.applyCallFlowFunction(d1, source, self.stmt, self.dest, kill_all)
         if kill_all.value:
             return None
 
-        res_mapping = self.flowfunctions.mapAccessPathToCallee(self.flowfunctions.dest, self.flowfunctions.ie,
-                                                               self.flowfunctions.paramLocals,
-                                                               self.flowfunctions.thisLocal,
-                                                               source.getAccessPath())
+        res_mapping = self.map_access_path_to_callee( self.dest, self.ie,
+                                                                    self.paramLocals,
+                                                                    self.thisLocal,
+                                                                    source.getAccessPath() )
         if res_mapping is None:
             return res
 
@@ -60,10 +61,10 @@ class SolverCallFlowFunction(FlowFunction):
             res_abs.addAll(res)
         for ap in res_mapping:
             if ap is not None:
-                if self.flowfunctions.aliasing.getAliasingStrategy().isLazyAnalysis() \
+                if self.aliasing.getAliasingStrategy().isLazyAnalysis() \
                         or source.isImplicit() \
-                        or self.flowfunctions.interprocedural_cfg().methodReadsValue(self.flowfunctions.dest, ap.getPlainValue()):
-                    new_abs = source.deriveNewAbstraction(ap, self.flowfunctions.stmt)
+                        or self.interprocedural_cfg().methodReadsValue(self.dest, ap.getPlainValue()):
+                    new_abs = source.deriveNewAbstraction(ap, self.stmt)
                     if new_abs is not None:
                         res_abs.add(new_abs)
         return res_abs

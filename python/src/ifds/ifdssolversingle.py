@@ -144,7 +144,7 @@ class IFDSSolver:
                     if self.kill_flag is not None:
                         return
 
-                    function = self.flow_functions.getCallFlowFunction(n, s_called_proc_n)
+                    function = self.flow_functions.get_call_flow_function( n, s_called_proc_n )
                     result = self.compute_call_flow_function(function, d1, d2)
 
                     if result is not None and not result.isEmpty():
@@ -164,7 +164,7 @@ class IFDSSolver:
                             self.apply_end_summary_on_call(d1, n, d2, return_site_ns, s_called_proc_n, d3)
 
         for return_site_n in return_site_ns:
-            call_to_return_flow_function = self.flow_functions.getCallToReturnFlowFunction(n, return_site_n)
+            call_to_return_flow_function = self.flow_functions.get_call_to_return_flow_function( n, return_site_n )
             result = self.compute_call_to_return_flow_function(call_to_return_flow_function, d1, d2)
 
             if result is not None and not result.isEmpty():
@@ -186,8 +186,8 @@ class IFDSSolver:
                 d4 = entry.getO2()
 
                 for ret_site_n in return_site_ns:
-                    ret_function = self.flow_functions.getReturnFlowFunction(n, s_called_proc_n, entry_point,
-                                                                             ret_site_n)
+                    ret_function = self.flow_functions.get_return_flow_function( n, s_called_proc_n, entry_point,
+                                                                                 ret_site_n )
                     ret_flow_result = self.compute_return_flow_function(ret_function, d3, d4, n,
                                                                         Collections.singleton(d1))
 
@@ -234,8 +234,8 @@ class IFDSSolver:
                 c = entry.getKey()
                 caller_side_ds = entry.getValue().keySet()
                 for ret_site_c in self.icfg.getReturnSitesOfCallAt(c):
-                    ret_function = self.flow_functions.getReturnFlowFunction(c, method_that_needs_summary, n,
-                                                                             ret_site_c)
+                    ret_function = self.flow_functions.get_return_flow_function( c, method_that_needs_summary, n,
+                                                                                 ret_site_c )
                     targets = self.compute_return_flow_function(ret_function, d1, d2, c, caller_side_ds)
 
                     if targets is not None and not targets.isEmpty():
@@ -264,8 +264,8 @@ class IFDSSolver:
 
             for c in callers:
                 for ret_site_c in self.icfg.getReturnSitesOfCallAt(c):
-                    ret_function = self.flow_functions.getReturnFlowFunction(c, method_that_needs_summary, n,
-                                                                             ret_site_c)
+                    ret_function = self.flow_functions.get_return_flow_function( c, method_that_needs_summary, n,
+                                                                                 ret_site_c )
                     targets = self.compute_return_flow_function(ret_function, d1, d2, c,
                                                                  Collections.singleton(self.zero_value))
                     if targets is not None and not targets.isEmpty():
@@ -276,7 +276,7 @@ class IFDSSolver:
                                 self.propagate(self.zero_value, ret_site_c, d5, c, True)
 
             if callers.isEmpty():
-                ret_function = self.flow_functions.getReturnFlowFunction(None, method_that_needs_summary, n, None)
+                ret_function = self.flow_functions.get_return_flow_function( None, method_that_needs_summary, n, None )
                 ret_function.compute_targets(d2)
 
     def compute_return_flow_function(self, ret_function, d1, d2, call_site, caller_side_ds):
@@ -290,7 +290,7 @@ class IFDSSolver:
         for m in self.icfg.getSuccsOf(n):
             if self.kill_flag is not None:
                 return
-            flow_function = self.flow_functions.getNormalFlowFunction(n, m)
+            flow_function = self.flow_functions.get_normal_flow_function( n, m )
             res = self.compute_normal_flow_function(flow_function, d1, d2)
             if res is not None and not res.isEmpty():
                 for d3 in res:
