@@ -12,91 +12,95 @@ from ..misc.copymember import copy_member
 
 class SolverReturnFlowFunction(FlowFunction):
 
-    def __init__(self, flowfunctions):
+    def __init__(self, flowfunctions, call_site, callee, exit_stmt, retSite):
         copy_member(self, flowfunctions)
+        self.call_site = call_site
+        self.callee = callee
+        self.exit_stmt = exit_stmt
+        self.retSite = retSite
 
-    def compute_targets(self, source, d1, callerD1s):
-        res = self.computeTargetsInternal(source, callerD1s)
-        return self.notifyOutFlowHandlers(self.exitStmt, d1, source, res, FlowFunctionType.ReturnFlowFunction)
+    def compute_targets(self, source, d1, caller_d1s=None):
+        res = self.compute_targets_internal( source, caller_d1s )
+        return self.notify_out_flow_handlers(self.exit_stmt, d1, source, res, FlowFunctionType.ReturnFlowFunction)
 
-    def computeTargetsInternal(self, source, callerD1s):
+    def compute_targets_internal(self, source, caller_d1s):
         if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
             return None
-        if source == self.getZeroValue():
+        if source == self.get_zero_value():
             return None
 
-        if self.taintPropagationHandler is not None:
-            self.taintPropagationHandler.notifyFlowIn(self.exitStmt, source, self.manager,
+        if self.taint_propagation_handler is not None:
+            self.taint_propagation_handler.notify_flow_in(self.exit_stmt, source, self.manager,
                                                        FlowFunctionType.ReturnFlowFunction)
-        callerD1sConditional = False
-        for d1 in callerD1s:
+        caller_d1s_conditional = False
+        for d1 in caller_d1s:
             if d1.getAccessPath().isEmpty():
-                callerD1sConditional = True
+                caller_d1s_conditional = True
                 break
-        newSource = source
+        new_source = source
         if not source.isAbstractionActive():
-            if self.callSite is not None:
-                if self.callSite == source.getActivationUnit() \
-                        or self.isCallSiteActivatingTaint(self.callSite, source.getActivationUnit()):
-                    newSource = source.getActiveCopy()
+            if self.call_site is not None:
+                if self.call_site == source.getActivationUnit() \
+                        or self.is_call_site_activating_taint(self.call_site, source.getActivationUnit()):
+                    new_source = source.getActiveCopy()
 
-        if not newSource.isAbstractionActive() and newSource.getActivationUnit() is not None:
-            if self.interprocedural_cfg().get_method_of(newSource.getActivationUnit()) == self.callee:
+        if not new_source.isAbstractionActive() and new_source.getActivationUnit() is not None:
+            if self.interprocedural_cfg().get_method_of(new_source.getActivationUnit()) == self.callee:
                 return None
 
-        killAll = ByReferenceBoolean()
-        res = self.propagationRules.applyReturnFlowFunction(callerD1s, newSource, self.exitStmt, self.retSite,
-                                                             self.callSite, killAll)
-        if killAll.value:
+        kill_all = ByReferenceBoolean()
+        res = self.propagation_rules.apply_return_flow_function( caller_d1s, new_source, self.exit_stmt, self.retSite,
+                                                                 self.call_site, kill_all )
+        if kill_all.value:
             return None
         if res is None:
             res = HashSet()
 
-        if self.callSite is None:
+        if self.call_site is None:
             return None
 
         if self.aliasing.getAliasingStrategy().isLazyAnalysis() \
-                and Aliasing.canHaveAliases(newSource.getAccessPath()):
-            res.add(newSource)
+                and Aliasing.canHaveAliases(new_source.getAccessPath()):
+            res.add(new_source)
 
-        if not newSource.getAccessPath().isStaticFieldRef() and not self.callee.isStaticInitializer():
-            if self.returnStmt is not None and isinstance(self.callSite, DefinitionStmt):
-                retLocal = self.returnStmt.getOp()
-                defnStmt = self.callSite
-                leftOp = defnStmt.getLeftOp()
+        if not new_source.getAccessPath().isStaticFieldRef() and not self.callee.isStaticInitializer():
+            if self.return_stmt is not None and isinstance(self.call_site, DefinitionStmt):
+                ret_local = self.return_stmt.getOp()
+                defn_stmt = self.call_site
+                left_op = defn_stmt.getLeftOp()
 
-                if self.aliasing.mayAlias(retLocal, newSource.getAccessPath().getPlainValue()) \
+                if self.aliasing.mayAlias(ret_local, new_source.getAccessPath().getPlainValue()) \
                         and not self.isExceptionHandler(self.retSite):
-                    ap = self.manager.getAccessPathFactory().copyWithNewValue(newSource.getAccessPath(), leftOp)
-                    abs = newSource.deriveNewAbstraction(ap, self.exitStmt)
+                    ap = self.manager.getAccessPathFactory().copyWithNewValue(new_source.getAccessPath(), left_op)
+                    abs = new_source.deriveNewAbstraction(ap, self.exit_stmt)
                     if abs is not None:
                         res.add(abs)
                         if self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
-                            for d1 in callerD1s:
-                                self.aliasing.computeAliases(d1, self.iCallStmt, leftOp, res,
-                                                              self.interprocedural_cfg().get_method_of(self.callSite),
+                            for d1 in caller_d1s:
+                                self.aliasing.computeAliases(d1, self.i_call_stmt, left_op, res,
+                                                              self.interprocedural_cfg().get_method_of(self.call_site),
                                                               abs)
 
-            sourceBase = newSource.getAccessPath().getPlainValue()
-            parameterAliases = False
-            originalCallArg = None
+            source_base = new_source.getAccessPath().getPlainValue()
+            parameter_aliases = False
+            original_call_arg = None
             for i in range(self.callee.getParameterCount()):
-                if isinstance(self.callSite, DefinitionStmt) and not self.isExceptionHandler(self.retSite):
-                    defnStmt = self.callSite
-                    leftOp = defnStmt.getLeftOp()
-                    originalCallArg = defnStmt.getInvokeExpr().getArg(i)
-                    if originalCallArg == leftOp:
+                if isinstance(self.call_site, DefinitionStmt) and not self.isExceptionHandler(self.retSite):
+                    defn_stmt = self.call_site
+                    left_op = defn_stmt.getLeftOp()
+                    original_call_arg = defn_stmt.getInvokeExpr().getArg(i)
+                    if original_call_arg == left_op:
                         continue
 
-                if self.aliasing.mayAlias(self.paramLocals[i], sourceBase):
-                    parameterAliases = True
-                    originalCallArg = self.iCallStmt.getInvokeExpr().getArg(1 if self.isReflectiveCallSite else i)
+                if self.aliasing.mayAlias(self.paramLocals[i], source_base):
+                    parameter_aliases = True
+                    original_call_arg = self.i_call_stmt.getInvokeExpr().getArg(1 if self.is_reflective_call_site else i)
 
-                    if not AccessPath.canContainValue(originalCallArg):
+                    if not AccessPath.canContainValue(original_call_arg):
                         continue
-                    if not self.isReflectiveCallSite \
+                    if not self.is_reflective_call_site \
                             and not self.manager.getTypeUtils().checkCast(source.getAccessPath(),
-                                                                           originalCallArg.getType()):
+                                                                           original_call_arg.getType()):
                         continue
 
                     if isinstance(source.getAccessPath().getBaseType(), PrimType):
@@ -112,45 +116,45 @@ class SolverReturnFlowFunction(FlowFunction):
                         continue
 
                     ap = self.manager.getAccessPathFactory().copyWithNewValue(
-                        newSource.getAccessPath(), originalCallArg,
-                        None if self.isReflectiveCallSite else newSource.getAccessPath().getBaseType(),
+                        new_source.getAccessPath(), original_call_arg,
+                        None if self.is_reflective_call_site else new_source.getAccessPath().getBaseType(),
                         False)
-                    abs = newSource.deriveNewAbstraction(ap, self.exitStmt)
+                    abs = new_source.deriveNewAbstraction(ap, self.exit_stmt)
 
                     if abs is not None:
                         res.add(abs)
 
-            thisAliases = False
-            if isinstance(self.callSite, DefinitionStmt) and not self.isExceptionHandler(self.retSite):
-                defnStmt = self.callSite
-                leftOp = defnStmt.getLeftOp()
-                if self.thisLocal == leftOp:
-                    thisAliases = True
+            this_aliases = False
+            if isinstance(self.call_site, DefinitionStmt) and not self.isExceptionHandler(self.retSite):
+                defn_stmt = self.call_site
+                left_op = defn_stmt.getLeftOp()
+                if self.this_local == left_op:
+                    this_aliases = True
 
-            if not parameterAliases and not thisAliases and source.getAccessPath().getTaintSubFields() \
-                    and isinstance(self.iCallStmt.getInvokeExpr(), InstanceInvokeExpr) \
-                    and self.aliasing.mayAlias(self.thisLocal, sourceBase):
+            if not parameter_aliases and not this_aliases and source.getAccessPath().getTaintSubFields() \
+                    and isinstance(self.i_call_stmt.getInvokeExpr(), InstanceInvokeExpr) \
+                    and self.aliasing.mayAlias(self.this_local, source_base):
 
-                if self.manager.getTypeUtils().checkCast(source.getAccessPath(), self.thisLocal.getType()):
-                    iIExpr = self.iCallStmt.getInvokeExpr()
+                if self.manager.getTypeUtils().checkCast(source.getAccessPath(), self.this_local.getType()):
+                    i_i_expr = self.i_call_stmt.getInvokeExpr()
 
-                    callerBaseLocal = iIExpr.getArg(0) \
-                        if self.interprocedural_cfg().isReflectiveCallSite(iIExpr) else iIExpr.getBase()
+                    caller_base_local = i_i_expr.getArg(0) \
+                        if self.interprocedural_cfg().is_reflective_call_site(i_i_expr) else i_i_expr.getBase()
                     ap = self.manager.getAccessPathFactory().copyWithNewValue(
-                        newSource.getAccessPath(), callerBaseLocal,
-                        None if self.isReflectiveCallSite else newSource.getAccessPath().getBaseType(),
+                        new_source.getAccessPath(), caller_base_local,
+                        None if self.is_reflective_call_site else new_source.getAccessPath().getBaseType(),
                         False)
-                    abs = newSource.deriveNewAbstraction(ap, self.exitStmt)
+                    abs = new_source.deriveNewAbstraction(ap, self.exit_stmt)
                     if abs is not None:
                         res.add(abs)
 
         for abs in res:
-            if abs.isImplicit() and not callerD1sConditional \
+            if abs.isImplicit() and not caller_d1s_conditional \
                     or self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
-                for d1 in callerD1s:
-                    self.aliasing.computeAliases(d1, self.iCallStmt, None, res,
-                                                  self.interprocedural_cfg().get_method_of(self.callSite), abs)
+                for d1 in caller_d1s:
+                    self.aliasing.computeAliases(d1, self.i_call_stmt, None, res,
+                                                  self.interprocedural_cfg().get_method_of(self.call_site), abs)
 
-            if abs != newSource:
-                abs.setCorrespondingCallSite(self.iCallStmt)
+            if abs != new_source:
+                abs.setCorrespondingCallSite(self.i_call_stmt)
         return res

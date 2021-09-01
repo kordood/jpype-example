@@ -20,9 +20,15 @@ import ThreadFactory
 
 l = logging.getLogger(name=__name__)
 
+
 class IFDSSolver:
 
-    def __init__(self, tabulationProblem, flowFunctionCacheBuilder: CacheBuilder):
+    PredecessorShorteningMode = {'NeverShorten': 0,
+                                 'ShortenIfEqual': 1,
+                                 'AlwaysShorten': 2
+                                 }
+
+    def __init__(self, tabulation_problem, flow_function_cache_builder: CacheBuilder):
 
 #        self.DEFAULT_CACHE_BUILDER = CacheBuilder.newBuilder().concurrencyLevel(
 #            multiprocessing.cpu_count()).initialCapacity(10000).softValues()
@@ -50,21 +56,21 @@ class IFDSSolver:
 
         self.max_callees_per_call_site = 75
         self.max_abstraction_path_length = 100
-        if l.isDebugEnabled():
-            self.flow_function_cache_builder = flowFunctionCacheBuilder.recordStats()
-            self.zero_value = tabulationProblem.zero_value()
-            self.icfg = tabulationProblem.interprocedural_cfg()
-            self.flow_functions = ZeroedFlowFunctions(tabulationProblem.flow_functions(), self.zero_value)\
-                if tabulationProblem.auto_add_zero() else tabulationProblem.flow_functions()
+        if l.is_debug_enabled():
+            self.flow_function_cache_builder = flow_function_cache_builder.recordStats()
+            self.zero_value = tabulation_problem.zero_value()
+            self.icfg = tabulation_problem.interprocedural_cfg()
+            self.flow_functions = ZeroedFlowFunctions( tabulation_problem.flow_functions(), self.zero_value )\
+                if tabulation_problem.auto_add_zero() else tabulation_problem.flow_functions()
         if self.flow_function_cache_builder is not None:
-            self.ff_cache = FlowFunctionCache(self.flow_functions, flowFunctionCacheBuilder)
+            self.ff_cache = FlowFunctionCache( self.flow_functions, flow_function_cache_builder )
             self.flow_functions = self.ff_cache
         else:
             self.ff_cache = None
             self.flow_functions = self.flow_functions
-            self.initial_seeds = tabulationProblem.initial_seeds()
-            self.follow_returns_past_seeds = tabulationProblem.follow_returns_past_seeds()
-            self.num_threads = max(1, tabulationProblem.num_threads())
+            self.initial_seeds = tabulation_problem.initial_seeds()
+            self.follow_returns_past_seeds = tabulation_problem.follow_returns_past_seeds()
+            self.num_threads = max( 1, tabulation_problem.num_threads() )
             self.executor = self.get_executor()
 
     def set_solver_id(self, solver_id: bool):
@@ -91,7 +97,7 @@ class IFDSSolver:
 
     def await_completion_compute_values_and_shutdown(self):
         self.run_executor_and_await_completion()
-        if l.isDebugEnabled():
+        if l.is_debug_enabled():
             self.print_stats()
 
         self.executor.shutdown()
@@ -177,7 +183,7 @@ class IFDSSolver:
                 d4 = entry.getO2()
 
                 for ret_site_n in return_site_ns:
-                    ret_function = self.flow_functions.getReturnFlowFunction(n, s_called_proc_n, eP, ret_site_n)
+                    ret_function = self.flow_functions.get_return_flow_function(n, s_called_proc_n, eP, ret_site_n)
                     ret_flow_res = self.compute_return_flow_function(ret_function, d3, d4, n, Collections.singleton(d1))
 
                     if ret_flow_res is not None and not ret_flow_res.isEmpty():
@@ -186,11 +192,11 @@ class IFDSSolver:
                                 d5 = self.memory_manager.handleGeneratedMemoryObject(d4, d5)
 
                             d5p = d5
-                            if self.shortening_mode == self.AlwaysShorten:
+                            if self.shortening_mode == PredecessorShorteningMode['AlwaysShorten']:
                                 if d5p != d2:
                                     d5p = d5p.clone()
                                     d5p.setPredecessor(d2)
-                            elif self.shortening_mode == self.ShortenIfEqual:
+                            elif self.shortening_mode == PredecessorShorteningMode['ShortenIfEqual']:
                                 if d5.equals(d2):
                                     d5p = d2
 
@@ -223,7 +229,7 @@ class IFDSSolver:
                 c = entry.getKey()
                 caller_side_ds = entry.getValue().keySet()
                 for ret_site_c in self.icfg.getReturnSitesOfCallAt(c):
-                    ret_function = self.flow_functions.getReturnFlowFunction(c, method_that_needs_summary, n, ret_site_c)
+                    ret_function = self.flow_functions.get_return_flow_function(c, method_that_needs_summary, n, ret_site_c)
                     targets = self.compute_return_flow_function(ret_function, d1, d2, c, caller_side_ds)
 
                     if targets is not None and not targets.isEmpty():
@@ -238,11 +244,11 @@ class IFDSSolver:
                                     continue
                                 d5p = d5
 
-                                if self.shortening_mode == self.AlwaysShorten:
+                                if self.shortening_mode == PredecessorShorteningMode['AlwaysShorten']:
                                     if d5p != pred_val:
                                         d5p = d5p.clone()
                                         d5p.setPredecessor(pred_val)
-                                elif self.shortening_mode == self.ShortenIfEqual:
+                                elif self.shortening_mode == PredecessorShorteningMode['ShortenIfEqual']:
                                     if d5.equals(pred_val):
                                         d5p = pred_val
                                 self.propagate(d4, ret_site_c, d5p, c, False)
@@ -252,7 +258,8 @@ class IFDSSolver:
 
             for c in callers:
                 for ret_site_c in self.icfg.getReturnSitesOfCallAt(c):
-                    ret_function = self.flow_functions.getReturnFlowFunction(c, method_that_needs_summary, n, ret_site_c)
+                    ret_function = self.flow_functions.get_return_flow_function(c, method_that_needs_summary, n,
+                                                                                ret_site_c)
                     targets = self.compute_return_flow_function(ret_function, d1, d2, c,
                                                                  Collections.singleton(self.zero_value))
                     if targets is not None and not targets.isEmpty():
@@ -263,7 +270,7 @@ class IFDSSolver:
                                 self.propagate(self.zero_value, ret_site_c, d5, c, True)
 
             if callers.isEmpty():
-                ret_function = self.flow_functions.getReturnFlowFunction(None, method_that_needs_summary, n, None)
+                ret_function = self.flow_functions.get_return_flow_function(None, method_that_needs_summary, n, None)
                 ret_function.compute_targets(d2)
 
     def compute_return_flow_function(self, ret_function, d1, d2, call_site, caller_side_ds):
@@ -304,7 +311,7 @@ class IFDSSolver:
         if existing_val is not None:
             if existing_val != target_val:
                 if self.memory_manager is None:
-                    is_essential = related_call_site is not None and self.icfg.isCallStmt(related_call_site)
+                    is_essential = related_call_site is not None and self.icfg.is_call_stmt(related_call_site)
                 else:
                     is_essential = self.memory_manager.isEssentialJoinPoint(target_val, related_call_site)
 
@@ -367,7 +374,7 @@ class IFDSSolver:
         return "FAST IFDS SOLVER"
 
     def print_stats(self):
-        if l.isDebugEnabled():
+        if l.is_debug_enabled():
             if self.ff_cache is not None:
                 self.ff_cache.print_stats()
         else:
@@ -385,10 +392,10 @@ class IFDSSolver:
 
         def run(self):
             target = self.edge.getTarget()
-            if self.icfg.isCallStmt(target):
+            if self.icfg.is_call_stmt(target):
                 self.processCall(self.edge)
             else:
-                if self.icfg.isExitStmt(target):
+                if self.icfg.is_exit_stmt(target):
                     self.processExit(self.edge)
                 if not self.icfg.getSuccsOf(target).isEmpty():
                     self.processNormalFlow(self.edge)

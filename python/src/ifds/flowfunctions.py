@@ -25,10 +25,6 @@ class FlowFunctions:
     def __init__(self, infoflow):
         copy_member(self, infoflow)
 
-    class NotifyingNormalFlowFunction(SolverNormalFlowFunction):
-
-
-
     """
     def getNormalFlowFunction(self, curr, succ):
         pass
@@ -36,14 +32,14 @@ class FlowFunctions:
     def getCallFlowFunction(self, callStmt, destinationMethod):
         pass
 
-    def getReturnFlowFunction(self, callSite, calleeMethod, exitStmt, returnSite):
+    def get_return_flow_function(self, call_site, calleeMethod, exit_stmt, returnSite):
         pass
 
-    def getCallToReturnFlowFunction(self, callSite, returnSite):
+    def getCallToReturnFlowFunction(self, call_site, returnSite):
         pass
     """
 
-    def addTaintViaStmt(self, d1, assign_stmt, source, taint_set, cut_first_field, method, target_type):
+    def add_taint_via_stmt(self, d1, assign_stmt, source, taint_set, cut_first_field, method, target_type):
         left_value = assign_stmt.getLeftOp()
         right_value = assign_stmt.getRightOp()
 
@@ -108,7 +104,6 @@ class FlowFunctions:
 
         if isinstance(right_value, LengthExpr):
             return Collections.singleton(new_source)
-
 
         implicit_taint = new_source.getTopPostdominator() is not None \
                         and new_source.getTopPostdominator().getUnit() is not None
@@ -192,8 +187,8 @@ class FlowFunctions:
         res = HashSet()
         target_ab = new_source if mapped_ap.equals(new_source.getAccessPath()) \
             else new_source.deriveNewAbstraction(mapped_ap, None)
-        self.addTaintViaStmt(d1, assign_stmt, target_ab, res, cut_first_field,
-                              self.interprocedural_cfg().get_method_of(assign_stmt), target_type)
+        self.add_taint_via_stmt( d1, assign_stmt, target_ab, res, cut_first_field,
+                                 self.interprocedural_cfg().get_method_of(assign_stmt), target_type )
         res.add(new_source)
         return res
 
@@ -201,7 +196,7 @@ class FlowFunctions:
         if not isinstance(src, Stmt):
             return self.KillAll.v()
 
-        return self.NotifyingNormalFlowFunction(self, src, dest)
+        return SolverNormalFlowFunction(self, src, dest)
 
     def get_call_flow_function(self, src, dest):
         if not dest.isConcrete():
@@ -213,22 +208,22 @@ class FlowFunctions:
 
         paramLocals = dest.getActiveBody().getParameterLocals().toArray(Local[0])
 
-        thisLocal = None if dest.isStatic() else dest.getActiveBody().getThisLocal()
+        this_local = None if dest.isStatic() else dest.getActiveBody().getThisLocal()
 
         aliasing = self.manager.getAliasing()
         if aliasing is None:
             return KillAll.v()
 
-        return SolverCallFlowFunction(self)
+        return SolverCallFlowFunction(self, src, dest)
 
-    def get_return_flow_function(self, callSite, callee, exitStmt, retSite):
-        if callSite is not None and not isinstance(callSite, Stmt):
+    def get_return_flow_function(self, call_site, callee, exit_stmt, retSite):
+        if call_site is not None and not isinstance(call_site, Stmt):
             return KillAll.v()
-        iCallStmt = callSite
-        isReflectiveCallSite = callSite is not None \
-                               and self.interprocedural_cfg().isReflectiveCallSite(callSite)
+        i_call_stmt = call_site
+        is_reflective_call_site = call_site is not None \
+                               and self.interprocedural_cfg().is_reflective_call_site(call_site)
 
-        returnStmt = exitStmt if isinstance(exitStmt, ReturnStmt) else None
+        return_stmt = exit_stmt if isinstance(exit_stmt, ReturnStmt) else None
 
         paramLocals = callee.getActiveBody().getParameterLocals().toArray(Local[0])
 
@@ -236,42 +231,42 @@ class FlowFunctions:
         if (aliasing is None):
             return KillAll.v()
 
-        thisLocal = None if callee.isStatic() else callee.getActiveBody().getThisLocal()
+        this_local = None if callee.isStatic() else callee.getActiveBody().getThisLocal()
 
-        return SolverReturnFlowFunction(self)
+        return SolverReturnFlowFunction(self, call_site, callee, exit_stmt, retSite)
 
     def get_call_to_return_flow_function(self, call, returnSite):
         if not isinstance(call, Stmt):
             return KillAll.v()
 
-        iCallStmt = call
-        invExpr = iCallStmt.getInvokeExpr()
+        i_call_stmt = call
+        invExpr = i_call_stmt.getInvokeExpr()
 
         aliasing = self.manager.getAliasing()
         if aliasing is None:
             return KillAll.v()
 
-        callArgs = Value[invExpr.getArgCount()]
+        call_args = Value[invExpr.getArgCount()]
         for i in range(invExpr.getArgCount()):
-            callArgs[i] = invExpr.getArg(i)
+            call_args[i] = invExpr.getArg(i)
 
-        isSink = self.manager.getSourceSinkManager().getSinkInfo(iCallStmt, self.manager, None) is not None \
+        isSink = self.manager.getSourceSinkManager().getSinkInfo(i_call_stmt, self.manager, None) is not None \
             if (self.manager.getSourceSinkManager() is not None) \
             else False
-        isSource = self.manager.getSourceSinkManager().getSourceInfo(iCallStmt, self.manager) is not None \
+        isSource = self.manager.getSourceSinkManager().getSourceInfo(i_call_stmt, self.manager) is not None \
             if self.manager.getSourceSinkManager() is not None \
             else False
 
         callee = invExpr.getMethod()
         hasValidCallees = self.has_valid_callees( call )
 
-        return SolverCallToReturnFlowFunction()
+        return SolverCallToReturnFlowFunction(self, call, returnSite)
 
-    def map_access_path_to_callee(self, callee, ie, paramLocals, thisLocal, ap):
+    def map_access_path_to_callee(self, callee, ie, param_locals, this_local, ap):
         if ap.isEmpty():
             return None
 
-        isExecutorExecute = self.interprocedural_cfg().isExecutorExecute(ie, callee)
+        is_executor_execute = self.interprocedural_cfg().isExecutorExecute(ie, callee)
 
         res = None
 
@@ -283,51 +278,51 @@ class FlowFunctions:
             res = HashSet()
             res.add(ap)
 
-        baseLocal = None
-        if not isExecutorExecute \
+        base_local = None
+        if not is_executor_execute \
                 and not ap.isStaticFieldRef() \
                 and not callee.isStatic():
-            if self.interprocedural_cfg().isReflectiveCallSite(ie):
-                baseLocal = ie.getArg(0)
+            if self.interprocedural_cfg().is_reflective_call_site(ie):
+                base_local = ie.getArg(0)
             else:
                 assert isinstance(ie, InstanceInvokeExpr)
                 vie = ie
-                baseLocal = vie.getBase()
+                base_local = vie.getBase()
 
-        if baseLocal is not None:
-            if aliasing.mayAlias(baseLocal, ap.getPlainValue()):
+        if base_local is not None:
+            if aliasing.mayAlias(base_local, ap.getPlainValue()):
                 if self.manager.getTypeUtils().hasCompatibleTypesForCall(ap, callee.getDeclaringClass()):
                     if res is None:
                         res = HashSet()
 
-                    if thisLocal is None:
-                        thisLocal = callee.getActiveBody().getThisLocal()
+                    if this_local is None:
+                        this_local = callee.getActiveBody().getThisLocal()
 
-                    res.add(self.manager.getAccessPathFactory().copyWithNewValue(ap, thisLocal))
+                    res.add( self.manager.getAccessPathFactory().copyWithNewValue( ap, this_local ) )
 
-        if isExecutorExecute:
+        if is_executor_execute:
             if aliasing.mayAlias(ie.getArg(0), ap.getPlainValue()):
                 if res is None:
                     res = HashSet()
                 res.add(self.manager.getAccessPathFactory().copyWithNewValue(ap, callee.getActiveBody().getThisLocal()))
         elif callee.getParameterCount() > 0:
-            isReflectiveCallSite = self.interprocedural_cfg().isReflectiveCallSite(ie)
+            is_reflective_call_site = self.interprocedural_cfg().is_reflective_call_site(ie)
 
-            for i in range(1 if isReflectiveCallSite else 0, ie.getArgCount()):
+            for i in range(1 if is_reflective_call_site else 0, ie.getArgCount()):
                 if aliasing.mayAlias(ie.getArg(i), ap.getPlainValue()):
                     if res is None:
                         res = HashSet()
 
-                    if paramLocals is None:
-                        paramLocals = callee.getActiveBody().getParameterLocals().toArray(Local[callee.getParameterCount()])
+                    if param_locals is None:
+                        param_locals = callee.getActiveBody().getParameterLocals().toArray( Local[callee.getParameterCount()] )
 
-                    if isReflectiveCallSite:
-                        for j in range(paramLocals.length):
-                            newAP = self.manager.getAccessPathFactory().copyWithNewValue(ap, paramLocals[j], None, False)
-                            if newAP is not None:
-                                res.add(newAP)
+                    if is_reflective_call_site:
+                        for j in range( param_locals.length ):
+                            new_ap = self.manager.getAccessPathFactory().copyWithNewValue( ap, param_locals[j], None, False )
+                            if new_ap is not None:
+                                res.add(new_ap)
                     else:
-                        newAP = self.manager.getAccessPathFactory().copyWithNewValue(ap, paramLocals[i])
-                        if newAP is not None:
-                            res.add(newAP)
+                        new_ap = self.manager.getAccessPathFactory().copyWithNewValue( ap, param_locals[i] )
+                        if new_ap is not None:
+                            res.add(new_ap)
         return res

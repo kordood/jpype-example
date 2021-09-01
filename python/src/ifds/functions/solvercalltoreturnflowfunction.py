@@ -6,115 +6,118 @@ import FlowFunctionType
 from ..flowfunction import FlowFunction
 from ..misc.copymember import copy_member
 
+
 class SolverCallToReturnFlowFunction(FlowFunction):
 
-    def __init__(self, flowfunctions):
+    def __init__(self, flowfunctions, call, return_site):
         copy_member(self, flowfunctions)
+        self.call = call
+        self.return_site = return_site
 
     def compute_targets(self, d1, source):
         res = self.computeTargetsInternal(d1, source)
-        return self.notifyOutFlowHandlers(self.call, d1, source, res, FlowFunctionType.CallToReturnFlowFunction)
+        return self.notify_out_flow_handlers(self.call, d1, source, res, FlowFunctionType.CallToReturnFlowFunction)
 
     def computeTargetsInternal(self, d1, source):
         if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
             return None
 
-        if self.taintPropagationHandler is not None:
-            self.taintPropagationHandler.notifyFlowIn(self.call, source, self.manager,
+        if self.taint_propagation_handler is not None:
+            self.taint_propagation_handler.notify_flow_in(self.call, source, self.manager,
                                                        FlowFunctionType.CallToReturnFlowFunction)
 
-        newSource = None
+        new_source = None
         if not source.isAbstractionActive() \
-                and call == source.getActivationUnit() \
-                or self.isCallSiteActivatingTaint(self.call, source.getActivationUnit()):
-            newSource = source.getActiveCopy()
+                and self.call == source.getActivationUnit() \
+                or self.is_call_site_activating_taint(self.call, source.getActivationUnit()):
+            new_source = source.getActiveCopy()
         else:
-            newSource = source
+            new_source = source
 
         killSource = ByReferenceBoolean()
         killAll = ByReferenceBoolean()
-        res = self.propagationRules.applyCallToReturnFlowFunction(d1, newSource, self.iCallStmt,
-                                                                   killSource, killAll, True)
+        res = self.propagation_rules.apply_call_to_return_flow_function( d1, new_source, self.i_call_stmt,
+                                                                         killSource, killAll, True )
         if killAll.value:
             return None
-        passOn = not killSource.value
+        pass_on = not killSource.value
 
-        if source == self.getZeroValue():
+        if source == self.get_zero_value():
             return Collections.emptySet() if res is None or res.isEmpty() else res
 
         if res is None:
             res = HashSet()
 
-        if newSource.getTopPostdominator() is not None \
-                and newSource.getTopPostdominator().getUnit() is None:
-            return Collections.singleton(newSource)
+        if new_source.getTopPostdominator() is not None \
+                and new_source.getTopPostdominator().getUnit() is None:
+            return Collections.singleton(new_source)
 
-        if newSource.getAccessPath().isStaticFieldRef():
-            passOn = False
+        if new_source.getAccessPath().isStaticFieldRef():
+            pass_on = False
 
-        if passOn \
+        if pass_on \
                 and isinstance(self.invExpr, InstanceInvokeExpr) \
                 and (self.manager.getConfig().getInspectSources() or not self.isSource) \
                 and (self.manager.getConfig().getInspectSinks() or not self.isSink) \
-                and newSource.getAccessPath().isInstanceFieldRef() \
+                and new_source.getAccessPath().isInstanceFieldRef() \
                 and (self.hasValidCallees \
-                     or (self.taintWrapper is not None and self.taintWrapper.isExclusive(self.iCallStmt, newSource))):
+                     or (self.taintWrapper is not None and self.taintWrapper.isExclusive(self.i_call_stmt, new_source))):
 
             callees = self.interprocedural_cfg().getCalleesOfCallAt(self.call)
-            allCalleesRead = not callees.isEmpty()
+            all_callees_read = not callees.isEmpty()
             for callee in callees:
                 if callee.isConcrete() and callee.hasActiveBody():
-                    calleeAPs = self.mapAccessPathToCallee(callee, self.invExpr, None, None, source.getAccessPath())
-                    if calleeAPs is not None:
-                        for ap in calleeAPs:
+                    callee_aps = self.mapAccessPathToCallee(callee, self.invExpr, None, None, source.getAccessPath())
+                    if callee_aps is not None:
+                        for ap in callee_aps:
                             if ap is not None:
                                 if not self.interprocedural_cfg().methodReadsValue(callee, ap.getPlainValue()):
-                                    allCalleesRead = False
+                                    all_callees_read = False
                                     break
 
-                if self.isExcluded(callee):
-                    allCalleesRead = False
+                if self.is_excluded(callee):
+                    all_callees_read = False
                     break
 
-            if allCalleesRead:
-                if self.aliasing.mayAlias(self.invExpr.getBase(), newSource.getAccessPath().getPlainValue()):
-                    passOn = False
-                if passOn:
-                    for i in range(self.callArgs.length):
-                        if self.aliasing.mayAlias(self.callArgs[i], newSource.getAccessPath().getPlainValue()):
-                            passOn = False
+            if all_callees_read:
+                if self.aliasing.mayAlias(self.invExpr.getBase(), new_source.getAccessPath().getPlainValue()):
+                    pass_on = False
+                if pass_on:
+                    for i in range(self.call_args.length):
+                        if self.aliasing.mayAlias(self.call_args[i], new_source.getAccessPath().getPlainValue()):
+                            pass_on = False
                             break
-                if newSource.getAccessPath().isStaticFieldRef():
-                    passOn = False
+                if new_source.getAccessPath().isStaticFieldRef():
+                    pass_on = False
 
         if source.getAccessPath().isStaticFieldRef():
             if not self.interprocedural_cfg().isStaticFieldUsed(callee, source.getAccessPath().getFirstField()):
-                passOn = True
+                pass_on = True
 
-        passOn |= source.getTopPostdominator() is not None or source.getAccessPath().isEmpty()
-        if passOn:
-            if newSource != self.getZeroValue():
-                res.add(newSource)
+        pass_on |= source.getTopPostdominator() is not None or source.getAccessPath().isEmpty()
+        if pass_on:
+            if new_source != self.get_zero_value():
+                res.add(new_source)
 
         if callee.isNative():
-            for callVal in self.callArgs:
-                if callVal == newSource.getAccessPath().getPlainValue():
-                    nativeAbs = self.ncHandler.getTaintedValues(self.iCallStmt, newSource, self.callArgs)
-                    if nativeAbs is not None:
-                        res.addAll(nativeAbs)
+            for call_val in self.call_args:
+                if call_val == new_source.getAccessPath().getPlainValue():
+                    native_abs = self.nc_handler.getTaintedValues(self.i_call_stmt, new_source, self.call_args)
+                    if native_abs is not None:
+                        res.addAll(native_abs)
 
-                        for abs in nativeAbs:
+                        for abs in native_abs:
                             if abs.getAccessPath().isStaticFieldRef() \
-                                    or self.aliasing.canHaveAliases(self.iCallStmt,
+                                    or self.aliasing.canHaveAliases(self.i_call_stmt,
                                                                 abs.getAccessPath().getCompleteValue(),
                                                                 abs):
-                                self.aliasing.computeAliases(d1, self.iCallStmt,
+                                self.aliasing.computeAliases(d1, self.i_call_stmt,
                                                          abs.getAccessPath().getPlainValue(), res,
                                                          self.interprocedural_cfg().get_method_of(self.call), abs)
                     break
 
         for abs in res:
-            if abs != newSource:
-                abs.setCorrespondingCallSite(self.iCallStmt)
+            if abs != new_source:
+                abs.setCorrespondingCallSite(self.i_call_stmt)
 
         return res

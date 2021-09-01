@@ -16,7 +16,7 @@ class SolverNormalFlowFunction(FlowFunction):
 
 	def compute_targets(self, d1, source):
 		if self.taint_propagation_handler is not None:
-			self.taint_propagation_handler.notifyFlowIn(self.stmt, source, self.manager,
+			self.taint_propagation_handler.notify_flow_in(self.stmt, source, self.manager,
 														FlowFunctionType.NormalFlowFunction)
 
 		res = self.compute_targets_internal(d1, source)
@@ -31,7 +31,8 @@ class SolverNormalFlowFunction(FlowFunction):
 
 		kill_source = ByReferenceBoolean()
 		kill_all = ByReferenceBoolean()
-		res = self.propagationRules.applyNormalFlowFunction(d1, new_source, self.stmt, self.dest, kill_source, kill_all)
+		res = self.propagation_rules.apply_normal_flow_function( d1, new_source, self.stmt, self.dest, kill_source, kill_all )
+
 		if kill_all.value:
 			return Collections.emptySet()
 

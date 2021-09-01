@@ -24,7 +24,7 @@ l = logging.getLogger(name=__name__)
 
 class IFDSSolver:
 
-    def __init__(self, tabulationProblem, solver_id):
+    def __init__(self, tabulation_problem, solver_id):
 
 #        self.DEFAULT_CACHE_BUILDER = CacheBuilder.newBuilder().concurrencyLevel(
 #            multiprocessing.cpu_count()).initialCapacity(10000).softValues()
@@ -53,8 +53,8 @@ class IFDSSolver:
         self.max_abstraction_path_length = 100
         self.ff_cache = None
         self.flow_functions = self.flow_functions
-        self.initial_seeds = tabulationProblem.initial_seeds()
-        self.follow_returns_past_seeds = tabulationProblem.follow_returns_past_seeds()
+        self.initial_seeds = tabulation_problem.initial_seeds()
+        self.follow_returns_past_seeds = tabulation_problem.follow_returns_past_seeds()
 
     def solve(self):
         self.reset()
@@ -87,7 +87,7 @@ class IFDSSolver:
             # Add target value to neighbor in specific case
             if existing_val != target_val:
                 if self.memory_manager is None:
-                    is_essential = related_call_site is not None and self.icfg.isCallStmt(related_call_site)
+                    is_essential = related_call_site is not None and self.icfg.is_call_stmt(related_call_site)
                 else:
                     is_essential = self.memory_manager.isEssentialJoinPoint(target_val, related_call_site)
 
@@ -109,21 +109,28 @@ class IFDSSolver:
         return self.jump_functions.putIfAbsent(edge, edge.factAtTarget())
 
     def schedule_edge_processing(self, edge):
-        # Have to kill?
-        if self.kill_flag is not None or self.executor.isTerminating() or self.executor.is_terminated():
+        if self.kill_flag is not None:
             return
 
-        self.path_edge_processing_task(edge, self.solver_id)
+        target = edge.getTarget()
+        if self.icfg.is_call_stmt(target):
+            self.process_call(edge)
+        else:
+            if self.icfg.is_exit_stmt(target):
+                self.process_exit(edge)
+            if not self.icfg.getSuccsOf(target).isEmpty():
+                self.process_normal_flow(edge)
+
         self.propagation_count += 1
 
     def path_edge_processing_task(self, edge, solver_id):
         target = edge.getTarget()
 
         # Handle of Procedure (call / exit / normal)
-        if self.icfg.isCallStmt(target):
+        if self.icfg.is_call_stmt(target):
             self.process_call(edge)
         else:
-            if self.icfg.isExitStmt(target):
+            if self.icfg.is_exit_stmt(target):
                 self.process_exit(edge)
             if not self.icfg.getSuccsOf(target).isEmpty():
                 self.process_normal_flow(edge)

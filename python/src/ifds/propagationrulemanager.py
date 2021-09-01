@@ -19,116 +19,116 @@ import HashSet
 
 class PropagationRuleManager:
 
-	def __init__(self, manager, zeroValue, results):
+	def __init__(self, manager, zero_value, results):
 		self.manager = InfoflowManager()
-		self.zeroValue = Abstraction()
+		self.zero_value = Abstraction()
 		self.results = TaintPropagationResults()
 		self.rules = []
 		self.manager = manager
-		self.zeroValue = zeroValue
+		self.zero_value = zero_value
 		self.results = results
 
-		ruleList = []
+		rule_list = []
 
-		ruleList.add(SourcePropagationRule(manager, zeroValue, results))
-		ruleList.add(SinkPropagationRule(manager, zeroValue, results))
-		ruleList.add(StaticPropagationRule(manager, zeroValue, results))
+		rule_list.append( SourcePropagationRule( manager, zero_value, results ) )
+		rule_list.append( SinkPropagationRule( manager, zero_value, results ) )
+		rule_list.append( StaticPropagationRule( manager, zero_value, results ) )
 
 		if manager.getConfig().getEnableArrayTracking():
-			ruleList.add(ArrayPropagationRule(manager, zeroValue, results))
+			rule_list.append( ArrayPropagationRule( manager, zero_value, results ) )
 
 		if manager.getConfig().getEnableExceptionTracking():
-			ruleList.add(ExceptionPropagationRule(manager, zeroValue, results))
+			rule_list.append( ExceptionPropagationRule( manager, zero_value, results ) )
 
 		if manager.getTaintWrapper() is not None:
-			ruleList.add(WrapperPropagationRule(manager, zeroValue, results))
+			rule_list.append( WrapperPropagationRule( manager, zero_value, results ) )
 			
 		if manager.getConfig().getImplicitFlowMode().trackControlFlowDependencies():
-			ruleList.add(ImplicitPropagtionRule(manager, zeroValue, results))
+			rule_list.append( ImplicitPropagtionRule( manager, zero_value, results ) )
 		
-		ruleList.add(StrongUpdatePropagationRule(manager, zeroValue, results))
+		rule_list.append( StrongUpdatePropagationRule( manager, zero_value, results ) )
 		
 		if manager.getConfig().getEnableTypeChecking():
-			ruleList.add(TypingPropagationRule(manager, zeroValue, results))
+			rule_list.append( TypingPropagationRule( manager, zero_value, results ) )
 		
-		ruleList.add(SkipSystemClassRule(manager, zeroValue, results))
+		rule_list.append( SkipSystemClassRule( manager, zero_value, results ) )
 		
 		if manager.getConfig().getStopAfterFirstKFlows() > 0:
-			ruleList.add(StopAfterFirstKFlowsPropagationRule(manager, zeroValue, results))
+			rule_list.append( StopAfterFirstKFlowsPropagationRule( manager, zero_value, results ) )
 
-		self.rules = ruleList.toArray(ITaintPropagationRule[ruleList.size()])
+		self.rules = rule_list.toArray(ITaintPropagationRule[rule_list.size()])
 
-	def applyNormalFlowFunction(self, d1,  source,  stmt,  destStmt, killSource=None, killAll=None):
+	def apply_normal_flow_function(self, d1, source, stmt, dest_stmt, kill_source=None, kill_all=None):
 		res = set([])
-		if killSource is None:
-			killSource = ByReferenceBoolean()
+		if kill_source is None:
+			kill_source = ByReferenceBoolean()
 		for rule in self.rules:
-			ruleOut = rule.propagateNormalFlow(d1, source, stmt, destStmt, killSource, killAll)
-			if killAll is not None and killAll.value:
+			rule_out = rule.propagate_normal_flow( d1, source, stmt, dest_stmt, kill_source, kill_all )
+			if kill_all is not None and kill_all.value:
 				return None
 
-			if ruleOut is not None and not ruleOut.isEmpty():
+			if rule_out is not None and not rule_out.isEmpty():
 				if res is None:
-					res = HashSet(ruleOut)
+					res = HashSet(rule_out)
 
 				else:
-					res.addAll(ruleOut)
+					res.update(rule_out)
 
-		if (killAll is None or not killAll.value) and not killSource.value:
+		if (kill_all is None or not kill_all.value) and not kill_source.value:
 			if res is None:
 				res = HashSet()
-				res.add(source)
+				res.append(source)
 			else:
-				res.add(source)
+				res = list(source)
 		
 		return res
 
-	def applyCallFlowFunction(self, d1, source, stmt, dest, killAll):
+	def apply_call_flow_function(self, d1, source, stmt, dest, kill_all):
 		res = []
 		for rule in self.rules:
-			ruleOut = rule.propagateCallFlow(d1, source, stmt, dest, killAll)
-			if killAll.value: 
+			rule_out = rule.propagateCallFlow( d1, source, stmt, dest, kill_all )
+			if kill_all.value:
 				return None
 
-			if (ruleOut is not None and not ruleOut.isEmpty()):
+			if rule_out is not None and not rule_out.isEmpty():
 				if res is None:
-					res = HashSet(ruleOut)
+					res = HashSet(rule_out)
 				else:
-					res.addAll(ruleOut)
+					res.extend(rule_out)
 		return res
 
-	def applyCallToReturnFlowFunction(self, d1, source, stmt, killSource, killAll=None, noAddSource=False):
+	def apply_call_to_return_flow_function(self, d1, source, stmt, kill_source, kill_all=None, no_append_source=False):
 		res = []
 		for rule in self.rules:
-			ruleOut = rule.propagateCallToReturnFlow(d1, source, stmt, killSource, killAll)
-			if killAll is not None and killAll.value:
+			rule_out = rule.propagateCallToReturnFlow( d1, source, stmt, kill_source, kill_all )
+			if kill_all is not None and kill_all.value:
 				return None
-			if ruleOut is not None and not ruleOut.isEmpty():
+			if rule_out is not None and not rule_out.isEmpty():
 				if res is None:
-					res = HashSet(ruleOut)
+					res = HashSet(rule_out)
 				else:
-					res.addAll(ruleOut)
+					res.extend(rule_out)
 
-		if not noAddSource and not killSource.value:
+		if not no_append_source and not kill_source.value:
 			if res is None:
 				res = HashSet()
-				res.add(source)
+				res.append(source)
 			else:
-				res.add(source)
+				res.append(source)
 
 		return res
 
-	def applyReturnFlowFunction(self, callerD1s, source, stmt, retSite, callSite, killAll):
+	def apply_return_flow_function(self, caller_d1s, source, stmt, ret_site, call_site, kill_all):
 		res = []
 		for rule in self.rules:
-			ruleOut = rule.propagateReturnFlow(callerD1s, source, stmt, retSite, callSite, killAll)
-			if killAll is not None and killAll.value:
+			rule_out = rule.propagateReturnFlow( caller_d1s, source, stmt, ret_site, call_site, kill_all )
+			if kill_all is not None and kill_all.value:
 				return None
-			if ruleOut is not None and not ruleOut.isEmpty():
+			if rule_out is not None and not rule_out.isEmpty():
 				if res is None:
-					res = HashSet(ruleOut)
+					res = HashSet(rule_out)
 				else:
-					res.addAll(ruleOut)
+					res.extend(rule_out)
 		return res
 
 	def getRules(self):
