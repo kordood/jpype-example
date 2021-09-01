@@ -1,9 +1,9 @@
 import PathDataErasureMode, pathBuilderFactory
 
-from .ifds.globaltaintmanager import GlobalTaintManager
-from .ifds.infoflowproblems import InfoflowProblem
-from .ifds.propagationrulemanager import PropagationRuleManager
-from .ifds.ifdssolversingle import IFDSSolver
+from .infoflow.globaltaints.globaltaintmanager import GlobalTaintManager
+from .infoflow.problems.infoflowproblems import InfoflowProblem
+from .infoflow.problems.rules.propagationrulemanager import PropagationRuleManager
+from .infoflow.solver.ifdssolversingle import IFDSSolver
 
 import logging
 

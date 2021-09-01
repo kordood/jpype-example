@@ -1,4 +1,4 @@
-from interproceduralcfg import InterproceduralCFG
+from ..cfg.interproceduralcfg import InterproceduralCFG
 from ifdstabulationproblem import IFDSTabulationProblem
 import os
 

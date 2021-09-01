@@ -1,12 +1,12 @@
-import CastExpr, InstanceOfExpr, LengthExpr, NewArrayExpr, InstanceInvokeExpr
-import Stmt, AssignStmt, ReturnStmt, DefinitionStmt
-import TypeUtils, BooleanType, ArrayTaintType, RefType, NoneType, PrimType
+import InstanceInvokeExpr
+import DefinitionStmt
+import TypeUtils, PrimType
 import Aliasing
 import HashSet
 import ByReferenceBoolean
 import FlowFunctionType
 import AccessPath
-from ..flowfunction import FlowFunction
+from ..problems.flowfunction import FlowFunction
 from ..misc.copymember import copy_member
 
 

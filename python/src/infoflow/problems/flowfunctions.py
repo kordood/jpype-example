@@ -1,23 +1,18 @@
 import StaticFieldRef, StaticFieldTrackingMode, ArrayRef, FieldRef, InstanceFieldRef
 import CastExpr, InstanceOfExpr, LengthExpr, NewArrayExpr, InstanceInvokeExpr
-import Stmt, AssignStmt, ReturnStmt, DefinitionStmt
+import Stmt, ReturnStmt
 import TypeUtils, BooleanType, ArrayTaintType, RefType, NoneType, PrimType
 import Collections
 import Aliasing
 import Local
 import HashSet
-import ByReferenceBoolean
-import BaseSelector
 import KillAll
-import FlowFunctionType
-import AccessPath
 import Value
-from .functions.solvernormalflowfunction import SolverNormalFlowFunction
-from .functions.solvercallflowfunction import SolverCallFlowFunction
-from .functions.solverreturnflowfuntion import SolverReturnFlowFunction
-from .functions.solvercalltoreturnflowfunction import SolverCallToReturnFlowFunction
-from .misc.copymember import copy_member
-from infoflowproblems import InfoflowProblem
+from ..functions.solvernormalflowfunction import SolverNormalFlowFunction
+from ..functions.solvercallflowfunction import SolverCallFlowFunction
+from ..functions.solverreturnflowfuntion import SolverReturnFlowFunction
+from ..functions.solvercalltoreturnflowfunction import SolverCallToReturnFlowFunction
+from ..misc.copymember import copy_member
 
 
 class FlowFunctions:

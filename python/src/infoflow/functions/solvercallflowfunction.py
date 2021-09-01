@@ -1,7 +1,7 @@
 import HashSet
 import ByReferenceBoolean
 import FlowFunctionType
-from ..flowfunction import FlowFunction
+from ..problems.flowfunction import FlowFunction
 from ..misc.copymember import copy_member
 
 

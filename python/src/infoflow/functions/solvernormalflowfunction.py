@@ -1,9 +1,9 @@
-import Stmt, AssignStmt, ReturnStmt, DefinitionStmt
+import AssignStmt
 import Collections
 import ByReferenceBoolean
 import BaseSelector
 import FlowFunctionType
-from ..flowfunction import FlowFunction
+from ..problems.flowfunction import FlowFunction
 from ..misc.copymember import copy_member
 
 

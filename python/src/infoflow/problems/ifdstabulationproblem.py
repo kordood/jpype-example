@@ -1,5 +1,5 @@
-from interproceduralcfg import InterproceduralCFG
-from solverconfiguration import SolverConfiguration
+from ..cfg.interproceduralcfg import InterproceduralCFG
+from ..solverconfiguration import SolverConfiguration
 
 
 class IFDSTabulationProblem(InterproceduralCFG, SolverConfiguration):
