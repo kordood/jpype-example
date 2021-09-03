@@ -63,7 +63,7 @@ class ContextInsensitivePathBuilder:
                                 self.SourceFindingTask( neighbor )
 
     def processPredecessor(self, scap, pred):
-        extendedScap = scap.extendPath( pred, pathConfig )
+        extendedScap = scap.extend_path( pred, pathConfig )
         if extendedScap == None:
             return False
 
@@ -93,10 +93,10 @@ class ContextInsensitivePathBuilder:
     def getTaintPathTask(self, abs):
         scap = SourceContextAndPath( abs.getSinkDefinition(),
                                      abs.getAbstraction().getAccessPath(), abs.getSinkStmt() )
-        scap = scap.extendPath( abs.getAbstraction(), pathConfig )
+        scap = scap.extend_path( abs.getAbstraction(), pathConfig )
         if self.path_cache.put( abs.getAbstraction(), scap ):
-            if not checkForSource( abs.getAbstraction(), scap ):
-                return SourceFindingTask( abs.getAbstraction() )
+            if not self.checkForSource( abs.getAbstraction(), scap ):
+                return self.SourceFindingTask( abs.getAbstraction() )
         return None
 
     def triggerComputationForNeighbors(self):
