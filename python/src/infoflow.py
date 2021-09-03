@@ -1,6 +1,9 @@
 import logging
+import time
+
 import PathDataErasureMode, pathBuilderFactory
 
+from .infoflow.util.systemclasshandler import SystemClassHandler
 from .infoflow.globaltaints.globaltaintmanager import GlobalTaintManager
 from .infoflow.problems.infoflowproblems import InfoflowProblem
 from .infoflow.problems.rules.propagationrulemanager import PropagationRuleManager
@@ -29,7 +32,7 @@ class Infoflow:
             erasure_mode = PathDataErasureMode.KeepOnlyContextData
         else:
             erasure_mode = PathDataErasureMode.EraseAll
-        memory_manager = memoryManagerFactory.getMemoryManager( False, erasure_mode )
+        memory_manager = memoryManagerFactory.getMemoryManager(False, erasure_mode)
         return memory_manager
 
     def create_forward_solver(self, forward_problem):
@@ -86,8 +89,8 @@ class Infoflow:
             before_path_reconstruction = 0
             sink_count = 0
 
-            for sm in getMethodsForSeeds(i_cfg):
-                sink_count += scan_method_for_sources_sinks(sources_sinks, forward_problem, sm)
+            for sm in self.get_methods_for_seeds(i_cfg):
+                sink_count += self.scan_method_for_sources_sinks(sources_sinks, forward_problem, sm)
 
             if additional_seeds is not None:
                 for meth in additional_seeds:
@@ -126,18 +129,15 @@ class Infoflow:
                 logger.info("Taint_wrapper hits: " + taint_wrapper.getWrapperHits())
                 logger.info("Taint_wrapper misses: " + taint_wrapper.getWrapperMisses())
 
-            res = propagation_results.getResults()
+            res = propagation_results.get_results()
 
             if self.config.getIncrementalResultReporting():
-                builder.runIncrementalPathCompuation()
-                result_executor.awaitCompletion()
+                builder.run_incremental_path_compuation()
             else:
-                builder.computeTaintPaths(res)
+                builder.compute_taint_paths( res )
                 res = None
 
-                result_executor.awaitCompletion()
-
-                self.results.addAll(builder.getResults())
+                self.results.addAll( builder.get_results() )
 
             has_more_sources = has_more_sources[1:]
 
@@ -147,10 +147,10 @@ class Infoflow:
         if results is None or results.isEmpty():
             logger.warn("No results found.")
         elif logger.is_info_enabled():
-            for sink in results.getResults().keySet():
+            for sink in results.get_results().keySet():
                 logger.info("The sink { in method { was called with values from the following sources:", sink,
                             i_cfg.getMethodOf(sink.getStmt()).getSignature())
-                for source in results.getResults().get(sink):
+                for source in results.get_results().get( sink ):
                     logger.info("- { in method {", source, i_cfg.getMethodOf(source.getStmt()).getSignature())
                     if source.getPath() is not None:
                         logger.info("\ton Path: ")
@@ -158,29 +158,59 @@ class Infoflow:
                             logger.info("\t -> " + i_cfg.getMethodOf(p))
                             logger.info("\t\t -> " + p)
 
-    def scan_method_for_sources_sinks(self, sourcesSinks, forwardProblem, m):
+    def get_methods_for_seeds(self, icfg):
+        seeds = list()
+        if Scene.v().hasCallGraph():
+            reachable_methods = Scene.v().getReachableMethods()
+            reachable_methods.update()
+            for method in reachable_methods:
+                sm = method
+                if self.is_valid_seed_method(sm):
+                    seeds.append(sm)
+        else:
+            before_seed_methods = time.time_ns()
+            done_set = set()
+            for sm in Scene.v().getEntryPoints():
+                self.get_methods_for_seeds_incremental(sm, done_set, seeds, icfg)
+            logger.info("Collecting seed methods took { seconds", (time.time_ns() - before_seed_methods) / 1E9)
+
+        return seeds
+
+    def get_methods_for_seeds_incremental(self, sm, done_set, seeds, icfg):
+        assert Scene.v().hasFastHierarchy()
+        if not sm.isConcrete() or not sm.getDeclaringClass().isApplicationClass() or not done_set.add(sm):
+            return
+        seeds.append(sm)
+        for u in sm.retrieveActiveBody().getUnits():
+            stmt = u
+            if stmt.containsInvokeExpr():
+                for callee in icfg.getCalleesOfCallAt(stmt):
+                    if self.is_valid_seed_method(callee):
+                        self.get_methods_for_seeds_incremental(callee, done_set, seeds, icfg)
+
+    def scan_method_for_sources_sinks(self, sources_sinks, forward_problem, m):
         if self.collected_sources is None:
             self.collected_sources = set()
             self.collected_sinks = set()
 
         sink_count = 0
         if m.hasActiveBody():
-            if not self.is_valid_seed_method( m ):
+            if not self.is_valid_seed_method(m):
                 return sink_count
 
             units = m.getActiveBody().getUnits()
             for u in units:
                 s = u
-                if sourcesSinks.getSourceInfo(s, self.manager) is not None:
-                    forwardProblem.addInitialSeeds(u, Collections.singleton(forwardProblem.zeroValue()))
-                    if getConfig().getLogSourcesAndSinks():
-                        collectedSources.add(s)
+                if sources_sinks.getSourceInfo(s, self.manager) is not None:
+                    forward_problem.add_initial_seeds(u, forward_problem.zeroValue())
+                    if self.config.getLogSourcesAndSinks():
+                        self.collected_sources.add(s)
                     logger.debug("Source found: { in {", u, m.getSignature())
                 
-                if sourcesSinks.getSinkInfo(s, self.manager, None) is not None:
+                if sources_sinks.getSinkInfo(s, self.manager, None) is not None:
                     sink_count += 1
-                    if getConfig().getLogSourcesAndSinks():
-                        collectedSinks.add(s)
+                    if self.config.getLogSourcesAndSinks():
+                        self.collected_sinks.add(s)
                     logger.debug("Sink found: { in {", u, m.getSignature())
                 
         return sink_count
@@ -192,7 +222,7 @@ class Infoflow:
             return False
 
         class_name = sm.getDeclaringClass().getName()
-        if self.config.getIgnoreFlowsInSystemPackages() and SystemClassHandler.v().is_class_in_system_package( class_name ) \
+        if self.config.getIgnoreFlowsInSystemPackages() and SystemClassHandler().is_class_in_system_package(class_name)\
                 and not self.is_user_code_class(class_name):
             return False
 
