@@ -15,6 +15,11 @@ class Infoflow:
         self.config = config
         self.results = None
 
+        self.collected_sources = set()
+        self.collected_sinks = set()
+        self.manager = None
+        self.dummy_main_method = None
+
     def create_memory_manager(self):
         if self.config.getPathConfiguration().mustKeepStatements():
             erasure_mode = PathDataErasureMode.EraseNothing
@@ -52,7 +57,7 @@ class Infoflow:
             solvers = dict()
             global_taint_manager = GlobalTaintManager(solvers)
 
-            manager = self.initialize_infoflow_manager(sources_sinks, i_cfg, global_taint_manager)
+            self.manager = self.initialize_infoflow_manager(sources_sinks, i_cfg, global_taint_manager)
 
             zero_value = None
             backward_solver = None  # FlowSensitive case of createAliasAnalysis
@@ -61,12 +66,12 @@ class Infoflow:
                 zero_value = backward_solver.get_tabulation_problem().create_zero_value()
                 solvers['backward'] = backward_solver
 
-            forward_problem = InfoflowProblem(manager, zero_value, PropagationRuleManager(manager, zero_value,
+            forward_problem = InfoflowProblem(self.manager, zero_value, PropagationRuleManager(self.manager, zero_value,
                                                                                           self.results))
 
             forward_solver = self.create_forward_solver(forward_problem)
 
-            manager.forward_solver(forward_solver)
+            self.manager.forward_solver(forward_solver)
             solvers['forward'] = forward_solver
 
             forward_solver.set_memory_manager(memory_manager)
@@ -106,10 +111,10 @@ class Infoflow:
                     forward_problem.getInitialSeeds().size(), sink_count)
 
             if taint_wrapper is not None:
-                taint_wrapper.initialize(manager)
+                taint_wrapper.initialize(self.manager)
 
             if native_call_handler is not None:
-                native_call_handler.initialize(manager)
+                native_call_handler.initialize(self.manager)
 
             propagation_results = forward_problem.getResults()
 
@@ -152,3 +157,49 @@ class Infoflow:
                         for p in source.getPath():
                             logger.info("\t -> " + i_cfg.getMethodOf(p))
                             logger.info("\t\t -> " + p)
+
+    def scan_method_for_sources_sinks(self, sourcesSinks, forwardProblem, m):
+        if self.collected_sources is None:
+            self.collected_sources = set()
+            self.collected_sinks = set()
+
+        sink_count = 0
+        if m.hasActiveBody():
+            if not self.is_valid_seed_method( m ):
+                return sink_count
+
+            units = m.getActiveBody().getUnits()
+            for u in units:
+                s = u
+                if sourcesSinks.getSourceInfo(s, self.manager) is not None:
+                    forwardProblem.addInitialSeeds(u, Collections.singleton(forwardProblem.zeroValue()))
+                    if getConfig().getLogSourcesAndSinks():
+                        collectedSources.add(s)
+                    logger.debug("Source found: { in {", u, m.getSignature())
+                
+                if sourcesSinks.getSinkInfo(s, self.manager, None) is not None:
+                    sink_count += 1
+                    if getConfig().getLogSourcesAndSinks():
+                        collectedSinks.add(s)
+                    logger.debug("Sink found: { in {", u, m.getSignature())
+                
+        return sink_count
+
+    def is_valid_seed_method(self, sm):
+        if sm == self.dummy_main_method:
+            return False
+        if self.dummy_main_method is not None and sm.getDeclaringClass() == self.dummy_main_method.getDeclaringClass():
+            return False
+
+        class_name = sm.getDeclaringClass().getName()
+        if self.config.getIgnoreFlowsInSystemPackages() and SystemClassHandler.v().is_class_in_system_package( class_name ) \
+                and not self.is_user_code_class(class_name):
+            return False
+
+        if self.config.getExcludeSootLibraryClasses() and sm.getDeclaringClass().isLibraryClass():
+            return False
+
+        return True
+
+    def is_user_code_class(self, class_name):
+        return False

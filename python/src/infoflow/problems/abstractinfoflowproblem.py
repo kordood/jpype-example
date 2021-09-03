@@ -150,7 +150,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
 
         if self.manager.getConfig().getIgnoreFlowsInSystemPackages():
             self.decl_class = sm.getDeclaringClass()
-            if self.decl_class is not None and SystemClassHandler.v().isClassInSystemPackage(self.decl_class.getName()):
+            if self.decl_class is not None and SystemClassHandler.v().is_class_in_system_package( self.decl_class.getName() ):
                 return True
 
         return False
