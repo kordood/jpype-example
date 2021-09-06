@@ -51,7 +51,7 @@ class SolverCallFlowFunction(FlowFunction):
 
         res_abs = HashSet(res_mapping.size())
         if res is not None and not res.is_empty():
-            res_abs.addAll(res)
+            res_abs.add_all(res)
         for ap in res_mapping:
             if ap is not None:
                 if self.aliasing.getAliasingStrategy().isLazyAnalysis() \

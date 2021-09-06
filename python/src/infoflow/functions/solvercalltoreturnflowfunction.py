@@ -104,7 +104,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                 if call_val == new_source.getAccessPath().getPlainValue():
                     native_abs = self.nc_handler.getTaintedValues(self.i_call_stmt, new_source, self.call_args)
                     if native_abs is not None:
-                        res.addAll(native_abs)
+                        res.add_all(native_abs)
 
                         for abs in native_abs:
                             if abs.getAccessPath().is_static_field_ref() \

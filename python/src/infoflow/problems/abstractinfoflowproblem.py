@@ -94,7 +94,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
 
     def add_initial_seeds(self, unit, seeds):
         if self.initial_seeds.containsKey(unit):
-            self.initial_seeds.get(unit).addAll(seeds)
+            self.initial_seeds.get(unit).add_all(seeds)
         else:
             self.initial_seeds.put(unit, HashSet(seeds))
 

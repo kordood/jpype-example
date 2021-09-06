@@ -44,7 +44,7 @@ class SolverNormalFlowFunction(FlowFunction):
 			res_assign = self.create_new_taint_on_assignment(assign_stmt, right_vals, d1, new_source)
 			if res_assign is not None and not res_assign.is_empty():
 				if res is not None:
-					res.addAll(res_assign)
+					res.add_all(res_assign)
 					return res
 				else:
 					res = res_assign

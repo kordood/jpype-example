@@ -77,9 +77,9 @@ class ContextInsensitivePathBuilder:
         assert abs.neighbors is None
 
         source_context = abs.souce_context
-        self.results.addResult(scap.definition, scap.access_path, scap.stmt, source_context.definition,
-                           source_context.access_path, source_context.stmt, source_context.user_data,
-                           scap.get_abstraction_path())
+        self.results.add_result(scap.definition, scap.access_path, scap.stmt, source_context.definition,
+                                source_context.access_path, source_context.stmt, source_context.user_data,
+                                scap.get_abstraction_path())
         return True
 
     def get_taint_path_task(self, abs):

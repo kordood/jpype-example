@@ -139,7 +139,7 @@ class Infoflow:
                 builder.compute_taint_paths( res )
                 res = None
 
-                self.results.addAll( builder.get_results() )
+                self.results.add_all(builder.get_results())
 
             has_more_sources = has_more_sources[1:]
 
