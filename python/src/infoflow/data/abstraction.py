@@ -1,6 +1,7 @@
 from copy import copy
 
 from .sourcecontext import SourceContext
+from .accesspath import AccessPath
 
 
 class Abstraction:
@@ -141,7 +142,7 @@ class Abstraction:
             return None
 
         if abs.postdominators is None:
-            abs.postdominators = Collections.singletonList( postdom )
+            abs.postdominators = list( postdom )
         else:
             abs.postdominators.add( 0, postdom )
         return abs
@@ -192,7 +193,7 @@ class Abstraction:
     def equals(self, obj):
         if self == obj:
             return True
-        if obj is None or getClass() != obj.getClass():
+        if obj is None:
             return False
         other = obj
 
@@ -240,6 +241,7 @@ class Abstraction:
         return self.local_equals( other )
 
     def add_neighbor(self, original_abstraction):
+        InfoflowConfiguration_getMergeNeighbors = False
         if original_abstraction == self:
             return False
 
@@ -249,8 +251,8 @@ class Abstraction:
             return False
 
         if self.neighbors is None:
-            self.neighbors = TCustomHashSet( NeighborHashingStrategy.INSTANCE )
-        elif InfoflowConfiguration.getMergeNeighbors():
+            self.neighbors = set()
+        elif InfoflowConfiguration_getMergeNeighbors:
             for nb in self.neighbors:
                 if nb == original_abstraction:
                     return False
@@ -261,17 +263,17 @@ class Abstraction:
 
         return self.neighbors.add( original_abstraction )
 
-    
     def get_zero_abstraction(self, flow_sensitive_aliasing):
         zero_value = Abstraction( AccessPath.get_zero_access_path(), None, False, False )
         Abstraction.flow_sensitive_aliasing = flow_sensitive_aliasing
         return zero_value
     
     
+    """
     def register_path_flag(self, id, max_size):
         if self.path_flags is None or self.path_flags.size() < max_size:
             if self.path_flags is None:
-                pf = AtomicBitSet( max_size )
+                pf = set( max_size )
                 path_flags = pf
             elif self.path_flags.size() < max_size:
                 pf = AtomicBitSet( max_size )
@@ -282,8 +284,8 @@ class Abstraction:
                 path_flags = pf
     
         return self.path_flags.set( id )
-    
-    
+    """
+
     def inject_source_context(self, souce_context):
         if self.souce_context is not None and self.souce_context.equals( souce_context ):
             return self
@@ -294,7 +296,3 @@ class Abstraction:
         abs.souce_context = souce_context
         abs.current_stmt = self.current_stmt
         return abs
-    
-    
-    def get_neighbor_count(self):
-        return self.neighbors is None ? 0: neighbors.size()

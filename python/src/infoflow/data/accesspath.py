@@ -1,6 +1,5 @@
 import Local, InstanceFieldRef, StaticFieldRef, ArrayRef
 import Jimple
-import getClass
 import NoneType
 
 
@@ -79,7 +78,7 @@ class AccessPath:
     def equals(self, obj):
         if obj == self:
             return True
-        if obj is None or getClass() != obj.getClass():
+        if obj is None:
             return False
 
         other = obj
