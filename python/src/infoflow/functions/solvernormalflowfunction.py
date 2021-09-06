@@ -24,8 +24,8 @@ class SolverNormalFlowFunction(FlowFunction):
 
 	def compute_targets_internal(self, d1, source):
 		new_source = None
-		if not source.isAbstractionActive() and self.src == source.getActivationUnit():
-			new_source = source.getActiveCopy()
+		if not source.is_abstraction_active() and self.src == source.getActivationUnit():
+			new_source = source.get_active_copy()
 		else:
 			new_source = source
 
@@ -42,11 +42,11 @@ class SolverNormalFlowFunction(FlowFunction):
 			right_vals = BaseSelector.selectBaseList(right, True)
 
 			res_assign = self.create_new_taint_on_assignment(assign_stmt, right_vals, d1, new_source)
-			if res_assign is not None and not res_assign.isEmpty():
+			if res_assign is not None and not res_assign.is_empty():
 				if res is not None:
 					res.addAll(res_assign)
 					return res
 				else:
 					res = res_assign
 
-		return Collections.emptySet() if res is None or res.isEmpty() else res
+		return Collections.emptySet() if res is None or res.is_empty() else res

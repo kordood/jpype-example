@@ -24,7 +24,7 @@ class SolverReturnFlowFunction(FlowFunction):
         return self.notify_out_flow_handlers(self.exit_stmt, d1, source, res, FlowFunctionType.ReturnFlowFunction)
 
     def compute_targets_internal(self, source, caller_d1s):
-        if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
+        if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.is_empty():
             return None
         if source == self.get_zero_value():
             return None
@@ -34,15 +34,15 @@ class SolverReturnFlowFunction(FlowFunction):
                                                        FlowFunctionType.ReturnFlowFunction)
         caller_d1s_conditional = False
         for d1 in caller_d1s:
-            if d1.getAccessPath().isEmpty():
+            if d1.getAccessPath().is_empty():
                 caller_d1s_conditional = True
                 break
         new_source = source
-        if not source.isAbstractionActive():
+        if not source.is_abstraction_active():
             if self.call_site is not None:
                 if self.call_site == source.getActivationUnit() \
                         or self.is_call_site_activating_taint(self.call_site, source.getActivationUnit()):
-                    new_source = source.getActiveCopy()
+                    new_source = source.get_active_copy()
 
         if not new_source.isAbstractionActive() and new_source.getActivationUnit() is not None:
             if self.interprocedural_cfg().get_method_of(new_source.getActivationUnit()) == self.callee:
@@ -63,7 +63,7 @@ class SolverReturnFlowFunction(FlowFunction):
                 and Aliasing.canHaveAliases(new_source.getAccessPath()):
             res.add(new_source)
 
-        if not new_source.getAccessPath().isStaticFieldRef() and not self.callee.isStaticInitializer():
+        if not new_source.getAccessPath().is_static_field_ref() and not self.callee.isStaticInitializer():
             if self.return_stmt is not None and isinstance(self.call_site, DefinitionStmt):
                 ret_local = self.return_stmt.getOp()
                 defn_stmt = self.call_site
@@ -96,7 +96,7 @@ class SolverReturnFlowFunction(FlowFunction):
                     parameter_aliases = True
                     original_call_arg = self.i_call_stmt.getInvokeExpr().getArg(1 if self.is_reflective_call_site else i)
 
-                    if not AccessPath.canContainValue(original_call_arg):
+                    if not AccessPath.can_contain_value( original_call_arg ):
                         continue
                     if not self.is_reflective_call_site \
                             and not self.manager.getTypeUtils().checkCast(source.getAccessPath(),

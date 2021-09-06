@@ -67,7 +67,7 @@ class PropagationRuleManager:
 			if kill_all is not None and kill_all.value:
 				return None
 
-			if rule_out is not None and not rule_out.isEmpty():
+			if rule_out is not None and not rule_out.is_empty():
 				if res is None:
 					res = HashSet(rule_out)
 
@@ -90,7 +90,7 @@ class PropagationRuleManager:
 			if kill_all.value:
 				return None
 
-			if rule_out is not None and not rule_out.isEmpty():
+			if rule_out is not None and not rule_out.is_empty():
 				if res is None:
 					res = HashSet(rule_out)
 				else:
@@ -103,7 +103,7 @@ class PropagationRuleManager:
 			rule_out = rule.propagateCallToReturnFlow( d1, source, stmt, kill_source, kill_all )
 			if kill_all is not None and kill_all.value:
 				return None
-			if rule_out is not None and not rule_out.isEmpty():
+			if rule_out is not None and not rule_out.is_empty():
 				if res is None:
 					res = HashSet(rule_out)
 				else:
@@ -124,7 +124,7 @@ class PropagationRuleManager:
 			rule_out = rule.propagateReturnFlow( caller_d1s, source, stmt, ret_site, call_site, kill_all )
 			if kill_all is not None and kill_all.value:
 				return None
-			if rule_out is not None and not rule_out.isEmpty():
+			if rule_out is not None and not rule_out.is_empty():
 				if res is None:
 					res = HashSet(rule_out)
 				else:

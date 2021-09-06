@@ -19,7 +19,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
         return self.notify_out_flow_handlers(self.call, d1, source, res, FlowFunctionType.CallToReturnFlowFunction)
 
     def computeTargetsInternal(self, d1, source):
-        if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
+        if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.is_empty():
             return None
 
         if self.taint_propagation_handler is not None:
@@ -27,10 +27,10 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                                                        FlowFunctionType.CallToReturnFlowFunction)
 
         new_source = None
-        if not source.isAbstractionActive() \
+        if not source.is_abstraction_active() \
                 and self.call == source.getActivationUnit() \
                 or self.is_call_site_activating_taint(self.call, source.getActivationUnit()):
-            new_source = source.getActiveCopy()
+            new_source = source.get_active_copy()
         else:
             new_source = source
 
@@ -43,7 +43,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
         pass_on = not killSource.value
 
         if source == self.get_zero_value():
-            return Collections.emptySet() if res is None or res.isEmpty() else res
+            return Collections.emptySet() if res is None or res.is_empty() else res
 
         if res is None:
             res = HashSet()
@@ -52,19 +52,19 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                 and new_source.getTopPostdominator().getUnit() is None:
             return Collections.singleton(new_source)
 
-        if new_source.getAccessPath().isStaticFieldRef():
+        if new_source.getAccessPath().is_static_field_ref():
             pass_on = False
 
         if pass_on \
                 and isinstance(self.invExpr, InstanceInvokeExpr) \
                 and (self.manager.getConfig().getInspectSources() or not self.isSource) \
                 and (self.manager.getConfig().getInspectSinks() or not self.isSink) \
-                and new_source.getAccessPath().isInstanceFieldRef() \
+                and new_source.getAccessPath().is_instance_field_ref() \
                 and (self.hasValidCallees \
                      or (self.taintWrapper is not None and self.taintWrapper.isExclusive(self.i_call_stmt, new_source))):
 
             callees = self.interprocedural_cfg().getCalleesOfCallAt(self.call)
-            all_callees_read = not callees.isEmpty()
+            all_callees_read = not callees.is_empty()
             for callee in callees:
                 if callee.isConcrete() and callee.hasActiveBody():
                     callee_aps = self.mapAccessPathToCallee(callee, self.invExpr, None, None, source.getAccessPath())
@@ -87,14 +87,14 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                         if self.aliasing.mayAlias(self.call_args[i], new_source.getAccessPath().getPlainValue()):
                             pass_on = False
                             break
-                if new_source.getAccessPath().isStaticFieldRef():
+                if new_source.getAccessPath().is_static_field_ref():
                     pass_on = False
 
-        if source.getAccessPath().isStaticFieldRef():
-            if not self.interprocedural_cfg().isStaticFieldUsed(callee, source.getAccessPath().getFirstField()):
+        if source.getAccessPath().is_static_field_ref():
+            if not self.interprocedural_cfg().isStaticFieldUsed( callee, source.getAccessPath().get_first_field() ):
                 pass_on = True
 
-        pass_on |= source.getTopPostdominator() is not None or source.getAccessPath().isEmpty()
+        pass_on |= source.get_top_postdominator() is not None or source.getAccessPath().is_empty()
         if pass_on:
             if new_source != self.get_zero_value():
                 res.add(new_source)
@@ -107,9 +107,9 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                         res.addAll(native_abs)
 
                         for abs in native_abs:
-                            if abs.getAccessPath().isStaticFieldRef() \
+                            if abs.getAccessPath().is_static_field_ref() \
                                     or self.aliasing.canHaveAliases(self.i_call_stmt,
-                                                                abs.getAccessPath().getCompleteValue(),
+                                                                abs.getAccessPath().get_complete_value(),
                                                                 abs):
                                 self.aliasing.computeAliases(d1, self.i_call_stmt,
                                                          abs.getAccessPath().getPlainValue(), res,

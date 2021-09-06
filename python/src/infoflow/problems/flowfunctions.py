@@ -43,7 +43,7 @@ class FlowFunctions:
             return
 
         new_abs = None
-        if not source.getAccessPath().isEmpty():
+        if not source.getAccessPath().is_empty():
             if isinstance(left_value, ArrayRef and target_type is not None):
                 array_ref = left_value
                 target_type = TypeUtils.buildArrayOrAddDimension(target_type, array_ref.getType().getArrayType())
@@ -52,7 +52,7 @@ class FlowFunctions:
                 cast = assign_stmt.getRightOp()
                 target_type = cast.getType()
             elif isinstance(right_value, InstanceOfExpr):
-                new_abs = source.deriveNewAbstraction(self.manager.getAccessPathFactory().createAccessPath(
+                new_abs = source.derive_new_abstraction(self.manager.getAccessPathFactory().createAccessPath(
                     left_value, BooleanType.v(), True, ArrayTaintType.ContentsAndLength), assign_stmt)
         else:
             assert target_type is None
@@ -62,8 +62,8 @@ class FlowFunctions:
             array_taint_type = ArrayTaintType.Contents
 
         if new_abs is None:
-            if source.getAccessPath().isEmpty():
-                new_abs = source.deriveNewAbstraction(
+            if source.getAccessPath().is_empty():
+                new_abs = source.derive_new_abstraction(
                         self.manager.getAccessPathFactory().createAccessPath(left_value, True), assign_stmt, True)
             else:
                 ap = self.manager.getAccessPathFactory().copyWithNewValue(source.getAccessPath(),
@@ -72,7 +72,7 @@ class FlowFunctions:
                                                                                     cut_first_field,
                                                                                     True,
                                                                                     array_taint_type)
-                new_abs = source.deriveNewAbstraction(ap, assign_stmt)
+                new_abs = source.derive_new_abstraction( ap, assign_stmt )
 
         if new_abs is not None:
             if isinstance(left_value, StaticFieldRef) \
@@ -100,19 +100,19 @@ class FlowFunctions:
         if isinstance(right_value, LengthExpr):
             return Collections.singleton(new_source)
 
-        implicit_taint = new_source.getTopPostdominator() is not None \
-                        and new_source.getTopPostdominator().getUnit() is not None
-        implicit_taint |= new_source.getAccessPath().isEmpty()
+        implicit_taint = new_source.get_top_postdominator() is not None \
+                         and new_source.get_top_postdominator().getUnit() is not None
+        implicit_taint |= new_source.getAccessPath().is_empty()
 
         if implicit_taint:
-            if d1 is None or d1.getAccessPath().isEmpty() and not isinstance(left_value, FieldRef):
+            if d1 is None or d1.getAccessPath().is_empty() and not isinstance( left_value, FieldRef ):
                 return Collections.singleton(new_source)
 
-            if new_source.getAccessPath().isEmpty():
+            if new_source.getAccessPath().is_empty():
                 add_left_value = True
 
         alias_overwritten = not add_left_value \
-                           and not new_source.isAbstractionActive() \
+                           and not new_source.is_abstraction_active() \
                            and Aliasing.baseMatchesStrict(right_value, new_source) \
                            and isinstance(right_value.getType(), RefType) \
                            and not new_source.dependsOnCutAP()
@@ -146,16 +146,16 @@ class FlowFunctions:
 
                         if mapped_ap is not None:
                             add_left_value = True
-                            cut_first_field = (mapped_ap.getFieldCount() > 0
-                                    and mapped_ap.getFirstField() == right_field)
+                            cut_first_field = (mapped_ap.get_field_count() > 0
+                                               and mapped_ap.get_first_field() == right_field)
                         elif (aliasing.mayAlias(right_base, source_base)
-                              and new_source.getAccessPath().getFieldCount() == 0
+                              and new_source.getAccessPath().get_field_count() == 0
                               and new_source.getAccessPath().getTaintSubFields()):
                             add_left_value = True
                             target_type = right_field.getType()
                             if (mapped_ap is None):
                                 mapped_ap = self.manager.getAccessPathFactory().createAccessPath(right_base, True)
-                elif isinstance(rightVal, Local) and new_source.getAccessPath().isInstanceFieldRef():
+                elif isinstance(rightVal, Local) and new_source.getAccessPath().is_instance_field_ref():
                     base = new_source.getAccessPath().getPlainValue()
                     if aliasing.mayAlias(rightVal, base):
                         add_left_value = True
@@ -173,7 +173,7 @@ class FlowFunctions:
         if not add_left_value:
             return None
 
-        if not new_source.isAbstractionActive() \
+        if not new_source.is_abstraction_active() \
                 and isinstance(assign_stmt.getLeftOp().getType(), PrimType) \
                 or TypeUtils.isStringType(assign_stmt.getLeftOp().getType()) \
                 and not new_source.getAccessPath().getCanHaveImmutableAliases():
@@ -181,7 +181,7 @@ class FlowFunctions:
 
         res = HashSet()
         target_ab = new_source if mapped_ap.equals(new_source.getAccessPath()) \
-            else new_source.deriveNewAbstraction(mapped_ap, None)
+            else new_source.derive_new_abstraction( mapped_ap, None )
         self.add_taint_via_stmt( d1, assign_stmt, target_ab, res, cut_first_field,
                                  self.interprocedural_cfg().get_method_of(assign_stmt), target_type )
         res.add(new_source)
@@ -258,7 +258,7 @@ class FlowFunctions:
         return SolverCallToReturnFlowFunction(self, call, returnSite)
 
     def map_access_path_to_callee(self, callee, ie, param_locals, this_local, ap):
-        if ap.isEmpty():
+        if ap.is_empty():
             return None
 
         is_executor_execute = self.interprocedural_cfg().isExecutorExecute(ie, callee)
@@ -275,7 +275,7 @@ class FlowFunctions:
 
         base_local = None
         if not is_executor_execute \
-                and not ap.isStaticFieldRef() \
+                and not ap.is_static_field_ref() \
                 and not callee.isStatic():
             if self.interprocedural_cfg().is_reflective_call_site(ie):
                 base_local = ie.getArg(0)

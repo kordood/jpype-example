@@ -74,7 +74,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         if call_sites.contains(call_site):
             return False
 
-        if not activation_abs.isAbstractionActive():
+        if not activation_abs.is_abstraction_active():
             if not callee.getActiveBody().getUnits().contains(activation_unit):
                 found = False
                 for au in call_sites:
@@ -99,7 +99,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
             self.initial_seeds.put(unit, HashSet(seeds))
 
     def has_initial_seeds(self):
-        return not self.initial_seeds.isEmpty()
+        return not self.initial_seeds.is_empty()
 
     def get_initial_seeds(self):
         return self.initial_seeds
@@ -109,7 +109,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
 
     def create_zero_value(self):
         if self.zero_value is None:
-            self.zero_value = Abstraction.getZeroAbstraction(self.manager.getConfig().getFlowSensitiveAliasing())
+            self.zero_value = Abstraction.get_zero_abstraction( self.manager.getConfig().getFlowSensitiveAliasing() )
         return self.zero_value
 
     def get_zero_value(self):

@@ -22,7 +22,7 @@ class SolverCallFlowFunction(FlowFunction):
         return self.notify_out_flow_handlers(self.stmt, d1, source, res, FlowFunctionType.CallFlowFunction)
 
     def compute_targets_internal(self, d1, source):
-        if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.isEmpty():
+        if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.is_empty():
             return None
         if source == self.get_zero_value():
             return None
@@ -34,8 +34,8 @@ class SolverCallFlowFunction(FlowFunction):
             self.taint_propagation_handler.notify_flow_in(self.stmt, source, self.manager,
                                                        FlowFunctionType.CallFlowFunction)
 
-        if not source.isAbstractionActive() and source.getActivationUnit() == self.src:
-            source = source.getActiveCopy()
+        if not source.is_abstraction_active() and source.getActivationUnit() == self.src:
+            source = source.get_active_copy()
 
         kill_all = ByReferenceBoolean()
         res = self.propagation_rules.apply_call_flow_function( d1, source, self.stmt, self.dest, kill_all )
@@ -50,7 +50,7 @@ class SolverCallFlowFunction(FlowFunction):
             return res
 
         res_abs = HashSet(res_mapping.size())
-        if res is not None and not res.isEmpty():
+        if res is not None and not res.is_empty():
             res_abs.addAll(res)
         for ap in res_mapping:
             if ap is not None:

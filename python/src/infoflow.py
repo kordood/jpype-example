@@ -63,11 +63,13 @@ class Infoflow:
             self.manager = self.initialize_infoflow_manager(sources_sinks, i_cfg, global_taint_manager)
 
             zero_value = None
+            """
             backward_solver = None  # FlowSensitive case of createAliasAnalysis
 
             if backward_solver is not None:
                 zero_value = backward_solver.get_tabulation_problem().create_zero_value()
                 solvers['backward'] = backward_solver
+            """
 
             forward_problem = InfoflowProblem(self.manager, zero_value, PropagationRuleManager(self.manager, zero_value,
                                                                                           self.results))
@@ -144,7 +146,7 @@ class Infoflow:
         for handler in self.postProcessors:
             results = handler.onResultsAvailable(results, i_cfg)
 
-        if results is None or results.isEmpty():
+        if results is None or results.is_empty():
             logger.warn("No results found.")
         elif logger.is_info_enabled():
             for sink in results.get_results().keySet():
@@ -152,9 +154,9 @@ class Infoflow:
                             i_cfg.getMethodOf(sink.getStmt()).getSignature())
                 for source in results.get_results().get( sink ):
                     logger.info("- { in method {", source, i_cfg.getMethodOf(source.getStmt()).getSignature())
-                    if source.getPath() is not None:
+                    if source.get_path() is not None:
                         logger.info("\ton Path: ")
-                        for p in source.getPath():
+                        for p in source.get_path():
                             logger.info("\t -> " + i_cfg.getMethodOf(p))
                             logger.info("\t\t -> " + p)
 

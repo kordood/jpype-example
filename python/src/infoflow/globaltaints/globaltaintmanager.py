@@ -9,7 +9,7 @@ class GlobalTaintManager:
         self.solvers = solvers
 
     def add_to_global_taint_state(self, abs):
-        if self.globalTaintState.add(abs) and self.solvers is not None and not self.solvers.isEmpty():
+        if self.globalTaintState.add(abs) and self.solvers is not None and not self.solvers.is_empty():
             injection_points = set()
             method_listener = Scene.v().getReachableMethods().listener()
             for mmoc in method_listener:
@@ -23,7 +23,7 @@ class GlobalTaintManager:
                             for vb in stmt.getUseBoxes():
                                 if isinstance(vb.getValue(), StaticFieldRef):
                                     field_ref = vb.getValue()
-                                    if abs.getAccessPath().firstFieldMatches(field_ref.getField()):
+                                    if abs.getAccessPath().first_field_matches( field_ref.getField() ):
                                         injection_points.add(stmt)
 
             if len(injection_points) > 0:

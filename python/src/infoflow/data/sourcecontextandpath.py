@@ -3,42 +3,42 @@ from copy import copy, deepcopy
 
 class SourceContextAndPath:
 
-    def __init__(self, definition, value, stmt, userData=None):
+    def __init__(self, definition, value, stmt, user_data=None):
         self.path = None
-        self.callStack = None
-        self.neighborCounter = 0
-        self.hashCode = 0
+        self.call_stack = None
+        self.neighbor_counter = 0
+        self.hash_code = 0
         self.definition = definition
         self.value = value
         self.stmt = stmt
-        self.userData = userData
+        self.user_data = user_data
 
-    def getPath(self):
+    def get_path(self):
         if self.path is None:
             return list()
     
-        stmtPath = list()
+        stmt_path = list()
         self.path.reverse()
     
         for it in self.path:
             abs = it.next()
     
             if abs.getCurrentStmt() is not None:
-                stmtPath.append(abs.getCurrentStmt())
+                stmt_path.append(abs.getCurrentStmt())
     
-        return stmtPath
+        return stmt_path
 
-    def getAbstractionPath(self):
+    def get_abstraction_path(self):
         if self.path is None:
             return None
     
-        reversePath = list()
+        reverse_path = list()
         self.path.reverse()
     
         for it in self.path:
-            reversePath.add(it.next())
+            reverse_path.add(it.next())
     
-        return reversePath
+        return reverse_path
     
     def extend_path(self, abs, path_config=None):
         if abs is None:
@@ -80,31 +80,31 @@ class SourceContextAndPath:
         if abs.getCorrespondingCallSite() is not None and abs.getCorrespondingCallSite() != abs.getCurrentStmt():
             if scap is None:
                 scap = deepcopy(self)
-            if scap.callStack is None:
-                scap.callStack = list()
-            elif path_config is not None and 0 < path_config.max_callstack_size() <= len( scap.callStack ):
+            if scap.call_stack is None:
+                scap.call_stack = list()
+            elif path_config is not None and 0 < path_config.max_callstack_size() <= len( scap.call_stack ):
                 return None
-            scap.callStack.add( abs.getCorrespondingCallSite() )
+            scap.call_stack.add( abs.getCorrespondingCallSite() )
     
-        self.neighborCounter = 0 if abs.getNeighbors() is None else abs.getNeighbors().size()
+        self.neighbor_counter = 0 if abs.getNeighbors() is None else abs.getNeighbors().size()
         return self if scap is None else scap
 
-    def popTopCallStackItem(self):
-        if self.callStack is None or self.callStack.isEmpty():
+    def pop_top_call_stack_item(self):
+        if self.call_stack is None or self.call_stack.is_empty():
             return None
 
         scap = copy(self)
-        lastStmt = None
-        c = scap.callStack.removeLast()
+        last_stmt = None
+        c = scap.call_stack.removeLast()
         if isinstance(c, ExtensibleList):
-            lastStmt = scap.callStack.getLast()
-            scap.callStack = c
+            last_stmt = scap.call_stack.getLast()
+            scap.call_stack = c
         else:
-            lastStmt = c
+            last_stmt = c
     
-        if scap.callStack.isEmpty():
-            scap.callStack = None
-        return set(scap, lastStmt)
+        if scap.call_stack.is_empty():
+            scap.call_stack = None
+        return set(scap, last_stmt)
     
 
     """

@@ -10,6 +10,7 @@ class ContextInsensitivePathBuilder:
         self.results = InfoflowResults()
         self.notification_listeners = set()
         self.kill_flag = None
+        self.path_config = None
 
     def compute_taint_paths(self, res):
         if res is None or res.isEmpty():
@@ -25,18 +26,19 @@ class ContextInsensitivePathBuilder:
 
             cur_res_idx += 1
             logger.info("Building path %d..." % cur_res_idx)
-            task = self.getTaintPathTask( abs )
+            task = self.get_taint_path_task( abs )
             if task is not None:
                 executor.execute( task )
 
-            if self.triggerComputationForNeighbors() and abs.getAbstraction().getNeighbors() is not None:
+            if self.trigger_computation_for_neighbors() and abs.getAbstraction().getNeighbors() is not None:
                 for neighbor in abs.getAbstraction().getNeighbors():
                     neighbor_at_sink = AbstractionAtSink( abs.getSinkDefinition(), neighbor, abs.getSinkStmt() )
-                    task = self.getTaintPathTask( neighbor_at_sink )
+                    task = self.get_taint_path_task( neighbor_at_sink )
+
                     if task is not None:
                         executor.execute( task )
 
-            if pathConfig.getSequentialPathProcessing():
+            if self.path_config.getSequentialPathProcessing():
                 try:
                     executor.awaitCompletion()
                     executor.reset()
@@ -46,74 +48,74 @@ class ContextInsensitivePathBuilder:
         for listener in notificationListeners:
             listener.notifySolverTerminated( self )
 
-    def SourceFindingTask(self, abstraction):
+    def source_finding_task(self, abstraction):
         paths = self.path_cache.get( abstraction )
         pred = abstraction.getPredecessor()
 
         if pred is not None:
             for scap in paths:
-                if self.processPredecessor( scap, pred ):
+                if self.process_predecessor( scap, pred ):
                     if not isKilled():
-                        self.SourceFindingTask( neighbor )
+                        self.source_finding_task( neighbor )
 
                 if pred.getNeighbors() is not None:
                     for neighbor in pred.getNeighbors():
-                        if self.processPredecessor( scap, neighbor ):
+                        if self.process_predecessor( scap, neighbor ):
                             if not isKilled():
-                                self.SourceFindingTask( neighbor )
+                                self.source_finding_task( neighbor )
 
-    def processPredecessor(self, scap, pred):
-        extendedScap = scap.extend_path( pred, pathConfig )
-        if extendedScap == None:
+    def process_predecessor(self, scap, pred):
+        extended_scap = scap.extend_path( pred, self.path_config )
+        if extended_scap == None:
             return False
 
-        self.checkForSource( pred, extendedScap )
+        self.check_for_source( pred, extended_scap )
 
-        maxPaths = pathConfig.getMaxPathsPerAbstraction()
-        if maxPaths > 0:
-            existingPaths = self.path_cache.get( pred )
-            if existingPaths is not None and existingPaths.size() > maxPaths:
+        max_paths = self.path_config.getMaxPathsPerAbstraction()
+        if max_paths > 0:
+            existing_paths = self.path_cache.get( pred )
+            if existing_paths is not None and existing_paths.size() > max_paths:
                 return False
 
-        return self.path_cache.put( pred, extendedScap )
+        return self.path_cache.put( pred, extended_scap )
 
-    def checkForSource(self, abs, scap):
+    def check_for_source(self, abs, scap):
         if abs.getPredecessor() is not None:
             return False
 
         assert abs.getSourceContext() is not None
         assert abs.getNeighbors() == None
 
-        sourceContext = abs.getSourceContext()
-        results.addResult( scap.getDefinition(), scap.getAccessPath(), scap.getStmt(), sourceContext.getDefinition(),
-                           sourceContext.getAccessPath(), sourceContext.getStmt(), sourceContext.getUserData(),
-                           scap.getAbstractionPath() )
+        source_context = abs.getSourceContext()
+        results.addResult( scap.getDefinition(), scap.getAccessPath(), scap.getStmt(), source_context.getDefinition(),
+                           source_context.getAccessPath(), source_context.getStmt(), source_context.getUserData(),
+                           scap.get_abstraction_path() )
         return True
 
-    def getTaintPathTask(self, abs):
+    def get_taint_path_task(self, abs):
         scap = SourceContextAndPath( abs.getSinkDefinition(),
                                      abs.getAbstraction().getAccessPath(), abs.getSinkStmt() )
-        scap = scap.extend_path( abs.getAbstraction(), pathConfig )
+        scap = scap.extend_path( abs.getAbstraction(), self.path_config )
         if self.path_cache.put( abs.getAbstraction(), scap ):
-            if not self.checkForSource( abs.getAbstraction(), scap ):
-                return self.SourceFindingTask( abs.getAbstraction() )
+            if not self.check_for_source( abs.getAbstraction(), scap ):
+                return self.source_finding_task( abs.getAbstraction() )
         return None
 
-    def triggerComputationForNeighbors(self):
+    def trigger_computation_for_neighbors(self):
         return True
 
-    def runIncrementalPathCompuation(self):
-        incrementalAbs = set()
+    def run_incremental_path_compuation(self):
+        incremental_abs = set()
         for abs in self.path_cache.keySet():
             for scap in self.path_cache.get( abs ):
                 if abs.getNeighbors() is not None and abs.getNeighbors().size() is not scap.getNeighborCounter():
                     scap.setNeighborCounter( abs.getNeighbors().size() )
 
                     for neighbor in abs.getNeighbors():
-                        incrementalAbs.add( AbstractionAtSink( scap.getDefinition(), neighbor, scap.getStmt() ) )
+                        incremental_abs.add( AbstractionAtSink( scap.getDefinition(), neighbor, scap.getStmt() ) )
 
-        if len( incrementalAbs.isEmpty() ) > 0:
-            self.compute_taint_paths( incrementalAbs )
+        if len( incremental_abs.isEmpty() ) > 0:
+            self.compute_taint_paths( incremental_abs )
 
 
 
