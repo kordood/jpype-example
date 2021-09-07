@@ -76,8 +76,8 @@ class IFDSSolver:
     def propagate(self, source_val, target, target_val, related_call_site, is_unbalanced_return):
         # Set val to memory manager
         if self.memory_manager is not None:
-            source_val = self.memory_manager.handleMemoryObject(source_val)
-            target_val = self.memory_manager.handleMemoryObject(target_val)
+            source_val = self.memory_manager.handle_memory_object( source_val )
+            target_val = self.memory_manager.handle_memory_object( target_val )
             if target_val is None:
                 return
 
@@ -95,7 +95,7 @@ class IFDSSolver:
                 if self.memory_manager is None:
                     is_essential = related_call_site is not None and self.icfg.is_call_stmt(related_call_site)
                 else:
-                    is_essential = self.memory_manager.isEssentialJoinPoint(target_val, related_call_site)
+                    is_essential = self.memory_manager.is_essential_join_point( target_val, related_call_site )
 
                 if self.max_join_point_abstractions < 0 \
                     or existing_val.get_neighbor_count() < self.max_join_point_abstractions \
@@ -164,7 +164,7 @@ class IFDSSolver:
                         start_points_of = self.icfg.getStartPointsOf(s_called_proc_n)
                         for d3 in result:
                             if self.memory_manager is not None:
-                                d3 = self.memory_manager.handleGeneratedMemoryObject(d2, d3)
+                                d3 = self.memory_manager.handle_generated_memory_object( d2, d3 )
                             if d3 is None:
                                 continue
 
@@ -183,7 +183,7 @@ class IFDSSolver:
             if result is not None and not result.is_empty():
                 for d3 in result:
                     if self.memory_manager is not None:
-                        d3 = self.memory_manager.handleGeneratedMemoryObject(d2, d3)
+                        d3 = self.memory_manager.handle_generated_memory_object( d2, d3 )
                     if d3 is not None:
                         self.propagate(d1, return_site_n, d3, n, False)
 
@@ -207,7 +207,7 @@ class IFDSSolver:
                     if ret_flow_result is not None and not ret_flow_result.is_empty():
                         for d5 in ret_flow_result:
                             if self.memory_manager is not None:
-                                d5 = self.memory_manager.handleGeneratedMemoryObject(d4, d5)
+                                d5 = self.memory_manager.handle_generated_memory_object( d4, d5 )
 
                             d5p = d5
                             if self.shortening_mode == AlwaysShorten:
@@ -258,7 +258,7 @@ class IFDSSolver:
 
                             for d5 in targets:
                                 if self.memory_manager is not None:
-                                    d5 = self.memory_manager.handleGeneratedMemoryObject(d2, d5)
+                                    d5 = self.memory_manager.handle_generated_memory_object( d2, d5 )
                                 if d5 is None:
                                     continue
                                 d5p = d5
@@ -284,7 +284,7 @@ class IFDSSolver:
                     if targets is not None and not targets.is_empty():
                         for d5 in targets:
                             if self.memory_manager is not None:
-                                d5 = self.memory_manager.handleGeneratedMemoryObject(d2, d5)
+                                d5 = self.memory_manager.handle_generated_memory_object( d2, d5 )
                             if d5 is not None:
                                 self.propagate(self.zero_value, ret_site_c, d5, c, True)
 
@@ -308,7 +308,7 @@ class IFDSSolver:
             if res is not None and not res.is_empty():
                 for d3 in res:
                     if self.memory_manager is not None and d2 != d3:
-                        d3 = self.memory_manager.handleGeneratedMemoryObject(d2, d3)
+                        d3 = self.memory_manager.handle_generated_memory_object( d2, d3 )
                     if d3 is not None:
                         self.propagate(d1, m, d3, None, False)
 

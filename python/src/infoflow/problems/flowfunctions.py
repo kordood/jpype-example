@@ -46,7 +46,7 @@ class FlowFunctions:
         if not source.getAccessPath().is_empty():
             if isinstance(left_value, ArrayRef and target_type is not None):
                 array_ref = left_value
-                target_type = TypeUtils.buildArrayOrAddDimension(target_type, array_ref.getType().getArrayType())
+                target_type = TypeUtils.build_array_or_add_dimension( target_type, array_ref.getType().getArrayType() )
 
             if isinstance(right_value, CastExpr):
                 cast = assign_stmt.getRightOp()
@@ -175,7 +175,7 @@ class FlowFunctions:
 
         if not new_source.is_abstraction_active() \
                 and isinstance(assign_stmt.getLeftOp().getType(), PrimType) \
-                or TypeUtils.isStringType(assign_stmt.getLeftOp().getType()) \
+                or TypeUtils.is_string_type( assign_stmt.getLeftOp().getType() ) \
                 and not new_source.getAccessPath().getCanHaveImmutableAliases():
             return Collections.singleton(new_source)
 
@@ -286,7 +286,7 @@ class FlowFunctions:
 
         if base_local is not None:
             if aliasing.mayAlias(base_local, ap.getPlainValue()):
-                if self.manager.getTypeUtils().hasCompatibleTypesForCall(ap, callee.getDeclaringClass()):
+                if self.manager.getTypeUtils().has_compatible_types_for_call( ap, callee.getDeclaringClass() ):
                     if res is None:
                         res = HashSet()
 

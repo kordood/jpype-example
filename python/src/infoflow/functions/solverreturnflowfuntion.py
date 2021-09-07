@@ -99,13 +99,13 @@ class SolverReturnFlowFunction(FlowFunction):
                     if not AccessPath.can_contain_value( original_call_arg ):
                         continue
                     if not self.is_reflective_call_site \
-                            and not self.manager.getTypeUtils().checkCast(source.getAccessPath(),
-                                                                           original_call_arg.getType()):
+                            and not self.manager.getTypeUtils().check_cast( source.getAccessPath(),
+                                                                            original_call_arg.getType() ):
                         continue
 
                     if isinstance(source.getAccessPath().getBaseType(), PrimType):
                         continue
-                    if TypeUtils.isStringType(source.getAccessPath().getBaseType()) \
+                    if TypeUtils.is_string_type( source.getAccessPath().getBaseType() ) \
                             and not source.getAccessPath().getCanHaveImmutableAliases():
                         continue
 
@@ -135,7 +135,7 @@ class SolverReturnFlowFunction(FlowFunction):
                     and isinstance(self.i_call_stmt.getInvokeExpr(), InstanceInvokeExpr) \
                     and self.aliasing.mayAlias(self.this_local, source_base):
 
-                if self.manager.getTypeUtils().checkCast(source.getAccessPath(), self.this_local.getType()):
+                if self.manager.getTypeUtils().check_cast( source.getAccessPath(), self.this_local.getType() ):
                     i_i_expr = self.i_call_stmt.getInvokeExpr()
 
                     caller_base_local = i_i_expr.getArg(0) \

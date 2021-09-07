@@ -10,7 +10,9 @@ from .globaltaints.globaltaintmanager import GlobalTaintManager
 from .problems.infoflowproblems import InfoflowProblem
 from .problems.rules.propagationrulemanager import PropagationRuleManager
 from .solver.ifdssolversingle import IFDSSolver
-from .data.pathbuilders.contextinsensitivepathbulder import ContextInsensitivePathBuilder as DefaultPathBuilderFactory
+from .solver.memory.defaultmemorymanagerfactory import DefaultMemoryManagerFactory
+from .data.pathbuilders.contextinsensitivepathbulder import ContextInsensitivePathBuilder as DefaultPathBuilder
+
 
 logger = logging.getLogger(__file__)
 
@@ -27,9 +29,9 @@ class Infoflow:
         self.collected_sinks = set()
         self.manager = None
         self.dummy_main_method = None
-        self.path_builder_factory = DefaultPathBuilderFactory()
+        self.memory_manager_factory = DefaultMemoryManagerFactory()
 
-    """def create_memory_manager(self):
+    def create_memory_manager(self):
         if self.config.getPathConfiguration().must_keep_statements():
             erasure_mode = PathDataErasureMode.EraseNothing
         elif pathBuilderFactory.supportsPathReconstruction():
@@ -38,8 +40,8 @@ class Infoflow:
             erasure_mode = PathDataErasureMode.KeepOnlyContextData
         else:
             erasure_mode = PathDataErasureMode.EraseAll
-        memory_manager = memoryManagerFactory.getMemoryManager(False, erasure_mode)
-        return memory_manager"""
+        memory_manager = self.memory_manager_factory.get_memory_manager(False, erasure_mode)
+        return memory_manager
 
     def create_forward_solver(self, forward_problem):
         solver_config = self.config.getSolverself.configuration()
@@ -56,7 +58,7 @@ class Infoflow:
         return InfoflowManager(self.config, None, i_cfg, sources_sinks, self.taint_wrapper, self.hierarchy,
                                AccessPathFactory(self.config), global_taint_manager)
 
-    def run_taint_analysis(self, sources_sinks, additional_seeds, i_cfg, performance_data):
+    def run_taint_analysis(self, sources_sinks, additional_seeds, i_cfg, performance_data=None):
 
         has_more_sources = sources_sinks[1:]
 
@@ -79,7 +81,7 @@ class Infoflow:
             """
 
             forward_problem = InfoflowProblem(self.manager, zero_value, PropagationRuleManager(self.manager, zero_value,
-                                                                                          self.results))
+                                                                                               self.results))
 
             forward_solver = self.create_forward_solver(forward_problem)
 
@@ -109,7 +111,7 @@ class Infoflow:
                         continue
 
                     forward_problem.addInitialSeeds(m.getActiveBody().getUnits().getFirst(),
-                            Collections.singleton(forward_problem.zeroValue()))
+                                                    [forward_problem.zeroValue()])
 
             if not forward_problem.hasInitialSeeds():
                 logger.error("No sources found, aborting analysis")
@@ -120,7 +122,7 @@ class Infoflow:
                 continue
 
             logger.info("Source lookup done, found { sources and { sinks.",
-                    forward_problem.getInitialSeeds().size(), sink_count)
+                        forward_problem.getInitialSeeds().size(), sink_count)
 
             if taint_wrapper is not None:
                 taint_wrapper.initialize(self.manager)
@@ -130,7 +132,7 @@ class Infoflow:
 
             propagation_results = forward_problem.getResults()
 
-            builder = createPathBuilder()
+            builder = DefaultPathBuilder()
 
             forward_solver.solve()
 
@@ -146,20 +148,20 @@ class Infoflow:
                 builder.compute_taint_paths( res )
                 res = None
 
-                self.results.add_all(builder.get_results())
+                self.results.add_all(builder.results())
 
             has_more_sources = has_more_sources[1:]
 
         for handler in self.postProcessors:
-            results = handler.onResultsAvailable(results, i_cfg)
+            self.results = handler.onResultsAvailable(self.results, i_cfg)
 
-        if results is None or results.is_empty():
+        if self.results is None or len(self.results) <= 0:
             logger.warn("No results found.")
         elif logger.is_info_enabled():
-            for sink in results.get_results().keySet():
+            for sink in self.results.get_results().keySet():
                 logger.info("The sink { in method { was called with values from the following sources:", sink,
                             i_cfg.getMethodOf(sink.getStmt()).getSignature())
-                for source in results.get_results().get( sink ):
+                for source in self.results.get_results().get( sink ):
                     logger.info("- { in method {", source, i_cfg.getMethodOf(source.getStmt()).getSignature())
                     if source.get_path() is not None:
                         logger.info("\ton Path: ")

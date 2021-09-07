@@ -14,20 +14,25 @@ from soot.jimple.StaticFieldRef import StaticFieldRef
 import logging
 
 from .accesspath import *
+from ..util.typeutils import TypeUtils
 
 logger = logging.getLogger(__file__)
 
 
 class AccessPathFactory:
 
-    def __init__(self, fields, types, config=None):
-        self.fields = fields
-        self.types = types
+    def __init__(self, config=None):
         self.config = config
         self.baseRegister = set()
 
-        if fields is None or len(fields) == 0:
-            raise RuntimeError("A base must contain at least one field")
+    class BasePair:
+
+        def __init__(self, fields, types):
+            self.fields = fields
+            self.types = types
+
+            if fields is None or len(fields) == 0:
+                raise RuntimeError("A base must contain at least one field")
 
     def create_access_path(self, val, taint_sub_fields, appending_fields=None, val_type=None, appending_field_types=None,
                            cut_first_field=False, reduce_bases=True, array_taint_type=ArrayTaintType.ContentsAndLength,
@@ -122,23 +127,23 @@ class AccessPathFactory:
 
         if self.config.enable_type_checking:
             if value is not None and value.type != base_type:
-                base_type = TypeUtils.getMorePreciseType(base_type, value.type)
+                base_type = TypeUtils.get_more_precise_type( base_type, value.type )
                 if base_type is None:
                     return None
 
                 if fields is not None and len(fields) > 0 and not isinstance(base_type, ArrayType):
-                    base_type = TypeUtils.getMorePreciseType(base_type, fields[0].getDeclaringClass().type)
+                    base_type = TypeUtils.get_more_precise_type( base_type, fields[0].getDeclaringClass().type )
                 if base_type is None:
                     return None
             if fields is not None and field_types is not None:
                 for i in range(0, len(fields)):
-                    field_types[i] = TypeUtils.getMorePreciseType(field_types[i], fields[i].type)
+                    field_types[i] = TypeUtils.get_more_precise_type( field_types[i], fields[i].type )
                     if field_types[i] is None:
                         return None
 
                     if len(fields) > i + 1 and not isinstance(field_types[i], ArrayType):
-                        field_types[i] = TypeUtils.getMorePreciseType(field_types[i],
-                                                                      fields[i + 1].getDeclaringClass().type)
+                        field_types[i] = TypeUtils.get_more_precise_type( field_types[i],
+                                                                          fields[i + 1].getDeclaringClass().type )
                     if field_types[i] is None:
                         return None
 
@@ -227,10 +232,10 @@ class AccessPathFactory:
             field_types = None
 
         assert value is None or not (not isinstance(base_type, ArrayType) \
-                                     and not TypeUtils.isObjectLikeType(base_type) \
+                                     and not TypeUtils.is_object_like_type( base_type ) \
                                      and isinstance(value.type, ArrayType))
         assert value is None or not isinstance(base_type, ArrayType) and not isinstance(value.type, ArrayType) \
-               and not TypeUtils.isObjectLikeType(value.type) , "mismatch. was " + str(base_type) + ", value was: " + str(value.type)
+               and not TypeUtils.is_object_like_type( value.type ) , "mismatch. was " + str( base_type ) + ", value was: " + str( value.type )
 
         if (fields is None and field_types is not None) or (fields is not None and field_types is None):
             raise RuntimeError("When there are fields, there must be field types and vice versa")
@@ -265,7 +270,7 @@ class AccessPathFactory:
                 break
 
         bases = self.baseRegister.put_if_absent_else_get(ei_type, set())
-        bases.extend((base, base_types))
+        bases.append(self.BasePair(base, base_types))
 
     def copy_with_new_value(self, original, val, new_type=None, cut_first_field=False,
                             reduce_bases=True, array_taint_type=None):
@@ -303,4 +308,4 @@ class AccessPathFactory:
             field_types = ap_field_types[offset:offset + len(ap_field_types)]
 
         return self.create_access_path(original.val, fields, original.baseType, field_types, taint_sub_fields, False,
-                                        True, original.arrayTaintType)
+                                       True, original.arrayTaintType)
