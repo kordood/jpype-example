@@ -2,6 +2,7 @@ from copy import copy
 
 from .sourcecontext import SourceContext
 from .accesspath import AccessPath
+from ..infoflowconfiguration import InfoflowConfiguration
 
 
 class Abstraction:
@@ -241,7 +242,7 @@ class Abstraction:
         return self.local_equals( other )
 
     def add_neighbor(self, original_abstraction):
-        InfoflowConfiguration_getMergeNeighbors = False
+        InfoflowConfiguration.mergeNeighbors = False
         if original_abstraction == self:
             return False
 
@@ -252,7 +253,7 @@ class Abstraction:
 
         if self.neighbors is None:
             self.neighbors = set()
-        elif InfoflowConfiguration_getMergeNeighbors:
+        elif InfoflowConfiguration.mergeNeighbors:
             for nb in self.neighbors:
                 if nb == original_abstraction:
                     return False

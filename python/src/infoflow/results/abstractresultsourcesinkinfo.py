@@ -1,4 +1,4 @@
-from infoflowconfiguration import InfoflowConfiguration
+from ..infoflowconfiguration import InfoflowConfiguration
 
 
 class AbstractResultSourceSinkInfo:
@@ -19,7 +19,7 @@ class AbstractResultSourceSinkInfo:
             return False
 
         si = o
-        if InfoflowConfiguration.getOneResultPerAccessPath() and not self.access_path.equals(si.access_path):
+        if InfoflowConfiguration.oneResultPerAccessPath and not self.access_path.equals(si.access_path):
             return False
 
         if self.definition is None:
