@@ -3,11 +3,14 @@ import time
 
 import PathDataErasureMode, pathBuilderFactory
 
-from .infoflow.util.systemclasshandler import SystemClassHandler
-from .infoflow.globaltaints.globaltaintmanager import GlobalTaintManager
-from .infoflow.problems.infoflowproblems import InfoflowProblem
-from .infoflow.problems.rules.propagationrulemanager import PropagationRuleManager
-from .infoflow.solver.ifdssolversingle import IFDSSolver
+from .infoflowmanager import InfoflowManager
+from .data.accesspathfactory import AccessPathFactory
+from .util.systemclasshandler import SystemClassHandler
+from .globaltaints.globaltaintmanager import GlobalTaintManager
+from .problems.infoflowproblems import InfoflowProblem
+from .problems.rules.propagationrulemanager import PropagationRuleManager
+from .solver.ifdssolversingle import IFDSSolver
+from .data.pathbuilders.contextinsensitivepathbulder import ContextInsensitivePathBuilder as DefaultPathBuilderFactory
 
 logger = logging.getLogger(__file__)
 
@@ -17,13 +20,16 @@ class Infoflow:
     def __init__(self, config):
         self.config = config
         self.results = None
+        self.taint_wrapper = None
+        self.hierarchy = None
 
         self.collected_sources = set()
         self.collected_sinks = set()
         self.manager = None
         self.dummy_main_method = None
+        self.path_builder_factory = DefaultPathBuilderFactory()
 
-    def create_memory_manager(self):
+    """def create_memory_manager(self):
         if self.config.getPathConfiguration().must_keep_statements():
             erasure_mode = PathDataErasureMode.EraseNothing
         elif pathBuilderFactory.supportsPathReconstruction():
@@ -33,7 +39,7 @@ class Infoflow:
         else:
             erasure_mode = PathDataErasureMode.EraseAll
         memory_manager = memoryManagerFactory.getMemoryManager(False, erasure_mode)
-        return memory_manager
+        return memory_manager"""
 
     def create_forward_solver(self, forward_problem):
         solver_config = self.config.getSolverself.configuration()
@@ -47,10 +53,11 @@ class Infoflow:
         return forward_solver
 
     def initialize_infoflow_manager(self, sources_sinks, i_cfg, global_taint_manager):
-        return InfoflowManager(self.config, None, i_cfg, sources_sinks, taint_wrapper, hierarchy,
+        return InfoflowManager(self.config, None, i_cfg, sources_sinks, self.taint_wrapper, self.hierarchy,
                                AccessPathFactory(self.config), global_taint_manager)
 
     def run_taint_analysis(self, sources_sinks, additional_seeds, i_cfg, performance_data):
+
         has_more_sources = sources_sinks[1:]
 
         while has_more_sources:

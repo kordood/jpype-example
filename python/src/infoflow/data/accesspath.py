@@ -26,7 +26,8 @@ class AccessPath:
         self.zeroAccessPath = None
         self.emptyAccessPath = AccessPath()
 
-    def can_contain_value(self, val):
+    @staticmethod
+    def can_contain_value(val):
         if val is None:
             return False
 

@@ -52,7 +52,7 @@ class FlowFunctions:
                 cast = assign_stmt.getRightOp()
                 target_type = cast.getType()
             elif isinstance(right_value, InstanceOfExpr):
-                new_abs = source.derive_new_abstraction(self.manager.getAccessPathFactory().createAccessPath(
+                new_abs = source.derive_new_abstraction(self.manager.getAccessPathFactory().create_access_path(
                     left_value, BooleanType.v(), True, ArrayTaintType.ContentsAndLength), assign_stmt)
         else:
             assert target_type is None
@@ -64,14 +64,14 @@ class FlowFunctions:
         if new_abs is None:
             if source.getAccessPath().is_empty():
                 new_abs = source.derive_new_abstraction(
-                        self.manager.getAccessPathFactory().createAccessPath(left_value, True), assign_stmt, True)
+                        self.manager.getAccessPathFactory().create_access_path( left_value, True ), assign_stmt, True)
             else:
-                ap = self.manager.getAccessPathFactory().copyWithNewValue(source.getAccessPath(),
-                                                                                    left_value,
-                                                                                    target_type,
-                                                                                    cut_first_field,
-                                                                                    True,
-                                                                                    array_taint_type)
+                ap = self.manager.getAccessPathFactory().copy_with_new_value( source.getAccessPath(),
+                                                                              left_value,
+                                                                              target_type,
+                                                                              cut_first_field,
+                                                                              True,
+                                                                              array_taint_type )
                 new_abs = source.derive_new_abstraction( ap, assign_stmt )
 
         if new_abs is not None:
@@ -154,7 +154,7 @@ class FlowFunctions:
                             add_left_value = True
                             target_type = right_field.getType()
                             if (mapped_ap is None):
-                                mapped_ap = self.manager.getAccessPathFactory().createAccessPath(right_base, True)
+                                mapped_ap = self.manager.getAccessPathFactory().create_access_path( right_base, True )
                 elif isinstance(rightVal, Local) and new_source.getAccessPath().is_instance_field_ref():
                     base = new_source.getAccessPath().getPlainValue()
                     if aliasing.mayAlias(rightVal, base):
@@ -293,13 +293,13 @@ class FlowFunctions:
                     if this_local is None:
                         this_local = callee.getActiveBody().getThisLocal()
 
-                    res.add( self.manager.getAccessPathFactory().copyWithNewValue( ap, this_local ) )
+                    res.add( self.manager.getAccessPathFactory().copy_with_new_value( ap, this_local ) )
 
         if is_executor_execute:
             if aliasing.mayAlias(ie.getArg(0), ap.getPlainValue()):
                 if res is None:
                     res = HashSet()
-                res.add(self.manager.getAccessPathFactory().copyWithNewValue(ap, callee.getActiveBody().getThisLocal()))
+                res.add( self.manager.getAccessPathFactory().copy_with_new_value( ap, callee.getActiveBody().getThisLocal() ) )
         elif callee.getParameterCount() > 0:
             is_reflective_call_site = self.interprocedural_cfg().is_reflective_call_site(ie)
 
@@ -313,11 +313,11 @@ class FlowFunctions:
 
                     if is_reflective_call_site:
                         for j in range( param_locals.length ):
-                            new_ap = self.manager.getAccessPathFactory().copyWithNewValue( ap, param_locals[j], None, False )
+                            new_ap = self.manager.getAccessPathFactory().copy_with_new_value( ap, param_locals[j], None, False )
                             if new_ap is not None:
                                 res.add(new_ap)
                     else:
-                        new_ap = self.manager.getAccessPathFactory().copyWithNewValue( ap, param_locals[i] )
+                        new_ap = self.manager.getAccessPathFactory().copy_with_new_value( ap, param_locals[i] )
                         if new_ap is not None:
                             res.add(new_ap)
         return res

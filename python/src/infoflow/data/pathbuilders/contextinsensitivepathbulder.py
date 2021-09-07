@@ -2,6 +2,7 @@ import logging
 
 from ..abstractionatsink import AbstractionAtSink
 from ..sourcecontextandpath import SourceContextAndPath
+from ...results.infoflowresults import InfoflowResults
 
 logger = logging.getLogger(__file__)
 
@@ -35,9 +36,6 @@ class ContextInsensitivePathBuilder:
                 for neighbor in abs.abstraction.neighbors:
                     neighbor_at_sink = AbstractionAtSink(abs.sinkDefinition, neighbor, abs.sinkStmt)
                     self.get_taint_path_task(neighbor_at_sink)
-
-        for listener in notificationListeners:
-            listener.notifySolverTerminated(self)
 
     def source_finding_task(self, abstraction):
         paths = self.path_cache.get(abstraction)

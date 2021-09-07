@@ -71,7 +71,7 @@ class SolverReturnFlowFunction(FlowFunction):
 
                 if self.aliasing.mayAlias(ret_local, new_source.getAccessPath().getPlainValue()) \
                         and not self.isExceptionHandler(self.retSite):
-                    ap = self.manager.getAccessPathFactory().copyWithNewValue(new_source.getAccessPath(), left_op)
+                    ap = self.manager.getAccessPathFactory().copy_with_new_value( new_source.getAccessPath(), left_op )
                     abs = new_source.deriveNewAbstraction(ap, self.exit_stmt)
                     if abs is not None:
                         res.add(abs)
@@ -115,7 +115,7 @@ class SolverReturnFlowFunction(FlowFunction):
                     if self.interprocedural_cfg().methodWritesValue(self.callee, self.paramLocals[i]):
                         continue
 
-                    ap = self.manager.getAccessPathFactory().copyWithNewValue(
+                    ap = self.manager.getAccessPathFactory().copy_with_new_value(
                         new_source.getAccessPath(), original_call_arg,
                         None if self.is_reflective_call_site else new_source.getAccessPath().getBaseType(),
                         False)
@@ -140,7 +140,7 @@ class SolverReturnFlowFunction(FlowFunction):
 
                     caller_base_local = i_i_expr.getArg(0) \
                         if self.interprocedural_cfg().is_reflective_call_site(i_i_expr) else i_i_expr.getBase()
-                    ap = self.manager.getAccessPathFactory().copyWithNewValue(
+                    ap = self.manager.getAccessPathFactory().copy_with_new_value(
                         new_source.getAccessPath(), caller_base_local,
                         None if self.is_reflective_call_site else new_source.getAccessPath().getBaseType(),
                         False)
