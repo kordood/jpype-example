@@ -24,7 +24,7 @@ class Infoflow:
         self.dummy_main_method = None
 
     def create_memory_manager(self):
-        if self.config.getPathConfiguration().mustKeepStatements():
+        if self.config.getPathConfiguration().must_keep_statements():
             erasure_mode = PathDataErasureMode.EraseNothing
         elif pathBuilderFactory.supportsPathReconstruction():
             erasure_mode = PathDataErasureMode.EraseNothing

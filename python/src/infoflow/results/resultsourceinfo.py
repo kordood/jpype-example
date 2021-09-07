@@ -14,7 +14,7 @@ class ResultSourceInfo(AbstractResultSourceSinkInfo):
         if self == obj:
             return True
         other = obj
-        if not InfoflowConfiguration.pathAgnosticResults:
+        if not InfoflowConfiguration().pathAgnosticResults:
             if self.path != other.path:
                 return False
             if self.path_aps != other.path_aps:

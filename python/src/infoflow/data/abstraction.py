@@ -242,7 +242,7 @@ class Abstraction:
         return self.local_equals( other )
 
     def add_neighbor(self, original_abstraction):
-        InfoflowConfiguration.mergeNeighbors = False
+        InfoflowConfiguration().mergeNeighbors = False
         if original_abstraction == self:
             return False
 
@@ -253,7 +253,7 @@ class Abstraction:
 
         if self.neighbors is None:
             self.neighbors = set()
-        elif InfoflowConfiguration.mergeNeighbors:
+        elif InfoflowConfiguration().mergeNeighbors:
             for nb in self.neighbors:
                 if nb == original_abstraction:
                     return False
