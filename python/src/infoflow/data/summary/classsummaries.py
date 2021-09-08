@@ -1,6 +1,6 @@
 from .immutableclasssummaries import ImmutableClassSummaries
-import ClassMethodSummaries
-import MethodSummaries
+from .classmethodsummaries import ClassMethodSummaries
+from .methodsummaries import MethodSummaries
 from .summarymetadata import SummaryMetaData
 
 
@@ -10,115 +10,113 @@ class ClassSummaries:
     def __init__(self):
         self.summaries = dict()
         self.dependencies = list()
-        self.metaData = None
+        self.meta_data = None
 
-    def getClassSummaries(self, className):
-        return self.summaries.get( className )
+    def get_class_summaries(self, class_name):
+        return self.summaries.get(class_name)
 
-    def getOrCreateClassSummaries(self, className):
-        return self.summaries.setdefault( className, ClassMethodSummaries( className ) )
+    def get_or_create_class_summaries(self, class_name):
+        return self.summaries.setdefault(class_name, ClassMethodSummaries(class_name))
 
-    def getMethodSummaries(self, className):
-        cms = self.summaries.get( className )
+    def get_method_summaries(self, class_name):
+        cms = self.summaries.get(class_name)
         if cms is None:
             return None
 
         return cms.getMethodSummaries()
 
-    def getAllSummaries(self):
+    def get_all_summaries(self):
         return self.summaries.values()
 
-    def getAllMethodSummaries(self):
-        return [v.getMethodSummaries() for v in self.summaries.values()]
+    def get_all_method_summaries(self):
+        return [v.get_method_summaries() for v in self.summaries.values()]
 
-    def getAllFlowsForMethod(self, signature):
+    def get_all_flows_for_method(self, signature):
         flows = set()
-        for className in self.summaries.keys():
-            classSummaries = self.summaries.get( className )
-            if classSummaries is not None:
-                methodFlows = classSummaries.getMethodSummaries().get_flows_for_method( signature )
-                if methodFlows is not None and not len( methodFlows ) != 0:
-                    flows.update( methodFlows )
+        for class_name in self.summaries.keys():
+            class_summaries = self.summaries.get(class_name)
+            if class_summaries is not None:
+                method_flows = class_summaries.getMethodSummaries().get_flows_for_method(signature)
+                if method_flows is not None and not len(method_flows) != 0:
+                    flows.update(method_flows)
 
         return flows
 
-    def getAllSummariesForMethod(self, signature):
+    def get_all_summaries_for_method(self, signature):
         summaries = MethodSummaries()
-        for className in self.summaries.keys():
-            classSummaries = self.summaries.get( className )
-            if classSummaries is not None:
-                summaries.merge( classSummaries.getMethodSummaries().filter_for_method( signature ) )
+        for class_name in self.summaries.keys():
+            class_summaries = self.summaries.get(class_name)
+            if class_summaries is not None:
+                summaries.merge(class_summaries.getMethodSummaries().filter_for_method(signature))
 
         return summaries
 
-    def getAllFlows(self):
-        return [cs.getMethodSummaries().get_all_flows() for cs in self.summaries.values()]
+    def get_all_flows(self):
+        return [cs.get_method_summaries().get_all_flows() for cs in self.summaries.values()]
 
-    def filterForMethod(self, signature, classes=None):
+    def filter_for_method(self, signature, classes=None):
         assert signature is not None
 
         if classes is None:
             classes = self.summaries.keys()
 
-        newSummaries = ClassSummaries()
-        for className in classes:
-            methodSummaries = self.summaries.get( className )
-            if methodSummaries is not None and not len( methodSummaries ) != 0:
-                newSummaries.merge( methodSummaries.filterForMethod( signature ) )
+        new_summaries = ClassSummaries()
+        for class_name in classes:
+            method_summaries = self.summaries.get(class_name)
+            if method_summaries is not None and not len(method_summaries) != 0:
+                new_summaries.merge(method_summaries.filterForMethod(signature))
 
-        return newSummaries
+        return new_summaries
 
-    def merge(self, className, newSums):
-        if newSums is None or len( newSums ) != 0:
-            return
+    def merge(self, class_name=None, new_sums=None, summaries=None):
+        if summaries is None:
+            if new_sums is None or len(new_sums) != 0:
+                return
 
-        methodSummaries = self.summaries.get( className )
-        ms = newSums if isinstance(newSums, MethodSummaries) else MethodSummaries(newSums)
-        if methodSummaries is None:
-            methodSummaries = ClassMethodSummaries( className, ms )
-            self.summaries[className] = methodSummaries
+            method_summaries = self.summaries.get(class_name)
+            ms = new_sums if isinstance(new_sums, MethodSummaries) else MethodSummaries(new_sums)
+            if method_summaries is None:
+                method_summaries = ClassMethodSummaries(class_name, ms)
+                self.summaries[class_name] = method_summaries
+            else:
+                method_summaries.merge(ms)
         else:
-            methodSummaries.merge( ms )
+            if summaries is None or len(summaries) != 0:
+                return
 
-    def merge(self, summaries):
-        if summaries is None or len( summaries ) != 0:
-            return
+            if isinstance(summaries, ClassSummaries):
+                for class_name in summaries.get_classes():
+                    self.merge(summaries=summaries.get_class_summaries(class_name))
 
-        for className in summaries.getClasses():
-            self.merge( summaries.getClassSummaries( className ) )
+                if self.meta_data is not None:
+                    self.meta_data.merge(summaries.meta_data)
+                else:
+                    self.meta_data = SummaryMetaData(summaries.meta_data)
+            elif isinstance(summaries, ClassMethodSummaries):
+                existing_summaries = self.summaries.get(summaries.class_name)
+                if existing_summaries is None:
+                    self.summaries[summaries.class_name] = summaries
+                    return True
+                else:
+                    return existing_summaries.merge(summaries)
 
-        if self.metaData is not None:
-            self.metaData.merge( summaries.metaData )
-        else:
-            metaData = SummaryMetaData( summaries.metaData )
+    def is_empty(self):
+        return len(self.summaries) != 0
 
-    def merge(self, summaries):
-        if summaries is None or len( summaries ) != 0:
-            return False
-
-        existingSummaries = self.summaries.get( summaries.getClassName() )
-        if existingSummaries is None:
-            self.summaries[summaries.getClassName()] = summaries
-            return True
-        else:
-            return existingSummaries.merge( summaries )
-
-    def isEmpty(self):
-        return len( self.summaries ) != 0
-
-    def getClasses(self):
+    def get_classes(self):
         return self.summaries.keys()
 
-    def hasSummariesForClass(self, className):
-        return className in self.summaries
+    def has_summaries_for_class(self, class_name):
+        return class_name in self.summaries
 
-    def add_dependency(self, className):
-        if self.isPrimitiveType( className ) or className in self.summaries:
+    def add_dependency(self, class_name):
+        if self.is_primitive_type(class_name) or class_name in self.summaries:
             return False
-        return self.dependencies.append( className )
+        return self.dependencies.append(class_name)
 
-    def isPrimitiveType(self, typeName):
-        return typeName == "int" or typeName == "long" or typeName == "float" or typeName == "double" or typeName == "char" or typeName == "byte" or typeName == "short" or typeName == "boolean"
+    def is_primitive_type(self, type_name):
+        return type_name == "int" or type_name == "long" or type_name == "float" or type_name == "double" or \
+               type_name == "char" or type_name == "byte" or type_name == "short" or type_name == "boolean"
 
     def clear(self):
         if self.dependencies is not None:
@@ -127,8 +125,8 @@ class ClassSummaries:
             self.summaries.clear()
 
     def validate(self):
-        for className in self.summaries.keys():
-            self.summaries.get( className ).validate()
+        for class_name in self.summaries.keys():
+            self.summaries.get(class_name).validate()
 
     def equals(self, obj):
         if self == obj:
@@ -141,10 +139,10 @@ class ClassSummaries:
                 return False
         elif not self.dependencies == other.dependencies:
             return False
-        if self.metaData is None:
-            if other.metaData is not None:
+        if self.meta_data is None:
+            if other.meta_data is not None:
                 return False
-        elif not self.metaData == other.metaData:
+        elif not self.meta_data == other.meta_data:
             return False
         if self.summaries is None:
             if other.summaries is not None:

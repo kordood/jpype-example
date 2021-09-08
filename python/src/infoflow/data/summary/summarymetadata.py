@@ -37,7 +37,7 @@ class SummaryMetaData:
 
     def merge_hierarchy_data(self, summaries):
         for class_name in self.class_to_superclass.keys():
-            clazz_summaries = summaries.getOrCreateClassSummaries(class_name)
+            clazz_summaries = summaries.get_or_create_class_summaries( class_name )
             if not clazz_summaries.has_superclass():
                 clazz_summaries.set_superClass(self.class_to_superclass.get(class_name))
 

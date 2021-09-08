@@ -231,7 +231,7 @@ class SummaryTaintWrapper:
                                                             originalCallSite.getInvokeExpr().getMethod(), None )
 
             methodSig = originalCallSite.getInvokeExpr().getMethod().getSubSignature()
-            return flowsInCallee.getAllSummariesForMethod( methodSig )
+            return flowsInCallee.get_all_summaries_for_method( methodSig )
 
         def getOriginalCallSite(self, propagator):
             curProp = propagator
@@ -484,13 +484,13 @@ class SummaryTaintWrapper:
             return None
 
         res = None
-        for className in flowsInCallees.getClasses():
+        for className in flowsInCallees.get_classes():
 
-            classFlows = flowsInCallees.getClassSummaries( className )
+            classFlows = flowsInCallees.get_class_summaries( className )
             if classFlows is None or len( classFlows ) != 0:
                 continue
 
-            flowsInCallee = classFlows.getMethodSummaries()
+            flowsInCallee = classFlows.get_method_summaries()
             if flowsInCallee is None or len( flowsInCallee ) != 0:
                 continue
 
@@ -642,12 +642,12 @@ class SummaryTaintWrapper:
             flows = self.getFlowSummariesForMethod( None, gapMethod, None )
             if flows is not None and len( flows ) != 0:
                 summaries = MethodSummaries()
-                summaries.merge_summaries( flows.getAllMethodSummaries() )
+                summaries.merge_summaries( flows.get_all_method_summaries() )
                 return summaries
 
         smac = SootMethodRepresentationParser.v().parseSootMethodString( gap.getSignature() )
         cms = flows.getMethodFlows( smac.getClassName(), smac.getSubSignature() )
-        return None if cms is None else cms.getMethodSummaries()
+        return None if cms is None else cms.get_method_summaries()
 
     def getFlowSummariesForMethod(self, stmt, method, taintedAbs=None, classSupported):
         subsig = method.getSubSignature()
@@ -666,7 +666,7 @@ class SummaryTaintWrapper:
                             classSupported.value = True
                         if classSummaries is None:
                             classSummaries = ClassSummaries()
-                        classSummaries.merge( "<dummy>", flows.getMethodSummaries() )
+                        classSummaries.merge( "<dummy>", flows.get_method_summaries() )
 
         if classSummaries is None or len( classSummaries ) != 0:
             declaredClass = self.getSummaryDeclaringClass( stmt )
@@ -1138,16 +1138,16 @@ class SummaryTaintWrapper:
             return Collections.emptySet()
 
         res = None
-        for className in flowsInCallees.getClasses():
+        for className in flowsInCallees.get_classes():
             workList = list()
             for taint in taintsFromAP:
                 workList.add( AccessPathPropagator( taint, None, None, stmt, d1, taintedAbs, True ) )
 
-            classFlows = flowsInCallees.getClassSummaries( className )
+            classFlows = flowsInCallees.get_class_summaries( className )
             if classFlows is None:
                 continue
 
-            flowsInCallee = classFlows.getMethodSummaries()
+            flowsInCallee = classFlows.get_method_summaries()
             if flowsInCallee is None or len( flowsInCallee ) != 0:
                 continue
 
@@ -1196,16 +1196,16 @@ class SummaryTaintWrapper:
             return Collections.emptySet()
 
         res = None
-        for className in flowsInCallees.getClasses():
+        for className in flowsInCallees.get_classes():
             workList = ArrayList < AccessPathPropagator > ()
             for taint in taintsFromAP:
                 workList.add( AccessPathPropagator( taint, None, None, stmt, d1, taintedAbs, True ) )
 
-            classFlows = flowsInCallees.getClassSummaries( className )
+            classFlows = flowsInCallees.get_class_summaries( className )
             if classFlows is None:
                 continue
 
-            flowsInCallee = classFlows.getMethodSummaries()
+            flowsInCallee = classFlows.get_method_summaries()
             if flowsInCallee is None or len( flowsInCallee ) != 0:
                 continue
 
