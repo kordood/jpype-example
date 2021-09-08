@@ -90,11 +90,11 @@ class Infoflow:
 
             forward_solver.set_memory_manager(memory_manager)
 
-            forward_problem.taint_propagation_handler = taint_propagation_handler
-            forward_problem.taint_wrapper = taint_wrapper
+            #forward_problem.taint_propagation_handler = taint_propagation_handler
+            #forward_problem.taint_wrapper = taint_wrapper
 
-            if native_call_handler is not None:
-                forward_problem.set_native_call_handler(native_call_handler)
+            #if native_call_handler is not None:
+            #    forward_problem.set_native_call_handler(native_call_handler)
 
             result_executor = None
             before_path_reconstruction = 0
@@ -124,7 +124,7 @@ class Infoflow:
             logger.info("Source lookup done, found { sources and { sinks.",
                         forward_problem.getInitialSeeds().size(), sink_count)
 
-            if taint_wrapper is not None:
+            #if taint_wrapper is not None:
                 taint_wrapper.initialize(self.manager)
 
             if native_call_handler is not None:

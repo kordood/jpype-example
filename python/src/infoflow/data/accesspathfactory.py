@@ -23,7 +23,7 @@ class AccessPathFactory:
 
     def __init__(self, config=None):
         self.config = config
-        self.baseRegister = set()
+        self.baseRegister = dict()
 
     class BasePair:
 
@@ -269,8 +269,8 @@ class AccessPathFactory:
                 base_types = new_types
                 break
 
-        bases = self.baseRegister.put_if_absent_else_get(ei_type, set())
-        bases.append(self.BasePair(base, base_types))
+        bases = self.baseRegister.setdefault(ei_type, set())
+        bases.add(self.BasePair(base, base_types))
 
     def copy_with_new_value(self, original, val, new_type=None, cut_first_field=False,
                             reduce_bases=True, array_taint_type=None):

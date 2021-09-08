@@ -50,7 +50,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
 
         if new_source.getTopPostdominator() is not None \
                 and new_source.getTopPostdominator().getUnit() is None:
-            return Collections.singleton(new_source)
+            return set(new_source)
 
         if new_source.getAccessPath().is_static_field_ref():
             pass_on = False

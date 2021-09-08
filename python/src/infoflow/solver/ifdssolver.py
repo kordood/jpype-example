@@ -179,7 +179,7 @@ class IFDSSolver:
 
                 for ret_site_n in return_site_ns:
                     ret_function = self.flow_functions.get_return_flow_function(n, s_called_proc_n, eP, ret_site_n)
-                    ret_flow_res = self.compute_return_flow_function(ret_function, d3, d4, n, Collections.singleton(d1))
+                    ret_flow_res = self.compute_return_flow_function(ret_function, d3, d4, n, set(d1))
 
                     if ret_flow_res is not None and not ret_flow_res.is_empty():
                         for d5 in ret_flow_res:
@@ -256,7 +256,7 @@ class IFDSSolver:
                     ret_function = self.flow_functions.get_return_flow_function(c, method_that_needs_summary, n,
                                                                                 ret_site_c)
                     targets = self.compute_return_flow_function(ret_function, d1, d2, c,
-                                                                 Collections.singleton(self.zero_value))
+                                                                 set(self.zero_value))
                     if targets is not None and not targets.is_empty():
                         for d5 in targets:
                             if self.memory_manager is not None:

@@ -98,7 +98,7 @@ class FlowFunctions:
         add_left_value = False
 
         if isinstance(right_value, LengthExpr):
-            return Collections.singleton(new_source)
+            return set(new_source)
 
         implicit_taint = new_source.get_top_postdominator() is not None \
                          and new_source.get_top_postdominator().getUnit() is not None
@@ -106,7 +106,7 @@ class FlowFunctions:
 
         if implicit_taint:
             if d1 is None or d1.getAccessPath().is_empty() and not isinstance( left_value, FieldRef ):
-                return Collections.singleton(new_source)
+                return set(new_source)
 
             if new_source.getAccessPath().is_empty():
                 add_left_value = True
@@ -177,7 +177,7 @@ class FlowFunctions:
                 and isinstance(assign_stmt.getLeftOp().getType(), PrimType) \
                 or TypeUtils.is_string_type( assign_stmt.getLeftOp().getType() ) \
                 and not new_source.getAccessPath().getCanHaveImmutableAliases():
-            return Collections.singleton(new_source)
+            return set(new_source)
 
         res = HashSet()
         target_ab = new_source if mapped_ap.equals(new_source.getAccessPath()) \
