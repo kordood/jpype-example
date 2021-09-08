@@ -17,20 +17,11 @@ from ...data.accesspath import ArrayTaintType
 from ...util.systemclasshandler import SystemClassHandler
 from ...util.typeutils import TypeUtils
 
-from ...data.SootMethodAndClass
-from ...methodsummary.data.provider.IMethodSummaryProvider
-from ...methodsummary.data.sourceSink.AbstractFlowSinkSource
-from ...methodsummary.data.summary.ClassMethodSummaries
-from ...methodsummary.data.summary.ClassSummaries
-from ...methodsummary.data.summary.GapDefinition
-from ...methodsummary.data.summary.MethodClear
-from ...methodsummary.data.summary.MethodFlow
-from ...methodsummary.data.summary.MethodSummaries
-from ...methodsummary.data.summary.SourceSinkType
-from ...methodsummary.data.summary.SummaryMetaData
-from ...solver.IFollowReturnsPastSeedsHandler
+from ...data.summary.classsummaries import ClassSummaries
+from ...data.summary.methodsummaries import MethodSummaries
+from ...data.summary.sourcesinktype import SourceSinkType
+from ...data.summary.summarymetadata import SummaryMetaData
 from ...taintWrappers.IReversibleTaintWrapper
-from ...taintWrappers.ITaintPropagationWrapper
 from ...util.ByReferenceBoolean
 from ...util.SootMethodRepresentationParser
 
