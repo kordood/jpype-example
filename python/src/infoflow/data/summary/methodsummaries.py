@@ -1,5 +1,6 @@
 from .immutablemethodsummaries import ImmutableMethodSummaries
-
+from .gapdefinition import GapDefinition
+from .sourcesinktype import SourceSinkType
 
 class MethodSummaries:
     EMPTY_SUMMARIES = ImmutableMethodSummaries()
