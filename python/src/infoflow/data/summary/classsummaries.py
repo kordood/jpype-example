@@ -1,3 +1,9 @@
+from .immutableclasssummaries import ImmutableClassSummaries
+import ClassMethodSummaries
+import MethodSummaries
+from .summarymetadata import SummaryMetaData
+
+
 class ClassSummaries:
     EMPTY_SUMMARIES = ImmutableClassSummaries()
 
@@ -106,7 +112,7 @@ class ClassSummaries:
     def hasSummariesForClass(self, className):
         return className in self.summaries
 
-    def addDependency(self, className):
+    def add_dependency(self, className):
         if self.isPrimitiveType( className ) or className in self.summaries:
             return False
         return self.dependencies.append( className )

@@ -1082,7 +1082,7 @@ class SummaryTaintWrapper:
                 SummaryMetaData
                 metaData = summaries.getMetaData()
                 if metaData is not None:
-                    if metaData.isClassExclusive( targetClassName ):
+                    if metaData.is_class_exclusive( targetClassName ):
                         return True
 
         return False
