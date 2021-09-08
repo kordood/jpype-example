@@ -84,7 +84,7 @@ class InfoflowResults:
             for e in results.getExceptions():
                 self.add_exception(e)
 
-        if not results.isEmpty() and not results.getResults().isEmpty():
+        if not results.isEmpty() and not results.getResults().is_empty():
             for sink in results.getResults().keySet():
                 for source in results.getResults().get(sink):
                     self.add_result(sink=sink, source=source)
@@ -98,7 +98,7 @@ class InfoflowResults:
         self.termination_state |= results.terminationState
 
     def get_result_set(self):
-        if self.results is None or self.results.isEmpty():
+        if self.results is None or self.results.is_empty():
             return None
 
         _set = set(self.results.size() * 10)

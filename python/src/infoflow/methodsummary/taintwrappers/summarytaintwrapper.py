@@ -154,7 +154,7 @@ class SummaryTaintWrapper:
             while len( interfaces ) != 0:
                 intfName = interfaces.remove( 0 )
                 classSummaries = flows.getClassFlows( intfName )
-                if classSummaries is not None and classSummaries.hasInterfaces():
+                if classSummaries is not None and classSummaries.has_interfaces():
 
                     for intf in classSummaries.getInterfaces():
                         if summaries.merge( flows.getMethodFlows( intf, methodSig ) ):
@@ -197,9 +197,9 @@ class SummaryTaintWrapper:
                 for propagator in propagators:
 
                     parent = self.safePopParent( propagator )
-                    else:parentGap = None if propagator.getParent() is None else propagator.getParent().getGap()
+                    else:parentGap = None if propagator.getParent() is None else propagator.getParent().get_gap()
 
-                    returnTaints = self.createTaintFromAccessPathOnReturn( d2.getAccessPath(), u, propagator.getGap() )
+                    returnTaints = self.createTaintFromAccessPathOnReturn( d2.getAccessPath(), u, propagator.get_gap() )
                     if returnTaints is None:
                         continue
 
@@ -497,8 +497,8 @@ class SummaryTaintWrapper:
             workList = list()
             for taint in taintsFromAP:
                 killTaint = False
-                if killIncomingTaint is not None and flowsInCallee.hasClears():
-                    for clear in flowsInCallee.getAllClears():
+                if killIncomingTaint is not None and flowsInCallee.has_clears():
+                    for clear in flowsInCallee.get_all_clears():
                         if self.flowMatchesTaint( clear.getClearDefinition(), taint ):
                             killTaint = True
                             break
@@ -521,7 +521,7 @@ class SummaryTaintWrapper:
         doneSet = set( workList )
         while len( workList ) != 0:
             curPropagator = workList.remove( 0 )
-            curGap = curPropagator.getGap()
+            curGap = curPropagator.get_gap()
 
             if curGap is not None and curPropagator.getParent() is None:
                 raise RuntimeError( "Gap flow without parent detected" )
@@ -551,7 +551,7 @@ class SummaryTaintWrapper:
                         if newPropagator is None:
                             continue
 
-                    if newPropagator.getParent() is None and newPropagator.getTaint().getGap() is None:
+                    if newPropagator.getParent() is None and newPropagator.getTaint().get_gap() is None:
                         ap = self.createAccessPathFromTaint( newPropagator.getTaint(), newPropagator.getStmt() )
                         if ap is None:
                             continue
@@ -579,7 +579,7 @@ class SummaryTaintWrapper:
         if not self.canTypeAlias( flow.sink().getLastFieldType() ):
             return None
 
-        if flow.source().getGap() is not None and flow.source().getType() == SourceSinkType.Return:
+        if flow.source().get_gap() is not None and flow.source().getType() == SourceSinkType.Return:
             return None
 
         return flow.reverse()
@@ -603,7 +603,7 @@ class SummaryTaintWrapper:
         abs = Abstraction( None, ap, None, None, False, False )
 
         parent = self.safePopParent( propagator )
-        gap = None if propagator.getParent() is None else propagator.getParent().getGap()
+        gap = None if propagator.getParent() is None else propagator.getParent().get_gap()
 
         outgoingTaints = None
         endSummary = self.manager.getForwardSolver().endSummary( implementor, abs )
@@ -613,7 +613,7 @@ class SummaryTaintWrapper:
                     outgoingTaints = set()
 
                 newTaints = self.createTaintFromAccessPathOnReturn( pair.getO2().getAccessPath(), pair.getO1(),
-                                                                    propagator.getGap() )
+                                                                    propagator.get_gap() )
                 if newTaints is not None:
                     for newTaint in newTaints:
                         newPropagator = AccessPathPropagator( newTaint, gap, parent,
@@ -642,7 +642,7 @@ class SummaryTaintWrapper:
             flows = self.getFlowSummariesForMethod( None, gapMethod, None )
             if flows is not None and len( flows ) != 0:
                 summaries = MethodSummaries()
-                summaries.mergeSummaries( flows.getAllMethodSummaries() )
+                summaries.merge_summaries( flows.getAllMethodSummaries() )
                 return summaries
 
         smac = SootMethodRepresentationParser.v().parseSootMethodString( gap.getSignature() )
@@ -767,23 +767,23 @@ class SummaryTaintWrapper:
         if not typesCompatible:
             return None
 
-        if taint.getGap() != flow.source().getGap():
+        if taint.get_gap() != flow.source().get_gap():
             return None
 
-        if flowSink.getGap() is not None:
+        if flowSink.get_gap() is not None:
             parent = propagator
-            gap = flowSink.getGap()
+            gap = flowSink.get_gap()
             stmt = None
             d1 = None
             d2 = None
             taintGap = None
         else:
             parent = self.safePopParent( propagator )
-            gap = None if propagator.getParent() is None else propagator.getParent().getGap()
+            gap = None if propagator.getParent() is None else propagator.getParent().get_gap()
             stmt = propagator.getStmt() if propagator.getParent() is None else propagator.getParent().getStmt()
             d1 = propagator.getD1() if propagator.getParent() is None else propagator.getParent().getD1()
             d2 = propagator.getD2() if propagator.getParent() is None else propagator.getParent().getD2()
-            taintGap = propagator.getGap()
+            taintGap = propagator.get_gap()
 
         addTaint = self.flowMatchesTaint( flowSource, taint )
 
@@ -815,11 +815,11 @@ class SummaryTaintWrapper:
         elif flowSource.isThis() and taint.isField():
             return True
 
-        elif flowSource.isReturn() and flowSource.getGap() is not None and taint.getGap() is not None and self.compareFields(
+        elif flowSource.isReturn() and flowSource.get_gap() is not None and taint.get_gap() is not None and self.compareFields(
                 taint, flowSource )
             return True
 
-        elif flowSource.isReturn() and flowSource.getGap() is None and taint.getGap() is None and taint.isReturn() and self.compareFields(
+        elif flowSource.isReturn() and flowSource.get_gap() is None and taint.get_gap() is None and taint.isReturn() and self.compareFields(
                 taint, flowSource ):
             return True
         return False
@@ -1075,7 +1075,7 @@ class SummaryTaintWrapper:
 
                 targetClassName = targetClass.getName()
                 cms = flows.getClassFlows( targetClassName )
-                if cms is not None and cms.self.isExclusiveForClass():
+                if cms is not None and cms.self.is_exclusive_for_class():
                     return True
 
                 summaries = flows.getSummaries()

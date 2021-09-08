@@ -155,15 +155,15 @@ class AccessPathFactory:
         if access_path_config.use_this_chain_reduction() and reduce_bases and fields is not None:
             for i in range(0, len(fields)):
                 if fields[i].name.startsWith("this$"):
-                    outer_class_name = fields[i].type.className
+                    outer_class_name = fields[i].type.class_name
 
                     start_idx = -1
-                    if value is not None and isinstance(value.type, RefType) and value.type.className().equals(
+                    if value is not None and isinstance(value.type, RefType) and value.type.class_name().equals(
                             outer_class_name):
                         start_idx = 0
                     else:
                         for j in range(0, i):
-                            if isinstance(fields[j].type, RefType) and fields[j].type.className().equals(
+                            if isinstance(fields[j].type, RefType) and fields[j].type.class_name().equals(
                                     outer_class_name):
                                 start_idx = j
                                 break

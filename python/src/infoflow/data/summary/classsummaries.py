@@ -36,7 +36,7 @@ class ClassSummaries:
         for className in self.summaries.keys():
             classSummaries = self.summaries.get( className )
             if classSummaries is not None:
-                methodFlows = classSummaries.getMethodSummaries().getFlowsForMethod( signature )
+                methodFlows = classSummaries.getMethodSummaries().get_flows_for_method( signature )
                 if methodFlows is not None and not len( methodFlows ) != 0:
                     flows.update( methodFlows )
 
@@ -47,12 +47,12 @@ class ClassSummaries:
         for className in self.summaries.keys():
             classSummaries = self.summaries.get( className )
             if classSummaries is not None:
-                summaries.merge( classSummaries.getMethodSummaries().filterForMethod( signature ) )
+                summaries.merge( classSummaries.getMethodSummaries().filter_for_method( signature ) )
 
         return summaries
 
     def getAllFlows(self):
-        return [cs.getMethodSummaries().getAllFlows() for cs in self.summaries.values()]
+        return [cs.getMethodSummaries().get_all_flows() for cs in self.summaries.values()]
 
     def filterForMethod(self, signature, classes=None):
         assert signature is not None
