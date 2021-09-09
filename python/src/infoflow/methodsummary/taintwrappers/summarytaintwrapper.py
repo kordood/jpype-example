@@ -37,6 +37,12 @@ import Pair
 import IReversibleTaintWrapper
 
 
+class ReferencableBool:
+
+    def __init__(self, value):
+        self.value = value
+
+
 class SummaryTaintWrapper:
 
     def __init__(self, flows=None, manager=None, fallback_wrapper=None):
@@ -401,11 +407,11 @@ class SummaryTaintWrapper:
             return set(tainted_abs)
 
         res_abs = None
-        kill_incoming_taint = ByReferenceBoolean(False)
-        class_supported = ByReferenceBoolean(False)
+        kill_incoming_taint = ReferencableBool(False)
+        class_supported = ReferencableBool(False)
 
         callee = stmt.getInvokeExpr().getMethod()
-        res = self.compute_taints_for_method(stmt, d1, tainted_abs, callee, kill_incoming_taint, class_supported)
+        res = self.compute_taints_for_method(stmt, d1, tainted_abs, callee, kill_incoming_taint.value, class_supported.value)
 
         if res is not None and len(res) != 0:
             if res_abs is None:
@@ -445,7 +451,7 @@ class SummaryTaintWrapper:
         flows_in_callees = self.get_flow_summaries_for_method(stmt=stmt,
                                                                method=method,
                                                                tainted_abs=tainted_abs,
-                                                               class_supported=class_supported)
+                                                               class_supported=class_supported.value)
         if flows_in_callees is None or flows_in_callees.is_empty():
             return None
 
@@ -467,7 +473,7 @@ class SummaryTaintWrapper:
             work_list = list()
             for taint in taints_from_ap:
                 kill_taint = False
-                if kill_incoming_taint is not None and flows_in_callee.has_clears():
+                if kill_incoming_taint.value is not None and flows_in_callee.has_clears():
                     for clear in flows_in_callee.get_all_clears():
                         if self.flow_matches_taint(clear.getClearDefinition(), taint):
                             kill_taint = True
@@ -635,7 +641,7 @@ class SummaryTaintWrapper:
                 for callee in self.manager.icfg.getCalleesOfCallAt(stmt):
                     flows = self.flows.getMethodFlows(callee.declaring_class, subsig)
                     if flows is not None and len(flows) != 0:
-                        if class_supported is not None:
+                        if class_supported.value is not None:
                             class_supported.value = True
                         if class_summaries is None:
                             class_summaries = ClassSummaries()
@@ -647,7 +653,7 @@ class SummaryTaintWrapper:
 #            response = methodToImplFlows.getUnchecked(
 #                self.SummaryQuery(self, method.declaring_class, declared_class, subsig))
             if response is not None:
-                if class_supported is not None:
+                if class_supported.value is not None:
                     class_supported.value = response.is_class_supported
                 class_summaries = ClassSummaries()
                 class_summaries.merge(response.class_summaries)
