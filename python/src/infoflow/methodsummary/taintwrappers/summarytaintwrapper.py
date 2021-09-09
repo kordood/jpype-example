@@ -46,32 +46,45 @@ class SummaryTaintWrapper:
 
         self.methodToImplFlows = IDESolver.DEFAULT_CACHE_BUILDER.build( self.CacheLoader() )
 
-    class CacheLoader:
 
-        def load(self, query):
-            calleeClass = query.calleeClass
-            declaredClass = query.declaredClass
-            methodSig = query.subsignature
-            classSummaries = ClassSummaries()
-            isClassSupported = False
 
-            if calleeClass is not None:
-                isClassSupported = self.getSummaries( methodSig, classSummaries, calleeClass )
-            if declaredClass is not None and not isClassSupported:
-                isClassSupported = self.getSummaries( methodSig, classSummaries, declaredClass )
 
-            if not isClassSupported and calleeClass is not None:
-                isClassSupported = self.getSummariesHierarchy( methodSig, classSummaries, calleeClass )
-            if declaredClass is not None and not isClassSupported:
-                isClassSupported = self.getSummariesHierarchy( methodSig, classSummaries, declaredClass )
+    class SummaryQuery:
 
-            if len( classSummaries ) != 0:
-                return self.SummaryResponse( classSummaries, isClassSupported )
+        def __init__(self, summary_taint_wrapper, calleeClass, declaredClass, subsignature):
+            self.calleeClass = calleeClass
+            self.declaredClass = declaredClass
+            self.methodSig = subsignature
+            self.classSummaries = ClassSummaries()
+            self.isClassSupported = False
+            self.summary_taint_wrapper = summary_taint_wrapper
+
+            if self.calleeClass is not None:
+                self.isClassSupported = self.getSummaries( self.methodSig, self.classSummaries, self.calleeClass )
+            if self.declaredClass is not None and not self.isClassSupported:
+                self.isClassSupported = self.getSummaries( self.methodSig, self.classSummaries, self.declaredClass )
+
+            if not self.isClassSupported and calleeClass is not None:
+                self.isClassSupported = self.getSummariesHierarchy( self.methodSig, self.classSummaries, self.calleeClass )
+            if declaredClass is not None and not self.isClassSupported:
+                self.isClassSupported = self.getSummariesHierarchy( self.methodSig, self.classSummaries, self.declaredClass )
+
+            if len( self.classSummaries.summaries ) != 0 :
+                self.summary_response =  self.SummaryResponse( self.classSummaries, self.isClassSupported )
             else:
-                return SummaryResponse().EMPTY_BUT_SUPPORTED if isClassSupported else SummaryResponse().NOT_SUPPORTED
+                self.summary_response =  self.SummaryResponse( None, False ) if self.isClassSupported else self.SummaryResponse( None, True )
+
+        class SummaryResponse:
+
+            def __init__(self, class_summaries=None, is_class_supported=None):
+                # self.NOT_SUPPORTED = self.SummaryResponse( None, False )
+                # self.EMPTY_BUT_SUPPORTED = self.SummaryResponse( None, True )
+
+                self.classSummaries = class_summaries
+                self.isClassSupported = is_class_supported
 
         def getSummaries(self, methodSig, summaries, clazz):
-            if summaries.merge( flows.getMethodFlows( clazz, methodSig ) ):
+            if summaries.merge( self.summary_taint_wrapper.flows.getMethodFlows( clazz, methodSig ) ):
                 return True
 
             if self.checkInterfaces( methodSig, summaries, clazz ):
@@ -79,9 +92,9 @@ class SummaryTaintWrapper:
 
             targetMethod = clazz.getMethodUnsafe( methodSig )
             if not clazz.isConcrete() or targetMethod is None or not targetMethod.isConcrete():
-                for parentClass in self.getAllParentClasses( clazz ):
+                for parentClass in self.summary_taint_wrapper.getAllParentClasses( clazz ):
 
-                    if summaries.merge( flows.getMethodFlows( parentClass, methodSig ) ):
+                    if summaries.merge( self.summary_taint_wrapper.flows.getMethodFlows( parentClass, methodSig ) ):
                         return True
 
                     if self.checkInterfaces( methodSig, summaries, parentClass ):
@@ -89,10 +102,10 @@ class SummaryTaintWrapper:
 
             curClass = clazz.getName()
             while curClass is not None:
-                classSummaries = flows.getClassFlows( curClass )
+                classSummaries = self.summary_taint_wrapper.flows.getClassFlows( curClass )
                 if classSummaries is not None:
 
-                    if summaries.merge( flows.getMethodFlows( curClass, methodSig ) ):
+                    if summaries.merge( self.summary_taint_wrapper.flows.getMethodFlows( curClass, methodSig ) ):
                         return True
 
                     if self.checkInterfacesFromSummary( methodSig, summaries, curClass ):
@@ -110,14 +123,14 @@ class SummaryTaintWrapper:
 
             targetMethod = clazz.getMethodUnsafe( methodSig )
             if not clazz.isConcrete() or targetMethod is None or not targetMethod.isConcrete():
-                childClasses = self.getAllChildClasses( clazz )
-                if len( childClasses ) > MAX_HIERARCHY_DEPTH:
+                childClasses = self.summary_taint_wrapper.getAllChildClasses( clazz )
+                if len( childClasses ) > self.summary_taint_wrapper.MAX_HIERARCHY_DEPTH:
                     return False
 
                 found = False
 
                 for childClass in childClasses:
-                    if summaries.merge( flows.getMethodFlows( childClass, methodSig ) ):
+                    if summaries.merge( self.summary_taint_wrapper.flows.getMethodFlows( childClass, methodSig ) ):
                         found = True
 
                     if self.checkInterfaces( methodSig, summaries, childClass ):
@@ -129,40 +142,31 @@ class SummaryTaintWrapper:
 
         def checkInterfaces(self, methodSig, summaries, clazz):
             for intf in clazz.getInterfaces():
-                if summaries.merge( flows.getMethodFlows( intf, methodSig ) ):
+                if summaries.merge( self.summary_taint_wrapper.flows.getMethodFlows( intf, methodSig ) ):
                     return True
 
-                for parent in self.getAllParentClasses( intf ):
+                for parent in self.summary_taint_wrapper.getAllParentClasses( intf ):
 
-                    if summaries.merge( flows.getMethodFlows( parent, methodSig ) ):
+                    if summaries.merge( self.summary_taint_wrapper.flows.getMethodFlows( parent, methodSig ) ):
                         return True
 
             return self.checkInterfacesFromSummary( methodSig, summaries, clazz.getName() )
 
         def checkInterfacesFromSummary(self, methodSig, summaries, className):
             interfaces = list()
-            interfaces.add( className )
+            interfaces.append( className )
             while len( interfaces ) != 0:
                 intfName = interfaces.remove( 0 )
-                classSummaries = flows.getClassFlows( intfName )
+                classSummaries = self.summary_taint_wrapper.flows.getClassFlows( intfName )
                 if classSummaries is not None and classSummaries.has_interfaces():
 
                     for intf in classSummaries.getInterfaces():
-                        if summaries.merge( flows.getMethodFlows( intf, methodSig ) ):
+                        if summaries.merge( self.summary_taint_wrapper.flows.getMethodFlows( intf, methodSig ) ):
                             return True
 
-                        interfaces.add( intf )
+                        interfaces.append( intf )
 
             return False
-
-    class SummaryResponse:
-
-        def __init__(self, classSummaries, isClassSupported):
-            self.NOT_SUPPORTED = self.SummaryResponse( None, False )
-            self.EMPTY_BUT_SUPPORTED = self.SummaryResponse( None, True )
-
-            self.classSummaries = classSummaries
-            self.isClassSupported = isClassSupported
 
         def equals(self, obj):
             if self == obj:
@@ -170,32 +174,35 @@ class SummaryTaintWrapper:
             if obj is None:
                 return False
             other = obj
-            if classSummaries is None:
+            if self.classSummaries is None:
                 if other.classSummaries is not None:
                     return False
-            elif classSummaries != other.classSummaries:
+            elif self.classSummaries != other.classSummaries:
                 return False
-            if isClassSupported != other.isClassSupported:
+            if self.isClassSupported != other.isClassSupported:
                 return False
             return True
 
     class SummaryFRPSHandler:
 
+        def __init__(self, summary_taint_wrapper):
+            self.summary_taint_wrapper = summary_taint_wrapper
+
         def handleFollowReturnsPastSeeds(self, d1, u, d2):
-            sm = self.manager.icfg.getMethodOf( u )
-            propagators = self.getUserCodeTaints( d1, sm )
+            sm = self.summary_taint_wrapper.manager.icfg.getMethodOf( u )
+            propagators = self.summary_taint_wrapper.getUserCodeTaints( d1, sm )
             if propagators is not None:
                 for propagator in propagators:
 
-                    parent = self.safePopParent( propagator )
-                    else:parentGap = None if propagator.getParent() is None else propagator.getParent().get_gap()
+                    parent = self.summary_taint_wrapper.safePopParent( propagator )
+                    parentGap = None if propagator.getParent() is None else propagator.getParent().get_gap()
 
-                    returnTaints = self.createTaintFromAccessPathOnReturn( d2.getAccessPath(), u, propagator.get_gap() )
+                    returnTaints = self.summary_taint_wrapper.createTaintFromAccessPathOnReturn( d2.getAccessPath(), u, propagator.get_gap() )
                     if returnTaints is None:
                         continue
 
                     flowsInTarget = self.getFlowsInOriginalCallee(
-                        propagator ) if parentGap is None else self.getFlowSummariesForGap( parentGap )
+                        propagator ) if parentGap is None else self.summary_taint_wrapper.getFlowSummariesForGap( parentGap )
 
                     workSet = set()
                     for returnTaint in returnTaints:
@@ -205,20 +212,20 @@ class SummaryTaintWrapper:
                                                               None if propagator.getParent() is None else propagator.getParent().getD2() )
                         workSet.add( newPropagator )
 
-                    resultAPs = self.applyFlowsIterative( flowsInTarget, list( workSet ) )
+                    resultAPs = self.summary_taint_wrapper.applyFlowsIterative( flowsInTarget, list( workSet ) )
 
                     if resultAPs is not None and len( resultAPs ) != 0:
                         rootPropagator = self.getOriginalCallSite( propagator )
                         for ap in resultAPs:
                             newAbs = rootPropagator.getD2().deriveNewAbstraction( ap, rootPropagator.getStmt() )
-                            for succUnit in self.manager.icfg.getSuccsOf( rootPropagator.getStmt() ):
-                                self.manager.getForwardSolver().processEdge(
+                            for succUnit in self.summary_taint_wrapper.manager.icfg.getSuccsOf( rootPropagator.getStmt() ):
+                                self.summary_taint_wrapper.manager.getForwardSolver().processEdge(
                                     PathEdge( rootPropagator.getD1(), succUnit, newAbs ) )
 
         def getFlowsInOriginalCallee(self, propagator):
             originalCallSite = self.getOriginalCallSite( propagator ).getStmt()
 
-            flowsInCallee = self.getFlowSummariesForMethod( originalCallSite,
+            flowsInCallee = self.summary_taint_wrapper.getFlowSummariesForMethod( originalCallSite,
                                                             originalCallSite.getInvokeExpr().getMethod(), None )
 
             methodSig = originalCallSite.getInvokeExpr().getMethod().getSubSignature()
@@ -233,57 +240,27 @@ class SummaryTaintWrapper:
 
             return None
 
-    class SummaryQuery:
-
-        def __init__(self, calleeClass, declaredClass, subsignature):
-            self.calleeClass = calleeClass
-            self.declaredClass = declaredClass
-            self.subsignature = subsignature
-
-        def equals(self, obj):
-            if self == obj:
-                return True
-            if obj is None:
-                return False
-            other = obj
-            if calleeClass is None:
-                if other.calleeClass is not None:
-                    return False
-            elif calleeClass != other.calleeClass:
-                return False
-            if declaredClass is None:
-                if other.declaredClass is not None:
-                    return False
-            elif declaredClass != other.declaredClass:
-                return False
-            if subsignature is None:
-                if other.subsignature is not None:
-                    return False
-            elif subsignature != other.subsignature:
-                return False
-            return True
-
     def SummaryTaintWrapper(self, flows):
         self.flows = flows
 
-    def initialize(self, self.manager):
-        self.manager = self.manager
+    def initialize(self, manager):
+        self.manager = manager
 
-        loadableClasses = flows.getAllClassesWithSummaries()
+        loadableClasses = self.flows.getAllClassesWithSummaries()
         if loadableClasses is not None:
             for className in loadableClasses:
                 self.loadClass( className )
 
-        for className in flows.getSupportedClasses():
+        for className in self.flows.getSupportedClasses():
             self.loadClass( className )
 
         self.hierarchy = Scene.v().getActiveHierarchy()
         self.fastHierarchy = Scene.v().getOrMakeFastHierarchy()
 
-        self.manager.getForwardSolver().setFollowReturnsPastSeedsHandler( SummaryFRPSHandler() )
+        self.manager.getForwardSolver().setFollowReturnsPastSeedsHandler( self.SummaryFRPSHandler() )
 
-        if fallbackWrapper is not None:
-            fallbackWrapper.self.initialize( self.manager )
+        if self.fallbackWrapper is not None:
+            self.fallbackWrapper.initialize( self.manager )
 
     def loadClass(self, className):
         sc = Scene.v().getSootClassUnsafe( className )
@@ -355,9 +332,9 @@ class SummaryTaintWrapper:
         return res
 
     def createAccessPathFromTaint(self, t, stmt):
-        fields = self.self.safeGetFields( t.getAccessPath() )
+        fields = self.safeGetFields( t.getAccessPath() )
         types = self.safeGetTypes( t.getAccessPath(), fields )
-        baseType = TypeUtils.getTypeFromString( t.getBaseType() )
+        baseType = TypeUtils.get_type_from_string( t.base_type )
 
         if t.isReturn():
 
@@ -371,8 +348,8 @@ class SummaryTaintWrapper:
 
         if t.isParameter() and stmt.containsInvokeExpr():
             iexpr = stmt.getInvokeExpr()
-            paramVal = iexpr.getArg( t.self.getParameterIndex() )
-            if not AccessPath.canContainValue( paramVal ):
+            paramVal = iexpr.getArg( t.getParameterIndex() )
+            if not AccessPath.can_contain_value( paramVal ):
                 return None
 
             return self.manager.getAccessPathFactory().createAccessPath( paramVal, fields, baseType, types,
@@ -400,15 +377,15 @@ class SummaryTaintWrapper:
         raise RuntimeError( "Could not convert taint to access path: " + t + " at " + stmt )
 
     def createAccessPathInMethod(self, t, sm):
-        fields = self.self.safeGetFields( t.getAccessPath() )
+        fields = self.safeGetFields( t.getAccessPath() )
         types = self.safeGetTypes( t.getAccessPath(), fields )
-        baseType = TypeUtils.getTypeFromString( t.getBaseType() )
+        baseType = TypeUtils.get_type_from_string( t.getBaseType() )
 
         if t.isReturn():
             raise RuntimeError( "Unsupported taint type" )
 
         if t.isParameter():
-            l = sm.getActiveBody().getParameterLocal( t.self.getParameterIndex() )
+            l = sm.getActiveBody().getParameterLocal( t.getParameterIndex() )
             return self.manager.getAccessPathFactory().createAccessPath( l, fields, baseType, types, True, False, True,
                                                                     ArrayTaintType.ContentsAndLength )
 
@@ -448,7 +425,7 @@ class SummaryTaintWrapper:
                     if fallbackWrapper is None:
                         return None
                     else:
-                        fallbackTaints = fallbackWrapper.self.getTaintsForMethod( stmt, d1, taintedAbs )
+                        fallbackTaints = fallbackWrapper.getTaintsForMethod( stmt, d1, taintedAbs )
                         return fallbackTaints
 
         if not killIncomingTaint.value:
@@ -459,15 +436,15 @@ class SummaryTaintWrapper:
         return resAbs
 
     def reportMissingSummary(self, method, stmt=None, incoming=None):
-        if reportMissingSummarie and SystemClassHandler.v().isClassInSystemPackage(
+        if self.reportMissingSummaries and SystemClassHandler.v().isClassInSystemPackage(
                 method.getDeclaringClass().getName() ):
             System.out.println( "Missing summary for class " + method.getDeclaringClass() )
 
     def computeTaintsForMethod(self, stmt, d1, taintedAbs, method, killIncomingTaint, classSupported):
-        wrapperHits.incrementAndGet()
+        self.wrapperHits.incrementAndGet()
 
         flowsInCallees = self.getFlowSummariesForMethod( stmt, method, taintedAbs, classSupported )
-        if flowsInCallees is None or len( flowsInCallees ) != 0:
+        if flowsInCallees is None or flowsInCallees.is_empty():
             return None
 
         taintsFromAP = self.createTaintFromAccessPathOnCall( taintedAbs.getAccessPath(), stmt, False )
@@ -497,13 +474,13 @@ class SummaryTaintWrapper:
                 if killTaint:
                     killIncomingTaint.value = True
                 else:
-                    workList.add( AccessPathPropagator( taint, None, None, stmt, d1, taintedAbs ) )
+                    workList.append( AccessPathPropagator( taint, None, None, stmt, d1, taintedAbs ) )
 
             resCallee = self.applyFlowsIterative( flowsInCallee, workList )
             if resCallee is not None and len( resCallee ) != 0:
                 if res is None:
                     res = set()
-                res.addAll( resCallee )
+                res.update( resCallee )
 
         return res
 
@@ -526,7 +503,7 @@ class SummaryTaintWrapper:
                         if implementor.getDeclaringClass().isConcrete() and not implementor.getDeclaringClass().isPhantom( and implementor.isConcrete()):
                             implementorPropagators = self.spawnAnalysisIntoClientCode( implementor, curPropagator )
                             if implementorPropagators is not None:
-                                workList.addAll( implementorPropagators )
+                                workList.update( implementorPropagators )
 
             if flowsInTarget is not None and len( flowsInTarget ) != 0:
                 for flow in flowsInTarget:
@@ -661,8 +638,9 @@ class SummaryTaintWrapper:
 
         if classSummaries is None or len( classSummaries ) != 0:
             declaredClass = self.getSummaryDeclaringClass( stmt )
+            response = self.SummaryResponse(classSummaries, isClassSupported)
             response = methodToImplFlows.getUnchecked(
-                SummaryQuery( method.getDeclaringClass(), declaredClass, subsig ) )
+                self.SummaryQuery( self, method.getDeclaringClass(), declaredClass, subsig ) )
             if response is not None:
                 if classSupported is not None:
                     classSupported.value = response.isClassSupported
@@ -695,10 +673,10 @@ class SummaryTaintWrapper:
                 continue
 
             if curClass.isInterface():
-                workList.addAll( hierarchy.getImplementersOf( curClass ) )
-                workList.addAll( hierarchy.getSubinterfacesOf( curClass ) )
+                workList.update( hierarchy.getImplementersOf( curClass ) )
+                workList.update( hierarchy.getSubinterfacesOf( curClass ) )
             else:
-                workList.addAll( hierarchy.getSubclassesOf( curClass ) )
+                workList.update( hierarchy.getSubclassesOf( curClass ) )
 
             ifm = curClass.getMethodUnsafe( subSig )
             if ifm is not None:
@@ -719,10 +697,10 @@ class SummaryTaintWrapper:
                 continue
 
             if curClass.isInterface():
-                workList.addAll( hierarchy.getImplementersOf( curClass ) )
-                workList.addAll( hierarchy.getSubinterfacesOf( curClass ) )
+                workList.update( hierarchy.getImplementersOf( curClass ) )
+                workList.update( hierarchy.getSubinterfacesOf( curClass ) )
             else:
-                workList.addAll( hierarchy.getSubclassesOf( curClass ) )
+                workList.update( hierarchy.getSubclassesOf( curClass ) )
                 classes.add( curClass )
 
         return classes
@@ -740,9 +718,9 @@ class SummaryTaintWrapper:
                 continue
 
             if curClass.isInterface():
-                workList.addAll( hierarchy.getSuperinterfacesOf( curClass ) )
+                workList.update( hierarchy.getSuperinterfacesOf( curClass ) )
             else:
-                workList.addAll( hierarchy.getSuperclassesOf( curClass ) )
+                workList.update( hierarchy.getSuperclassesOf( curClass ) )
                 classes.add( curClass )
 
         return classes
@@ -794,7 +772,7 @@ class SummaryTaintWrapper:
 
     def flowMatchesTaint(self, flowSource, taint):
         if flowSource.isParameter() and taint.isParameter():
-            if taint.self.getParameterIndex() == flowSource.self.getParameterIndex():
+            if taint.getParameterIndex() == flowSource.getParameterIndex():
                 if self.compareFields( taint, flowSource ):
                     return True
 
@@ -892,7 +870,7 @@ class SummaryTaintWrapper:
         if accessPath is None or len( accessPath ) != 0:
             return None
         else:
-            return self.self.safeGetFields( accessPath.getFields() )
+            return self.safeGetFields( accessPath.getFields() )
 
         if fieldSigs is None or len( fieldSigs ) == 0:
             return None
@@ -905,24 +883,26 @@ class SummaryTaintWrapper:
         return fields
 
     def safeGetTypes(self, accessPath=None, fields=None, fieldTypes=None):
-        if accessPath is None or len( accessPath ) != 0:
-            return None
+        if fieldTypes is None:
+            if accessPath is None or len( accessPath ) != 0:
+                return None
+            else:
+                return self.safeGetTypes( accessPath.getFieldTypes(), fields )
+
         else:
-            return self.safeGetTypes( accessPath.getFieldTypes(), fields )
+            if fieldTypes is None or len( fieldTypes ) == 0:
+                if fields is not None and len( fields ) > 0:
+                    types = Type[len( fields )]
+                    for i in range( 0, len( fields ) ):
+                        types[i] = fields[i].getType()
+                    return types
 
-        if fieldTypes is None or len( fieldTypes ) == 0:
-            if fields is not None and len( fields ) > 0:
-                types = Type[len( fields )]
-                for i in range( 0, len( fields ) ):
-                    types[i] = fields[i].getType()
-                return types
+                return None
 
-            return None
-
-        types = Type[len( fieldTypes )]
-        for i in range( 0, len( fieldTypes ) ):
-            types[i] = TypeUtils.getTypeFromString( fieldTypes[i] )
-        return types
+            types = Type[len( fieldTypes )]
+            for i in range( 0, len( fieldTypes ) ):
+                types[i] = TypeUtils.getTypeFromString( fieldTypes[i] )
+            return types
 
     def addCustomSinkTaint(self, flow, taint, gap):
         return None
@@ -978,7 +958,7 @@ class SummaryTaintWrapper:
                                                                      String.valueOf( newBaseType ) )
                 sBaseType = flowSink.getBaseType()
 
-        return Taint( sourceSinkType, flowSink.self.getParameterIndex(), sBaseType, appendedFields,
+        return Taint( sourceSinkType, flowSink.getParameterIndex(), sBaseType, appendedFields,
                       taintSubFields or taint.taintSubFields(), gap )
 
     def cutSubFields(self, flow, accessPath):
@@ -1056,7 +1036,7 @@ class SummaryTaintWrapper:
         if self.supportsCallee( stmt ):
             return True
 
-        if fallbackWrapper is not None and fallbackWrapper.self.isExclusive( stmt, taintedPath ):
+        if self.fallbackWrapper is not None and self.fallbackWrapper.isExclusive( stmt, taintedPath ):
             return True
 
         if stmt.containsInvokeExpr():
@@ -1065,12 +1045,11 @@ class SummaryTaintWrapper:
             if targetClass is not None:
 
                 targetClassName = targetClass.getName()
-                cms = flows.getClassFlows( targetClassName )
-                if cms is not None and cms.self.is_exclusive_for_class():
+                cms = self.flows.getClassFlows( targetClassName )
+                if cms is not None and cms.is_exclusive_for_class():
                     return True
 
-                summaries = flows.getSummaries()
-                SummaryMetaData
+                summaries = self.flows.getSummaries()
                 metaData = summaries.getMetaData()
                 if metaData is not None:
                     if metaData.is_class_exclusive( targetClassName ):
@@ -1078,38 +1057,38 @@ class SummaryTaintWrapper:
 
         return False
 
-    def supportsCallee(self, method):
-        declClass = method.getDeclaringClass()
-        if declClass is not None and flows.supportsClass( declClass.getName() ):
-            return True
-
-        return False
-
-    def supportsCallee(self, callSite):
-        if not callSite.containsInvokeExpr():
-            return False
-
-        if self.manager is None:
-            method = callSite.getInvokeExpr().getMethod()
-            if self.supportsCallee( method ):
+    def supportsCallee(self, method=None, callSite=None):
+        if callSite is None:
+            declClass = method.getDeclaringClass()
+            if declClass is not None and self.flows.supportsClass( declClass.getName() ):
                 return True
+
+            return False
         else:
+            if not callSite.containsInvokeExpr():
+                return False
 
-            for callee in self.manager.icfg.getCalleesOfCallAt( callSite ):
-                if not callee.isStaticInitializer():
-                    if self.supportsCallee( callee ):
-                        return True
+            if self.manager is None:
+                method = callSite.getInvokeExpr().getMethod()
+                if self.supportsCallee( method ):
+                    return True
+            else:
 
-        return False
+                for callee in self.manager.icfg.getCalleesOfCallAt( callSite ):
+                    if not callee.isStaticInitializer():
+                        if self.supportsCallee( callee ):
+                            return True
+
+            return False
 
     def getUserCodeTaints(self, abs, callee):
         return self.userCodeTaints.get( Pair( abs, callee ) )
 
     def getWrapperHits(self):
-        return wrapperHits.get()
+        return self.wrapperHits.get()
 
     def getWrapperMisses(self):
-        return wrapperMisses.get()
+        return self.wrapperMisses.get()
 
     def getAliasesForMethod(self, stmt, d1, taintedAbs):
         if not stmt.containsInvokeExpr():
@@ -1118,11 +1097,11 @@ class SummaryTaintWrapper:
         method = stmt.getInvokeExpr().getMethod()
         flowsInCallees = self.getFlowSummariesForMethod( stmt, method, None )
 
-        if flowsInCallees is None or len( flowsInCallees ) != 0:
-            if fallbackWrapper is None:
+        if flowsInCallees is None or len( flowsInCallees.summaries ) != 0:
+            if self.fallbackWrapper is None:
                 return None
             else:
-                return fallbackWrapper.self.getAliasesForMethod( stmt, d1, taintedAbs )
+                return self.fallbackWrapper.getAliasesForMethod( stmt, d1, taintedAbs )
 
         taintsFromAP = self.createTaintFromAccessPathOnCall( taintedAbs.getAccessPath(), stmt, True )
         if taintsFromAP is None or len( taintsFromAP ) != 0:
@@ -1132,7 +1111,7 @@ class SummaryTaintWrapper:
         for className in flowsInCallees.get_classes():
             workList = list()
             for taint in taintsFromAP:
-                workList.add( AccessPathPropagator( taint, None, None, stmt, d1, taintedAbs, True ) )
+                workList.append( AccessPathPropagator( taint, None, None, stmt, d1, taintedAbs, True ) )
 
             classFlows = flowsInCallees.get_class_summaries( className )
             if classFlows is None:
@@ -1146,12 +1125,12 @@ class SummaryTaintWrapper:
             if resCallee is not None and len( resCallee ) != 0:
                 if res is None:
                     res = set()
-                res.addAll( resCallee )
+                res.update( resCallee )
 
         if res is None or len( res ) != 0:
             return set( taintedAbs )
 
-        resAbs = set( res.size() + 1 )
+        resAbs = set( len(res) + 1 )
         resAbs.add( taintedAbs )
         for ap in res:
             newAbs = taintedAbs.deriveNewAbstraction( ap, stmt )
@@ -1177,8 +1156,8 @@ class SummaryTaintWrapper:
         flowsInCallees = self.getFlowSummariesForMethod( stmt, method, None )
 
         if len( flowsInCallees ):
-            if fallbackWrapper is not None and isinstance( fallbackWrapper, IReversibleTaintWrapper ):
-                return fallbackWrapper.self.getInverseTaintsForMethod( stmt, d1, taintedAbs )
+            if self.fallbackWrapper is not None and isinstance( self.fallbackWrapper, IReversibleTaintWrapper ):
+                return self.fallbackWrapper.getInverseTaintsForMethod( stmt, d1, taintedAbs )
             else:
                 return None
 
@@ -1188,9 +1167,9 @@ class SummaryTaintWrapper:
 
         res = None
         for className in flowsInCallees.get_classes():
-            workList = ArrayList < AccessPathPropagator > ()
+            workList = list()
             for taint in taintsFromAP:
-                workList.add( AccessPathPropagator( taint, None, None, stmt, d1, taintedAbs, True ) )
+                workList.append( AccessPathPropagator( taint, None, None, stmt, d1, taintedAbs, True ) )
 
             classFlows = flowsInCallees.get_class_summaries( className )
             if classFlows is None:
@@ -1206,14 +1185,14 @@ class SummaryTaintWrapper:
             if resCallee is not None and len( resCallee ) != 0:
                 if res is None:
                     res = set()
-                res.addAll( resCallee )
+                res.update( resCallee )
 
         if res is None or len( res ) != 0:
             return set( taintedAbs )
 
-        resAbs = set( res.size() + 1 )
+        resAbs = set( len(res) + 1 )
         resAbs.add( taintedAbs )
-        for ap in res
+        for ap in res:
             newAbs = taintedAbs.deriveNewAbstraction( ap, stmt )
             newAbs.setCorrespondingCallSite( stmt )
             resAbs.add( newAbs )

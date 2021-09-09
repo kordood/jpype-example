@@ -146,7 +146,8 @@ class TypeUtils:
         new_type = self.get_more_precise_type(self.get_type_from_string(tp1), self.get_type_from_string(tp2))
         return None if new_type is None else "" + new_type
 
-    def get_type_from_string(self, _type):
+    @staticmethod
+    def get_type_from_string(_type):
         if _type is None or _type.isEmpty():
             return None
 
