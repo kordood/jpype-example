@@ -15,20 +15,20 @@ class MethodSummaries:
         flow_set = dict()
         if flows is not None and not len(flows) != 0:
             for flow in flows:
-                flow_set[flow.methodSig()] = flow
+                flow_set[flow.method_sig()] = flow
         return flow_set
 
     def merge_flows(self, new_flows):
         if new_flows is not None and not len(new_flows) != 0:
             self.ensure_flows()
             for flow in new_flows:
-                self.flows[flow.methodSig()] = flow
+                self.flows[flow.method_sig()] = flow
 
     def merge_clears(self, new_clears):
         if new_clears is not None and not new_clears.isEmpty():
             self.ensure_clears()
             for clear in new_clears:
-                self.clears[clear.methodSig()] = clear
+                self.clears[clear.method_sig()] = clear
 
     def merge_summaries(self, new_summaries):
         if new_summaries is not None and not new_summaries.isEmpty():
@@ -115,11 +115,11 @@ class MethodSummaries:
 
     def add_flow(self, flow):
         self.ensure_flows()
-        self.flows[flow.methodSig] = flow
+        self.flows[flow.method_sig] = flow
 
     def add_clear(self, clear):
         self.ensure_clears()
-        self.clears[clear.methodSig] = clear
+        self.clears[clear.method_sig] = clear
 
     def get_gap(self, id):
         return None if self.gaps is None else self.gaps[id]
@@ -253,11 +253,11 @@ class MethodSummaries:
         return res
 
     def remove(self, to_remove):
-        flows_for_method = self.flows[to_remove.methodSig()]
+        flows_for_method = self.flows[to_remove.method_sig()]
         if flows_for_method is not None:
             flows_for_method.remove(to_remove)
             if flows_for_method.is_empty():
-                self.flows.remove(to_remove.methodSig())
+                self.flows.remove( to_remove.method_sig() )
 
     def remove_all(self, to_remove):
         for i, flow in enumerate(self.flows):

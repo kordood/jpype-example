@@ -61,7 +61,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                 and (self.manager.getConfig().getInspectSinks() or not self.isSink) \
                 and new_source.getAccessPath().is_instance_field_ref() \
                 and (self.hasValidCallees \
-                     or (self.taintWrapper is not None and self.taintWrapper.isExclusive(self.i_call_stmt, new_source))):
+                     or (self.taintWrapper is not None and self.taintWrapper.is_exclusive( self.i_call_stmt, new_source ))):
 
             callees = self.interprocedural_cfg().getCalleesOfCallAt(self.call)
             all_callees_read = not callees.is_empty()
