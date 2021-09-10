@@ -142,7 +142,7 @@ class FlowFunctions:
                     elif isinstance(rightVal, InstanceFieldRef):
                         right_base = right_ref.getBase()
                         source_base = new_source.getAccessPath().getPlainValue()
-                        right_field = right_ref.getField()
+                        right_field = right_ref.get_field()
 
                         if mapped_ap is not None:
                             add_left_value = True

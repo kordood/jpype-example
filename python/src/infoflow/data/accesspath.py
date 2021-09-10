@@ -177,11 +177,11 @@ class AccessPath:
             return True
         elif isinstance(val, StaticFieldRef):
             return self.value is None and self.fields is not None and len(self.fields) > 0 \
-                   and self.fields[0] == val.getField()
+                   and self.fields[0] == val.get_field()
         elif isinstance(val, InstanceFieldRef):
             iref = val
             return self.value == iref.getBase() and self.fields is not None and len(self.fields) > 0 \
-                   and self.fields[0] == iref.getField()
+                   and self.fields[0] == iref.get_field()
         else:
             return False
 

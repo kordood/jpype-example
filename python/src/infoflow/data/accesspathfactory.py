@@ -284,9 +284,9 @@ class AccessPathFactory:
                 new_type) and original.arrayTaintType == array_taint_type:
             return original
 
-        new_ap = self.create_access_path(val, original.fields, new_type, original.fieldTypes, original.taintSubFields,
+        new_ap = self.create_access_path( val, original.fields, new_type, original.field_types, original.taintSubFields,
                                           cut_first_field, reduce_bases, array_taint_type,
-                                          original.can_have_immutable_aliases)
+                                          original.can_have_immutable_aliases )
 
         if new_ap is not None and new_ap.equals(original):
             return original
@@ -294,7 +294,7 @@ class AccessPathFactory:
             return new_ap
 
     def merge(self, ap1, ap2):
-        return self.append_fields(ap1, ap2.fields, ap2.fieldTypes, ap2.taintSubFields)
+        return self.append_fields( ap1, ap2.fields, ap2.field_types, ap2.taintSubFields )
 
     def append_fields(self, original, ap_fields, ap_field_types, taint_sub_fields):
         offset = 0 if original.fields is None else len(original.fields)
@@ -302,7 +302,7 @@ class AccessPathFactory:
         field_types = list()
         if original.fields is not None:
             fields = original.fields[:len(original.fields)]
-            field_types = original.fieldTypes[:len(original.fieldTypes)]
+            field_types = original.field_types[:len( original.field_types )]
         if ap_fields is not None and len(ap_fields) > 0:
             fields = ap_fields[offset:offset + len(ap_fields)]
             field_types = ap_field_types[offset:offset + len(ap_field_types)]

@@ -24,7 +24,7 @@ class AbstractFlowSinkSource:
             if self.access_path.length() > other.access_path.length():
                 return False
             for i in range(0, len(self.access_path)):
-                if not self.access_path.getField(i).equals(other.access_path.getField(i)):
+                if not self.access_path.get_field( i ).equals( other.access_path.get_field( i ) ):
                     return False
 
         return True
@@ -57,7 +57,7 @@ class AbstractFlowSinkSource:
         return self.gap is not None
 
     def get_last_field_type(self):
-        if self.access_path is None or self.access_path.isEmpty():
+        if self.access_path is None or self.access_path.is_empty():
             return self.base_type
         return self.access_path.get_last_field_type()
 

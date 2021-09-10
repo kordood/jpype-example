@@ -23,7 +23,7 @@ class GlobalTaintManager:
                             for vb in stmt.getUseBoxes():
                                 if isinstance(vb.getValue(), StaticFieldRef):
                                     field_ref = vb.getValue()
-                                    if abs.getAccessPath().first_field_matches( field_ref.getField() ):
+                                    if abs.getAccessPath().first_field_matches( field_ref.get_field() ):
                                         injection_points.add(stmt)
 
             if len(injection_points) > 0:
