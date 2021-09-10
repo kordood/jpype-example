@@ -1,5 +1,5 @@
-from ...methodsummary.xml.xmlconstants import XMLConstants
 from ...data.summary.sourcesinktype import SourceSinkType
+from ...methodsummary.xml.xmlconstants import XMLConstants
 
 
 class AbstractFlowSinkSource:

@@ -160,9 +160,9 @@ class Infoflow:
         elif logger.is_info_enabled():
             for sink in self.results.get_results().keySet():
                 logger.info("The sink { in method { was called with values from the following sources:", sink,
-                            i_cfg.getMethodOf(sink.getStmt()).getSignature())
+                            i_cfg.getMethodOf(sink.getStmt()).get_signature() )
                 for source in self.results.get_results().get( sink ):
-                    logger.info("- { in method {", source, i_cfg.getMethodOf(source.getStmt()).getSignature())
+                    logger.info("- { in method {", source, i_cfg.getMethodOf(source.getStmt()).get_signature() )
                     if source.get_path() is not None:
                         logger.info("\ton Path: ")
                         for p in source.get_path():
@@ -216,13 +216,13 @@ class Infoflow:
                     forward_problem.add_initial_seeds(u, forward_problem.zeroValue())
                     if self.config.getLogSourcesAndSinks():
                         self.collected_sources.add(s)
-                    logger.debug("Source found: { in {", u, m.getSignature())
+                    logger.debug("Source found: { in {", u, m.get_signature() )
                 
                 if sources_sinks.getSinkInfo(s, self.manager, None) is not None:
                     sink_count += 1
                     if self.config.getLogSourcesAndSinks():
                         self.collected_sinks.add(s)
-                    logger.debug("Sink found: { in {", u, m.getSignature())
+                    logger.debug("Sink found: { in {", u, m.get_signature() )
                 
         return sink_count
 

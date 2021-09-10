@@ -13,6 +13,7 @@ import InstanceInvokeExpr
 import ReturnStmt
 import StaticInvokeExpr
 
+from .taint import Taint
 from ...data.abstraction import Abstraction
 from ...data.accesspath import AccessPath
 from ...data.accesspath import ArrayTaintType
@@ -22,20 +23,19 @@ from ...util.typeutils import TypeUtils
 from ...data.summary.classsummaries import ClassSummaries
 from ...data.summary.methodsummaries import MethodSummaries
 from ...data.summary.sourcesinktype import SourceSinkType
-from ...data.summary.summarymetadata import SummaryMetaData
-from ...taintWrappers.IReversibleTaintWrapper
-from ...util.ByReferenceBoolean
+from ...solver.pathedge import PathEdge
 from ...util.SootMethodRepresentationParser
 
 import AccessPathPropagator
-import PathEdge
-import Taint
 import AccessPathFragment
-import ByReferenceBoolean
 import SootMethodRepresentationParser
-import Pair
-import IReversibleTaintWrapper
 
+
+class Pair:
+
+    def __init__(self, object_1, object_2):
+        self.object_1 = object_1
+        self.object_2 = object_2
 
 class ReferencableBool:
 
@@ -255,7 +255,7 @@ class SummaryTaintWrapper:
             flows_in_callee = self.summary_taint_wrapper.get_flow_summaries_for_method(stmt=original_call_site,
                                                                                         method=original_call_site.getInvokeExpr().getMethod(), class_supported=None)
 
-            method_sig = original_call_site.getInvokeExpr().getMethod().getSubSignature()
+            method_sig = original_call_site.getInvokeExpr().getMethod().get_sub_signature()
             return flows_in_callee.get_all_summaries_for_method(method_sig)
 
         @staticmethod
@@ -421,7 +421,7 @@ class SummaryTaintWrapper:
 
         if not kill_incoming_taint.value and (res_abs is None or len(res_abs) != 0):
 
-            if not self.flows.isMethodExcluded(callee.declaring_class.getName(), callee.getSubSignature()):
+            if not self.flows.isMethodExcluded( callee.declaring_class.getName(), callee.get_sub_signature() ):
                 self.wrapper_misses += 1
 
                 if class_supported.value:
@@ -505,7 +505,7 @@ class SummaryTaintWrapper:
             flows_in_target = flows_in_callee if cur_gap is None else self.get_flow_summaries_for_gap(cur_gap)
 
             if (flows_in_target is None or flows_in_target.is_empty()) and cur_gap is not None:
-                callee = Scene.v().grabMethod(cur_gap.getSignature())
+                callee = Scene.v().grabMethod( cur_gap.get_signature() )
                 if callee is not None:
                     for implementor in self.get_all_implementors(callee):
                         if implementor.declaring_class.isConcrete() \
@@ -617,20 +617,20 @@ class SummaryTaintWrapper:
         return cur_propagator.getParent().getParent()
 
     def get_flow_summaries_for_gap(self, gap):
-        if Scene.v().containsMethod(gap.getSignature()):
-            gap_method = Scene.v().getMethod(gap.getSignature())
+        if Scene.v().containsMethod( gap.get_signature() ):
+            gap_method = Scene.v().getMethod( gap.get_signature() )
             flows = self.get_flow_summaries_for_method(stmt=None, method=gap_method, class_supported=None)
             if flows is not None and not flows.is_empty():
                 summaries = MethodSummaries()
                 summaries.merge_summaries(flows.get_all_method_summaries())
                 return summaries
 
-        smac = SootMethodRepresentationParser.v().parseSootMethodString(gap.getSignature())
-        cms = self.flows.getMethodFlows(smac.class_name, smac.getSubSignature())
+        smac = SootMethodRepresentationParser.v().parse_soot_method_string( gap.get_signature() )
+        cms = self.flows.getMethodFlows( smac.class_name, smac.get_sub_signature() )
         return None if cms is None else cms.get_method_summaries()
 
     def get_flow_summaries_for_method(self, stmt, method, tainted_abs=None, class_supported=None):
-        subsig = method.getSubSignature()
+        subsig = method.get_sub_signature()
         if not self.flows.mayHaveSummaryForMethod(subsig):
             return ClassSummaries.EMPTY_SUMMARIES
 
@@ -672,7 +672,7 @@ class SummaryTaintWrapper:
         return declared_class
 
     def get_all_implementors(self, method):
-        sub_sig = method.getSubSignature()
+        sub_sig = method.get_sub_signature()
         implementors = set()
 
         work_list = list()
@@ -1155,6 +1155,7 @@ class SummaryTaintWrapper:
     def get_provider(self):
         return self.flows
 
+    """
     def get_inverse_taints_for_method(self, stmt, d1, tainted_abs):
         if not stmt.containsInvokeExpr():
             return set(tainted_abs)
@@ -1205,3 +1206,4 @@ class SummaryTaintWrapper:
             res_abs.add(new_abs)
 
         return res_abs
+    """
