@@ -275,12 +275,12 @@ class AccessPathFactory:
     def copy_with_new_value(self, original, val, new_type=None, cut_first_field=False,
                             reduce_bases=True, array_taint_type=None):
         if new_type is None:
-            new_type = original.baseType
+            new_type = original.base_type
 
         if array_taint_type is None:
             array_taint_type = original.arrayTaintType
 
-        if original.val is not None and original.val.equals(val) and original.baseType.equals(
+        if original.val is not None and original.val.equals(val) and original.base_type.equals(
                 new_type) and original.arrayTaintType == array_taint_type:
             return original
 
@@ -307,5 +307,5 @@ class AccessPathFactory:
             fields = ap_fields[offset:offset + len(ap_fields)]
             field_types = ap_field_types[offset:offset + len(ap_field_types)]
 
-        return self.create_access_path(original.val, fields, original.baseType, field_types, taint_sub_fields, False,
-                                       True, original.arrayTaintType)
+        return self.create_access_path( original.val, fields, original.base_type, field_types, taint_sub_fields, False,
+                                        True, original.arrayTaintType )

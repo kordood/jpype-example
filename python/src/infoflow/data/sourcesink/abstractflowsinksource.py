@@ -1,65 +1,65 @@
+from ...methodsummary.xml.xmlconstants import XMLConstants
+from ...data.summary.sourcesinktype import SourceSinkType
+
+
 class AbstractFlowSinkSource:
 
-    def __init__(self, type, parameterIdx, baseType, accessPath=None, gap=None, userData=None, matchStrict=None):
+    def __init__(self, type, parameter_idx, base_type, access_path=None, gap=None, user_data=None, match_strict=None):
         self.type = type
-        self.parameterIdx = parameterIdx
-        self.baseType = baseType
-        self.accessPath = accessPath
+        self.parameter_idx = parameter_idx
+        self.base_type = base_type
+        self.access_path = access_path
         self.gap = gap
-        self.userData = userData
-        self.matchStrict = matchStrict
+        self.user_data = user_data
+        self.match_strict = match_strict
 
-    def isCoarserThan(self, other):
-        if self.equals( other ):
+    def is_coarser_than(self, other):
+        if self.equals(other):
             return True
 
-        if self.type != other.type or self.parameterIdx != other.parameterId or not safeCompare( self.baseType,
-                                                                                                 other.baseType ) or not safeCompare(
-                self.gap, other.gap ):
+        if self.type != other.type or self.parameter_idx != other.parameter_id or not \
+                self.safe_compare(self.base_type, other.base_type) or not self.safe_compare(self.gap, other.gap):
             return False
-        if self.accessPath is not None and other.accessPath is not None:
-            if self.accessPath.length() > other.accessPath.length():
+        if self.access_path is not None and other.access_path is not None:
+            if self.access_path.length() > other.access_path.length():
                 return False
-            for i in range( 0, len( self.accessPath ) ):
-                if not self.accessPath.getField( i ).equals( other.accessPath.getField( i ) ):
+            for i in range(0, len(self.access_path)):
+                if not self.access_path.getField(i).equals(other.access_path.getField(i)):
                     return False
 
         return True
 
-    def isParameter(self):
+    def is_parameter(self):
         return self.type == SourceSinkType.Parameter
 
-    def isThis(self):
-        return self.type == SourceSinkType.Field and not hasAccessPath()
+    def is_this(self):
+        return self.type == SourceSinkType.Field and not self.has_access_path()
 
-    def isCustom(self):
+    def is_custom(self):
         return self.type == SourceSinkType.Custom
 
-    def isField(self):
+    def is_field(self):
         return self.type == SourceSinkType.Field
 
-    def isReturn(self):
+    def is_return(self):
         return self.type == SourceSinkType.Return
 
-    def isGapBaseObject(self):
+    def is_gap_base_object(self):
         return self.type == SourceSinkType.GapBaseObject
 
-    def hasAccessPath(self):
-        return accessPath is not None and not accessPath.isEmpty()
+    def has_access_path(self):
+        return self.access_path is not None and not self.access_path.is_empty()
 
-    def getAccessPathLength(self):
-        return accessPath is None ? 0: accessPath.length()
+    def get_access_path_length(self):
+        return 0 if self.access_path is None else len(self.access_path)
 
-    def hasGap(self):
+    def has_gap(self):
         return self.gap is not None
 
-    def getLastFieldType(self):
-        if accessPath is None or accessPath.isEmpty():
-            return self.baseType
-        return accessPath.getLastFieldType()
-
-    def isMatchStrict(self):
-        return matchStrict
+    def get_last_field_type(self):
+        if self.access_path is None or self.access_path.isEmpty():
+            return self.base_type
+        return self.access_path.get_last_field_type()
 
     def equals(self, obj):
         if self == obj:
@@ -67,63 +67,62 @@ class AbstractFlowSinkSource:
         if obj is None:
             return False
         other = obj
-        if accessPath is None:
-            if other.accessPath is not None:
+        if self.access_path is None:
+            if other.access_path is not None:
                 return False
-        elif not accessPath.equals( other.accessPath ):
+        elif not self.access_path.equals(other.access_path):
             return False
-        if self.baseType is None:
-            if other.baseType is not None:
+        if self.base_type is None:
+            if other.base_type is not None:
                 return False
-        elif not self.baseType.equals( other.baseType ):
+        elif not self.base_type.equals(other.base_type):
             return False
-        if gap is None:
+        if self.gap is None:
             if other.gap is not None:
                 return False
-        elif not gap.equals( other.gap ):
+        elif not self.gap.equals(other.gap):
             return False
-        if matchStrict != other.matchStrict:
+        if self.match_strict != other.match_strict:
             return False
-        if parameterIdx != other.parameterIdx:
+        if self.parameter_idx != other.parameter_idx:
             return False
         if type != other.type:
             return False
-        if userData is None:
-            if other.userData is not None:
+        if self.user_data is None:
+            if other.user_data is not None:
                 return False
-        elif not userData.equals( other.userData ):
+        elif not self.user_data.equals(other.user_data):
             return False
         return True
 
-    def safeCompare(self, o1, o2):
+    @staticmethod
+    def safe_compare(o1, o2):
         if o1 is None:
             return o2 is None
         if o2 is None:
             return o1 is None
-        return o1.equals( o2 )
+        return o1.equals(o2)
 
-    def xmlAttributes(self):
+    def xml_attributes(self):
         res = dict()
-        if isParameter():
-            res.put( XMLConstants.ATTRIBUTE_FLOWTYPE, XMLConstants.VALUE_PARAMETER )
-            res.put( XMLConstants.ATTRIBUTE_PARAMTER_INDEX, getParameterIndex() + "" )
-        elif isField():
-            res.put( XMLConstants.ATTRIBUTE_FLOWTYPE, XMLConstants.VALUE_FIELD )
-        elif isReturn():
-            res.put( XMLConstants.ATTRIBUTE_FLOWTYPE, XMLConstants.VALUE_RETURN )
+        if self.is_parameter():
+            res[XMLConstants.ATTRIBUTE_FLOWTYPE] = XMLConstants.VALUE_PARAMETER
+            res[XMLConstants.ATTRIBUTE_PARAMTER_INDEX] = self.parameter_idx + ""
+        elif self.is_field():
+            res[XMLConstants.ATTRIBUTE_FLOWTYPE] = XMLConstants.VALUE_FIELD
+        elif self.is_return():
+            res[XMLConstants.ATTRIBUTE_FLOWTYPE] = XMLConstants.VALUE_RETURN
         else:
-            raise RuntimeError( "Invalid source type" )
+            raise RuntimeError("Invalid source type")
 
-        if self.baseType is not None:
-            res.put( XMLConstants.ATTRIBUTE_BASETYPE, baseType )
-        if hasAccessPath():
-            res.put( XMLConstants.ATTRIBUTE_ACCESSPATH, getAccessPath().toString() )
-        if gap is not None:
-            res.put( XMLConstants.ATTRIBUTE_GAP, getGap().getID() + "" )
+        if self.base_type is not None:
+            res[XMLConstants.ATTRIBUTE_BASETYPE] = self.base_type
+        if self.has_access_path():
+            res[XMLConstants.ATTRIBUTE_ACCESSPATH] = str(self.access_path)
+        if self.gap is not None:
+            res[XMLConstants.ATTRIBUTE_GAP] = self.gap().id + ""
 
         return res
 
-    def replaceGaps(self, replacementMap):
+    def replace_gaps(self, replacement_map):
         pass
-
-

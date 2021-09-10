@@ -77,8 +77,8 @@ class FlowDroidMemoryManager:
             if output.current_stmt is None or _input.current_stmt == output.current_stmt:
                 return _input
 
-        new_ap = self.get_cached_access_path( output.accessPath )
-        output.accessPath = new_ap
+        new_ap = self.get_cached_access_path( output.access_path )
+        output.access_path = new_ap
 
         if self.erase_path_data != PathDataErasureMode.EraseNothing:
             cur_abs = output.predecessor

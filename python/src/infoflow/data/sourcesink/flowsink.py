@@ -40,11 +40,11 @@ class FlowSink( AbstractFlowSinkSource ):
         if self.type == SourceSinkType.Parameter and self.gap is None:
             raise InvalidFlowSpecificationError( "Parameters may only be sinks when referencing gaps", self )
 
-    def replaceGaps(self, replacement_map):
+    def replace_gaps(self, replacement_map):
         if gap is None:
             return self
         new_gap = replacement_map.get( gap.getID() )
         if new_gap is None:
             return self
-        return FlowSink( self.type, self.parameterIdx, self.base_type, self.access_path, self.taint_sub_fields,
+        return FlowSink( self.type, self.parameter_idx, self.base_type, self.access_path, self.taint_sub_fields,
                          self.new_gap, self.match_strict )

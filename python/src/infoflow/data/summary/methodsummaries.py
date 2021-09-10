@@ -68,7 +68,7 @@ class MethodSummaries:
             if new_flows.flows is not None and not new_flows.flows.is_empty():
                 for key in new_flows.flows.keys():
                     for flow in new_flows.flows[key]:
-                        replaced_flow = flow.replaceGaps(renumbered_gaps)
+                        replaced_flow = flow.replace_gaps( renumbered_gaps )
                         self.ensure_flows()
                         if self.flows[key] == replaced_flow:
                             new_data = True
@@ -76,7 +76,7 @@ class MethodSummaries:
             if new_flows.clears is not None and not new_flows.clears.is_empty():
                 for key in new_flows.clears.keys():
                     for clear in new_flows.clears[key]:
-                        replaced_flow = clear.replaceGaps(renumbered_gaps)
+                        replaced_flow = clear.replace_gaps( renumbered_gaps )
                         self.ensure_clears()
                         if self.clears[key] == replaced_flow:
                             new_data = True
@@ -190,7 +190,7 @@ class MethodSummaries:
             gaps_with_bases = dict()
 
             for flow in self.flows[method_name]:
-                if not flow.isCustom():
+                if not flow.is_custom():
 
                     if flow.source().get_gap() is not None:
                         if flow.source().getType() == SourceSinkType.GapBaseObject:

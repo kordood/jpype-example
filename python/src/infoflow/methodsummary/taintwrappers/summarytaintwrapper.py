@@ -343,7 +343,7 @@ class SummaryTaintWrapper:
         types = self.safe_get_types(t.getAccessPath(), fields)
         base_type = TypeUtils.get_type_from_string(t.base_type)
 
-        if t.isReturn():
+        if t.is_return():
             if not isinstance(stmt, DefinitionStmt):
                 return None
 
@@ -352,7 +352,7 @@ class SummaryTaintWrapper:
                                                                     t.taint_sub_fields, False, True,
                                                                     ArrayTaintType.ContentsAndLength)
 
-        if t.isParameter() and stmt.containsInvokeExpr():
+        if t.is_parameter() and stmt.containsInvokeExpr():
             iexpr = stmt.getInvokeExpr()
             param_val = iexpr.getArg(t.parameter_index)
             if not AccessPath.can_contain_value(param_val):
@@ -362,7 +362,7 @@ class SummaryTaintWrapper:
                                                                     t.taint_sub_fields, False, True,
                                                                     ArrayTaintType.ContentsAndLength)
 
-        if t.isField() and stmt.containsInvokeExpr():
+        if t.is_field() and stmt.containsInvokeExpr():
             iexpr = stmt.getInvokeExpr()
             if isinstance(iexpr, InstanceInvokeExpr):
                 iiexpr = iexpr
@@ -387,15 +387,15 @@ class SummaryTaintWrapper:
         types = self.safe_get_types(t.getAccessPath(), fields)
         base_type = TypeUtils.get_type_from_string(t.getBaseType())
 
-        if t.isReturn():
+        if t.is_return():
             raise RuntimeError("Unsupported taint type")
 
-        if t.isParameter():
+        if t.is_parameter():
             l = sm.getActiveBody().getParameterLocal(t.parameter_index)
             return self.manager.getAccessPathFactory().createAccessPath(l, fields, base_type, types, True, False, True,
                                                                     ArrayTaintType.ContentsAndLength)
 
-        if t.isField() or t.isGapBaseObject():
+        if t.is_field() or t.is_gap_base_object():
             l = sm.getActiveBody().getThisLocal()
             return self.manager.getAccessPathFactory().createAccessPath(l, fields, base_type, types, True, False, True,
                                                                     ArrayTaintType.ContentsAndLength)
@@ -540,7 +540,7 @@ class SummaryTaintWrapper:
                     if done_set.add(new_propagator):
                         work_list.add(new_propagator)
 
-                    if new_propagator.getTaint().hasAccessPath():
+                    if new_propagator.getTaint().has_access_path():
                         backwards_propagator = new_propagator.deriveInversePropagator()
                         if done_set.add(backwards_propagator):
                             work_list.add(backwards_propagator)
@@ -551,9 +551,9 @@ class SummaryTaintWrapper:
         if not flow.isAlias():
             return None
 
-        if not self.can_type_alias(flow.source().getLastFieldType()):
+        if not self.can_type_alias( flow.source().get_last_field_type() ):
             return None
-        if not self.can_type_alias(flow.sink().getLastFieldType()):
+        if not self.can_type_alias( flow.sink().get_last_field_type() ):
             return None
 
         if flow.source().get_gap() is not None and flow.source().getType() == SourceSinkType.Return:
@@ -771,7 +771,7 @@ class SummaryTaintWrapper:
         if not add_taint:
             return None
 
-        if flow.isCustom():
+        if flow.is_custom():
             new_taint = None
         else:
             new_taint = self.add_sink_taint(flow, taint, taint_gap)
@@ -782,24 +782,24 @@ class SummaryTaintWrapper:
         return new_propagator
 
     def flow_matches_taint(self, flow_source, taint):
-        if flow_source.isParameter() and taint.isParameter():
+        if flow_source.is_parameter() and taint.is_parameter():
             if taint.parameter_index == flow_source.parameter_index:
                 if self.compare_fields(taint, flow_source):
                     return True
 
-        elif flow_source.isField():
-            do_taint = taint.isGapBaseObject() or taint.isField()
+        elif flow_source.is_field():
+            do_taint = taint.is_gap_base_object() or taint.is_field()
             if do_taint and self.compare_fields(taint, flow_source):
                 return True
 
-        elif flow_source.isThis() and taint.isField():
+        elif flow_source.is_this() and taint.is_field():
             return True
 
-        elif flow_source.isReturn() and flow_source.get_gap() is not None and taint.get_gap() is not None \
+        elif flow_source.is_return() and flow_source.get_gap() is not None and taint.get_gap() is not None \
                 and self.compare_fields(taint, flow_source):
             return True
 
-        elif flow_source.isReturn() and flow_source.get_gap() is None and taint.get_gap() is None and taint.isReturn() \
+        elif flow_source.is_return() and flow_source.get_gap() is None and taint.get_gap() is None and taint.is_return() \
                 and self.compare_fields(taint, flow_source):
             return True
         return False
@@ -841,12 +841,12 @@ class SummaryTaintWrapper:
 
     @staticmethod
     def compare_fields(tainted_path, flow_source):
-        if tainted_path.getAccessPathLength() < flow_source.getAccessPathLength():
+        if tainted_path.get_access_path_length() < flow_source.get_access_path_length():
             if not tainted_path.taint_sub_fields or flow_source.isMatchStrict():
                 return False
 
-        for i in range(0, tainted_path.getAccessPathLength()):
-            if i < flow_source.getAccessPathLength():
+        for i in range( 0, tainted_path.get_access_path_length() ):
+            if i < flow_source.get_access_path_length():
                 break
 
             taint_field = tainted_path.getAccessPath().getField(i)
@@ -932,7 +932,7 @@ class SummaryTaintWrapper:
         remaining_fields = self.cut_sub_fields(flow, self.get_remaining_fields(flow_source, taint))
         appended_fields = AccessPathFragment.append(flow_sink.getAccessPath(), remaining_fields)
 
-        last_common_ap_idx = min(flow_source.getAccessPathLength(), taint.getAccessPathLength())
+        last_common_ap_idx = min( flow_source.get_access_path_length(), taint.get_access_path_length() )
 
         sink_type = TypeUtils.get_type_from_string(self.get_assignment_type(src_sink=flow_sink))
         taint_type = TypeUtils.get_type_from_string(self.get_assignment_type(taint=taint, idx=last_common_ap_idx - 1))
@@ -970,9 +970,9 @@ class SummaryTaintWrapper:
             if new_base_type is None:
                 new_base_type = sink_type
 
-            if flow_sink.hasAccessPath():
+            if flow_sink.has_access_path():
                 if appended_fields is not None:
-                    appended_fields = appended_fields.updateFieldType(flow_sink.getAccessPathLength()-1, str(new_base_type))
+                    appended_fields = appended_fields.updateFieldType( flow_sink.get_access_path_length() - 1, str( new_base_type ) )
                 s_base_type = flow_sink.getBaseType()
 
         return Taint(source_sink_type, flow_sink.parameter_index, s_base_type, appended_fields,
@@ -1008,13 +1008,13 @@ class SummaryTaintWrapper:
 
             return None if field_types is None else field_types[idx]
         else:
-            if not src_sink.hasAccessPath():
+            if not src_sink.has_access_path():
                 return src_sink.getBaseType()
 
             access_path = src_sink.getAccessPath()
             if access_path.getFieldTypes() is None and access_path.getFields() is not None:
                 ap = access_path.getFields()
-                ap_element = ap[src_sink.getAccessPathLength() - 1]
+                ap_element = ap[src_sink.get_access_path_length() - 1]
 
                 pattern = re.compile("^\\s*<(.*?)\\s*(.*?)>\\s*$")
                 matcher = pattern.match(ap_element)
@@ -1022,14 +1022,14 @@ class SummaryTaintWrapper:
                     return matcher.group(1)
 
             return None if access_path.getFieldTypes() is None else access_path.getFieldTypes()[
-                src_sink.getAccessPathLength() - 1]
+                src_sink.get_access_path_length() - 1]
 
     @staticmethod
     def get_remaining_fields(flow_source, tainted_path):
-        if not flow_source.hasAccessPath():
+        if not flow_source.has_access_path():
             return tainted_path.getAccessPath()
 
-        field_cnt = tainted_path.getAccessPathLength() - flow_source.getAccessPathLength()
+        field_cnt = tainted_path.get_access_path_length() - flow_source.get_access_path_length()
         if field_cnt <= 0:
             return None
 
@@ -1037,8 +1037,8 @@ class SummaryTaintWrapper:
         old_fields = tainted_ap.getFields()
         old_field_types = tainted_ap.getFieldTypes()
 
-        fields = old_fields[flow_source.getAccessPathLength():flow_source.getAccessPathLength() + field_cnt]
-        field_types = old_field_types[flow_source.getAccessPathLength():flow_source.getAccessPathLength() + field_cnt]
+        fields = old_fields[flow_source.get_access_path_length():flow_source.get_access_path_length() + field_cnt]
+        field_types = old_field_types[flow_source.get_access_path_length():flow_source.get_access_path_length() + field_cnt]
 
         return AccessPathFragment(fields, field_types)
 
