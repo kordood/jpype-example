@@ -8,6 +8,7 @@ import Local
 import HashSet
 import KillAll
 import Value
+from ..infoflow import Infoflow
 from ..functions.solvernormalflowfunction import SolverNormalFlowFunction
 from ..functions.solvercallflowfunction import SolverCallFlowFunction
 from ..functions.solverreturnflowfuntion import SolverReturnFlowFunction
@@ -17,8 +18,9 @@ from ..misc.copymember import copy_member
 
 class FlowFunctions:
 
-    def __init__(self, infoflow):
-        copy_member(self, infoflow)
+    def __init__(self, infoflow:Infoflow):
+        self.infoflow = infoflow
+        self.manager = infoflow.manager
 
     """
     def getNormalFlowFunction(self, curr, succ):

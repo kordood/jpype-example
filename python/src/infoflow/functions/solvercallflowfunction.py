@@ -2,13 +2,16 @@ import HashSet
 import ByReferenceBoolean
 import FlowFunctionType
 from ..problems.flowfunction import FlowFunction
+from ..problems.flowfunctions import FlowFunctions
 from ..misc.copymember import copy_member
 
 
 class SolverCallFlowFunction(FlowFunction):
     
-    def __init__(self, flowfunctions, src, dest):
-        copy_member(self, flowfunctions)
+    def __init__(self, flow_functions:FlowFunctions, src, dest):
+        self.flow_functions = flow_functions
+        self.manager = flow_functions.manager
+        self.results = flow_functions.results
         self.src = src
         self.dest = dest
 
@@ -16,21 +19,21 @@ class SolverCallFlowFunction(FlowFunction):
         res = self.compute_targets_internal(d1, source)
         if res is not None and not res.isEmpty() and d1 is not None:
             for abs in res:
-                self.aliasing.getAliasingStrategy().injectCallingContext(abs, self.solver, self.dest, self.src, source,
+                self.flow_functions.aliasing.getAliasingStrategy().injectCallingContext(abs, self.flow_functions.solver, self.dest, self.src, source,
                                                                          d1
                                                                          )
-        return self.notify_out_flow_handlers(self.stmt, d1, source, res, FlowFunctionType.CallFlowFunction)
+        return self.flow_functions.notify_out_flow_handlers(self.flow_functions.stmt, d1, source, res, FlowFunctionType.CallFlowFunction)
 
     def compute_targets_internal(self, d1, source):
-        if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.is_empty():
+        if self.flow_functions.manager.getConfig().getStopAfterFirstFlow() and not self.results.is_empty():
             return None
-        if source == self.get_zero_value():
-            return None
-
-        if self.is_excluded(self.dest):
+        if source == self.flow_functions.get_zero_value():
             return None
 
-        if self.taint_propagation_handler is not None:
+        if self.flow_functions.is_excluded(self.dest):
+            return None
+
+        if self.flow_functions.taint_propagation_handler is not None:
             self.taint_propagation_handler.notify_flow_in(self.stmt, source, self.manager,
                                                        FlowFunctionType.CallFlowFunction)
 

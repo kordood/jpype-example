@@ -88,7 +88,7 @@ class Infoflow:
             self.manager.forward_solver(forward_solver)
             solvers['forward'] = forward_solver
 
-            forward_solver.set_memory_manager(memory_manager)
+            forward_solver.memory_manager = memory_manager
 
             #forward_problem.taint_propagation_handler = taint_propagation_handler
             #forward_problem.taint_wrapper = taint_wrapper
