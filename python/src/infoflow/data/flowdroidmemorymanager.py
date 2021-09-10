@@ -16,14 +16,13 @@ class FlowDroidMemoryManager:
         def __init__(self, _abs):
             self.abs = _abs
 
-        def equals(self, obj):
-            if self == obj:
+        def __eq__(self, other):
+            if self == other:
                 return True
-            if obj is None:
+            if other is None:
                 return False
-            other = obj
 
-            if not self.abs.equals( other.abs ):
+            if not self.abs == other.abs:
                 return False
             if self.abs.predecessor != other.abs.predecessor:
                 return False
@@ -73,7 +72,7 @@ class FlowDroidMemoryManager:
         if _input == output:
             return output
 
-        if _input.equals( output ):
+        if _input == output:
             if output.current_stmt is None or _input.current_stmt == output.current_stmt:
                 return _input
 
@@ -85,7 +84,7 @@ class FlowDroidMemoryManager:
             while cur_abs is not None and cur_abs.neighbors is None:
                 pred_pred = cur_abs.predecessor
                 if pred_pred is not None:
-                    if pred_pred.equals( output ):
+                    if pred_pred == output:
                         output = pred_pred
 
                 cur_abs = pred_pred

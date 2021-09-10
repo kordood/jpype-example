@@ -11,31 +11,31 @@ class AbstractResultSourceSinkInfo:
         self.stmt = stmt
         self.user_data = user_data
 
-    def equals(self, o):
-        if self == o:
+    def __eq__(self, other):
+        if self == other:
             return True
 
-        if o is None:
+        if other is None:
             return False
 
-        si = o
-        if InfoflowConfiguration().oneResultPerAccessPath and not self.access_path.equals(si.access_path):
+        si = other
+        if InfoflowConfiguration().oneResultPerAccessPath and not self.access_path == si.access_path:
             return False
 
         if self.definition is None:
             if si.definition is not None:
                 return False
-        elif not self.definition.equals(si.definition):
+        elif not self.definition == si.definition:
             return False
         if self.stmt is None:
             if si.stmt is not None:
                 return False
-        elif not self.stmt.equals(si.stmt):
+        elif not self.stmt == si.stmt:
             return False
         if self.user_data is None:
             if si.user_data is not None:
                 return False
-        elif not self.user_data.equals(si.user_data):
+        elif not self.user_data == si.user_data:
             return False
 
         return True

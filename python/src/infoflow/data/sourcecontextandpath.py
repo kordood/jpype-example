@@ -63,7 +63,7 @@ class SourceContextAndPath:
         if track_path and abs.getCurrentStmt() is not None:
             if self.path is not None:
                 top_abs = self.path[-1]
-                if top_abs.equals( abs ) and top_abs.getCorrespondingCallSite() is not None \
+                if top_abs == abs and top_abs.getCorrespondingCallSite() is not None \
                         and top_abs.getCorrespondingCallSite() == abs.getCorrespondingCallSite() \
                         and top_abs.getCurrentStmt() != abs.getCurrentStmt():
                     return None

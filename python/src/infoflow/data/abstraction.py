@@ -71,7 +71,7 @@ class Abstraction:
 
     def derive_new_abstraction(self, p, current_stmt, is_implicit=None):
         is_implicit = is_implicit if is_implicit else self.is_implicit
-        if self.access_path.equals( p ) and self.current_stmt == current_stmt and self.is_implicit == is_implicit:
+        if self.access_path == p and self.current_stmt == current_stmt and self.is_implicit == is_implicit:
             return self
 
         abs = self.derive_new_abstraction_mutable( p, current_stmt )
@@ -85,7 +85,7 @@ class Abstraction:
         if p is None:
             return None
 
-        if self.access_path.equals( p ) and self.current_stmt == current_stmt:
+        if self.access_path == p and self.current_stmt == current_stmt:
             abs = copy(self)
             abs.current_stmt = current_stmt
             return abs
@@ -188,23 +188,23 @@ class Abstraction:
         abs.corresponding_call_site = None
         abs.propagation_path_length = self.propagation_path_length + 1
 
-        assert abs.equals( self )
+        assert abs == self
         return abs
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
+        other = other
 
-        if self.hashCode != 0 and other.hashCode != 0 and self.hashCode != other.hashCode:
+        if self.__hash__ != 0 and other.hashCode != 0 and self.__hash__ != other.hashCode:
             return False
 
         if self.access_path is None:
             if other.access_path is not None:
                 return False
-        elif not self.access_path.equals(other.access_path):
+        elif not self.access_path == other.access_path:
             return False
 
         return self.local_equals( other )
@@ -213,19 +213,19 @@ class Abstraction:
         if self.souce_context is None:
             if other.souce_context is not None:
                 return False
-        elif not self.souce_context.equals(other.souce_context):
+        elif not self.souce_context == other.souce_context:
             return False
         if self.activation_unit is None:
             if other.activation_unit is not None:
                 return False
-        elif not self.activation_unit.equals(other.activation_unit):
+        elif not self.activation_unit == other.activation_unit:
             return False
         if self.exception_thrown != other.exception_thrown:
             return False
         if self.postdominators is None:
             if other.postdominators is not None:
                 return False
-        elif not self.postdominators.equals(other.postdominators):
+        elif not self.postdominators == other.postdominators:
             return False
         if self.depends_on_cut_ap != other.depends_on_cut_ap:
             return False
@@ -288,7 +288,7 @@ class Abstraction:
     """
 
     def inject_source_context(self, souce_context):
-        if self.souce_context is not None and self.souce_context.equals( souce_context ):
+        if self.souce_context is not None and self.souce_context == souce_context:
             return self
     
         abs = copy(self)

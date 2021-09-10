@@ -94,12 +94,11 @@ class AccessPathFragment:
         new_field_types = self.field_types[:length]
         return AccessPathFragment(new_fields, new_field_types)
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.field_types != other.field_types:
             return False
         if self.fields != other.fields:
@@ -134,36 +133,35 @@ class AccessPathPropagator:
         return AccessPathPropagator(self.taint, self.gap, self.parent, self.stmt, self.d1, self.d2,
                                     not self.inverse_propagator)
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.taint is None:
             if other.taint is not None:
                 return False
-        elif not self.taint.equals(other.taint):
+        elif not self.taint == other.taint:
             return False
         if self.gap is None:
             if other.gap is not None:
                 return False
-        elif not self.gap.equals(other.gap):
+        elif not self.gap == other.gap:
             return False
         if self.stmt is None:
             if other.stmt is not None:
                 return False
-        elif not self.stmt.equals(other.stmt):
+        elif not self.stmt == other.stmt:
             return False
         if self.d1 is None:
             if other.d1 is not None:
                 return False
-        elif not self.d1.equals(other.d1):
+        elif not self.d1 == other.d1:
             return False
         if self.d2 is None:
             if other.d2 is not None:
                 return False
-        elif not self.d2.equals(other.d2):
+        elif not self.d2 == other.d2:
             return False
         if self.inverse_propagator != other.inverse_propagator:
             return False
@@ -338,12 +336,11 @@ class SummaryTaintWrapper:
 
             return False
 
-        def equals(self, obj):
-            if self == obj:
+        def __eq__(self, other):
+            if self == other:
                 return True
-            if obj is None:
+            if other is None:
                 return False
-            other = obj
             if self.class_summaries is None:
                 if other.class_summaries is not None:
                     return False
@@ -715,7 +712,7 @@ class SummaryTaintWrapper:
         if isinstance(tp, PrimType):
             return False
         if isinstance(tp, RefType):
-            if tp.class_name.equals("java.lang.String"):
+            if tp.class_name == "java.lang.String":
                 return False
         return True
 
@@ -999,14 +996,14 @@ class SummaryTaintWrapper:
 
             taint_field = tainted_path.access_path.get_field(i)
             source_field = flow_source.access_path.get_field(i)
-            if not source_field.equals(taint_field):
+            if not source_field == taint_field:
                 return False
 
         return True
 
     @staticmethod
     def safe_get_field(field_sig):
-        if field_sig is None or field_sig.equals(""):
+        if field_sig is None or field_sig == "":
             return None
 
         sf = Scene.v().grabField(field_sig)

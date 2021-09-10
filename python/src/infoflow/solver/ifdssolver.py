@@ -192,7 +192,7 @@ class IFDSSolver:
                                     d5p = d5p.clone()
                                     d5p.setPredecessor(d2)
                             elif self.shortening_mode == PredecessorShorteningMode['ShortenIfEqual']:
-                                if d5.equals(d2):
+                                if d5 == d2:
                                     d5p = d2
 
                             self.propagate(d1, ret_site_n, d5p, n, False)
@@ -244,7 +244,7 @@ class IFDSSolver:
                                         d5p = d5p.clone()
                                         d5p.setPredecessor(pred_val)
                                 elif self.shortening_mode == PredecessorShorteningMode['ShortenIfEqual']:
-                                    if d5.equals(pred_val):
+                                    if d5 == pred_val:
                                         d5p = pred_val
                                 self.propagate(d4, ret_site_c, d5p, c, False)
 
@@ -405,18 +405,15 @@ class IFDSSolver:
         def getClass(self):
             pass
 
-        def equals(self, obj):
-            if self == obj:
+        def __eq__(self, other):
+            if self == other:
                 return True
-            if obj is None:
+            if other is None:
                 return False
-            if self.getClass() != obj.getClass():
-                return False
-            other = obj
             if self.edge is None:
                 if other.edge is not None:
                     return False
-            elif not self.edge.equals(other.edge):
+            elif not self.edge == other.edge:
                 return False
             if self.solver_id != other.solver_id:
                 return False

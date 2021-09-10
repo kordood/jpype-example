@@ -41,12 +41,11 @@ class SummaryMetaData:
             if not clazz_summaries.has_superclass():
                 clazz_summaries.set_superClass(self.class_to_superclass.get(class_name))
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.exclusive_classes is None:
             if other.exclusive_classes is not None:
                 return False

@@ -7,12 +7,11 @@ class GapDefinition:
     def renumber(self, new_id):
         return GapDefinition(new_id, self.signature)
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if id != other.id:
             return False
         if self.signature is None:

@@ -3,6 +3,7 @@ import time
 
 import PathDataErasureMode, pathBuilderFactory
 
+from .infoflowconfiguration import InfoflowConfiguration
 from .infoflowmanager import InfoflowManager
 from .data.accesspathfactory import AccessPathFactory
 from .util.systemclasshandler import SystemClassHandler
@@ -19,7 +20,7 @@ logger = logging.getLogger(__file__)
 
 class Infoflow:
 
-    def __init__(self, config):
+    def __init__(self, config:InfoflowConfiguration):
         self.config = config
         self.results = None
         self.taint_wrapper = None
@@ -32,7 +33,7 @@ class Infoflow:
         self.memory_manager_factory = DefaultMemoryManagerFactory()
 
     def create_memory_manager(self):
-        if self.config.getPathConfiguration().must_keep_statements():
+        if self.config.path_configuration.must_keep_statements():
             erasure_mode = PathDataErasureMode.EraseNothing
         elif pathBuilderFactory.supportsPathReconstruction():
             erasure_mode = PathDataErasureMode.EraseNothing
@@ -43,14 +44,14 @@ class Infoflow:
         memory_manager = self.memory_manager_factory.get_memory_manager(False, erasure_mode)
         return memory_manager
 
-    def create_forward_solver(self, forward_problem):
-        solver_config = self.config.getSolverself.configuration()
+    def create_forward_solver(self, forward_problem:InfoflowProblem)->IFDSSolver:
+        solver_config = self.config.solver_configuration
         forward_solver = IFDSSolver(forward_problem, solver_config)
 
         forward_solver.solver_id = True
-        forward_solver.max_join_point_abstractions = solver_config.getMaxJoinPointAbstractions()
-        forward_solver.max_callees_per_call_site = solver_config.getMaxCalleesPerCallSite()
-        forward_solver.max_abstraction_path_length = solver_config.getMaxAbstractionPathLength()
+        forward_solver.max_join_point_abstractions = solver_config.max_join_point_abstractions
+        forward_solver.max_callees_per_call_site = solver_config.max_callees_per_call_site
+        forward_solver.max_abstraction_path_length = solver_config.max_abstraction_path_length
 
         return forward_solver
 

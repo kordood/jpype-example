@@ -30,8 +30,8 @@ class TypeUtils:
 
         rt = tp
         class_name = rt.cls.name
-        return class_name.equals("java.lang.Object") or class_name.equals("java.io.Serializable") \
-               or class_name.equals("java.lang.Cloneable")
+        return class_name == "java.lang.Object" or class_name == "java.io.Serializable" \
+               or class_name == "java.lang.Cloneable"
 
     def check_cast(self, dest_type=None, source_type=None, access_path=None, _type=None):
         if dest_type and source_type:
@@ -99,7 +99,7 @@ class TypeUtils:
             return False
 
         if isinstance( ap_base.base_type, ArrayType ):
-            return dest.getName().equals("java.lang.Object")
+            return dest.getName() == "java.lang.Object"
 
         return self.check_cast(ap_base, dest.getType())
 
@@ -156,21 +156,21 @@ class TypeUtils:
             num_dimensions += 1
             _type = _type[:len(_type)-2]
 
-        if _type.equals("int"):
+        if _type == "int":
             t = IntType.v()
-        elif _type.equals("long"):
+        elif _type == "long":
             t = LongType.v()
-        elif _type.equals("float"):
+        elif _type == "float":
             t = FloatType.v()
-        elif _type.equals("double"):
+        elif _type == "double":
             t = DoubleType.v()
-        elif _type.equals("boolean"):
+        elif _type == "boolean":
             t = BooleanType.v()
-        elif _type.equals("char"):
+        elif _type == "char":
             t = CharType.v()
-        elif _type.equals("short"):
+        elif _type == "short":
             t = ShortType.v()
-        elif _type.equals("byte"):
+        elif _type == "byte":
             t = ByteType.v()
         else:
             if Scene.v().containsClass(_type):

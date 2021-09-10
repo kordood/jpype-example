@@ -14,7 +14,7 @@ class AbstractFlowSinkSource:
         self.match_strict = match_strict
 
     def is_coarser_than(self, other):
-        if self.equals(other):
+        if self == other:
             return True
 
         if self.type != other.type or self.parameter_idx != other.parameter_id or not \
@@ -24,7 +24,7 @@ class AbstractFlowSinkSource:
             if self.access_path.length() > other.access_path.length():
                 return False
             for i in range(0, len(self.access_path)):
-                if not self.access_path.get_field( i ).equals( other.access_path.get_field( i ) ):
+                if not self.access_path.get_field( i ) == other.access_path.get_field( i ):
                     return False
 
         return True
@@ -61,26 +61,25 @@ class AbstractFlowSinkSource:
             return self.base_type
         return self.access_path.get_last_field_type()
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.access_path is None:
             if other.access_path is not None:
                 return False
-        elif not self.access_path.equals(other.access_path):
+        elif not self.access_path == other.access_path:
             return False
         if self.base_type is None:
             if other.base_type is not None:
                 return False
-        elif not self.base_type.equals(other.base_type):
+        elif not self.base_type == other.base_type:
             return False
         if self.gap is None:
             if other.gap is not None:
                 return False
-        elif not self.gap.equals(other.gap):
+        elif not self.gap == other.gap:
             return False
         if self.match_strict != other.match_strict:
             return False
@@ -91,7 +90,7 @@ class AbstractFlowSinkSource:
         if self.user_data is None:
             if other.user_data is not None:
                 return False
-        elif not self.user_data.equals(other.user_data):
+        elif not self.user_data == other.user_data:
             return False
         return True
 
@@ -101,7 +100,7 @@ class AbstractFlowSinkSource:
             return o2 is None
         if o2 is None:
             return o1 is None
-        return o1.equals(o2)
+        return o1 == o2
 
     def xml_attributes(self):
         res = dict()

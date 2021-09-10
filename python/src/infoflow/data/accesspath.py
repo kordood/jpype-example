@@ -76,23 +76,21 @@ class AccessPath:
     def get_field_count(self):
         return 0 if self.fields is None else len(self.fields)
 
-    def equals(self, obj):
-        if obj == self:
+    def __eq__(self, other):
+        if other == self:
             return True
-        if obj is None:
+        if other is None:
             return False
-
-        other = obj
 
         if self.value is None:
             if other.value is not None:
                 return False
-        elif not self.value.equals(other.value):
+        elif not self.value == other.value:
             return False
         if self.baseType is None:
             if other.baseType is not None:
                 return False
-        elif not self.baseType.equals(other.baseType):
+        elif not self.baseType == other.baseType:
             return False
 
         if self.fields != other.fields:
@@ -140,7 +138,7 @@ class AccessPath:
         if (self.value is not None and a2.value is None) or (self.value is None and a2.value is not None):
             return False
 
-        if self.value is not None and not self.value.equals(a2.value):
+        if self.value is not None and not self.value == a2.value:
             return False
 
         if self.fields is not None and a2.fields is not None:
@@ -148,7 +146,7 @@ class AccessPath:
                 return False
 
             for i in range(0, len(self.fields)):
-                if not self.fields[i].equals(a2.fields[i]):
+                if not self.fields[i] == a2.fields[i]:
                     return False
 
         return True

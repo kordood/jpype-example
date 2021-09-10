@@ -37,12 +37,11 @@ class SourceSinkConfiguration:
         self.source_filter_mode = ss_config.source_filter_mode
         self.sink_filter_mode = ss_config.sink_filter_mode
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.callback_source_mode != other.callback_source_mode:
             return False
         if self.enable_lifecycle_sources != other.enable_lifecycle_sources:
@@ -81,12 +80,11 @@ class PathConfiguration:
     def must_keep_statements(self):
         return self.path_reconstruction_mode.reconstructPaths() or self.path_building_algorithm == PathBuildingAlgorithm.ContextSensitive
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.max_call_stack_size != other.max_call_stack_size:
             return False
         if self.max_path_length != other.max_path_length:
@@ -119,12 +117,11 @@ class OutputConfiguration:
         self.max_callers_in_output_file = output_config.max_callers_in_output_file
         self.result_serialization_timeout = output_config.result_serialization_timeout
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.max_callers_in_output_file != other.max_callers_in_output_file:
             return False
         if self.no_call_graph_fraction != other.no_call_graph_fraction:
@@ -150,12 +147,11 @@ class SolverConfiguration:
         self.max_callees_per_call_site = solver_config.max_callees_per_call_site
         self.max_abstraction_path_length = solver_config.max_abstraction_path_length
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.data_flow_solver != other.data_flow_solver:
             return False
         if self.max_callees_per_call_site != other.max_callees_per_call_site:
@@ -181,12 +177,11 @@ class AccessPathConfiguration:
         self.use_this_chain_reduction = config.use_this_chain_reduction
         self.use_same_field_reduction = config.use_same_field_reduction
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.access_path_length != other.access_path_length:
             return False
         if self.use_recursive_access_paths != other.use_recursive_access_paths:

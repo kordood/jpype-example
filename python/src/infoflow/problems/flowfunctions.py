@@ -182,7 +182,7 @@ class FlowFunctions:
             return set(new_source)
 
         res = HashSet()
-        target_ab = new_source if mapped_ap.equals(new_source.getAccessPath()) \
+        target_ab = new_source if mapped_ap == new_source.getAccessPath() \
             else new_source.derive_new_abstraction( mapped_ap, None )
         self.add_taint_via_stmt( d1, assign_stmt, target_ab, res, cut_first_field,
                                  self.interprocedural_cfg().get_method_of(assign_stmt), target_type )

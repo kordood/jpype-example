@@ -10,10 +10,10 @@ class ResultSourceInfo(AbstractResultSourceSinkInfo):
         self.path = path
         self.path_aps = path_aps
 
-    def equals(self,  obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        other = obj
+        other = other
         if not InfoflowConfiguration().pathAgnosticResults:
             if self.path != other.path:
                 return False

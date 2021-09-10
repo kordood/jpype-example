@@ -76,15 +76,14 @@ class SootMethodAndClass:
 
         return self.signature
 
-    def equals(self, another):
-        if not isinstance(another, SootMethodAndClass):
+    def __eq__(self, other):
+        if not isinstance(other, SootMethodAndClass):
             return False
-        other_method = another
 
-        if not self.method_name.equals(other_method.method_name):
+        if not self.method_name == other.method_name:
             return False
-        if not self.parameters == other_method.parameters:
+        if not self.parameters == other.parameters:
             return False
-        if not self.class_name.equals(other_method.class_name):
+        if not self.class_name == other.class_name:
             return False
         return True

@@ -168,12 +168,11 @@ class InfoflowResults:
     def clear(self):
         self.results = None
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.exceptions is None:
             if other.exceptions is not None:
                 return False

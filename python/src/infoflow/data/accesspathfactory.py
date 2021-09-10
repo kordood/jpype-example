@@ -158,13 +158,12 @@ class AccessPathFactory:
                     outer_class_name = fields[i].type.class_name
 
                     start_idx = -1
-                    if value is not None and isinstance(value.type, RefType) and value.type.class_name().equals(
-                            outer_class_name):
+                    if value is not None and isinstance(value.type, RefType) and \
+                            value.type.class_name() == outer_class_name:
                         start_idx = 0
                     else:
                         for j in range(0, i):
-                            if isinstance(fields[j].type, RefType) and fields[j].type.class_name().equals(
-                                    outer_class_name):
+                            if isinstance(fields[j].type, RefType) and fields[j].type.class_name() == outer_class_name:
                                 start_idx = j
                                 break
 
@@ -280,15 +279,15 @@ class AccessPathFactory:
         if array_taint_type is None:
             array_taint_type = original.arrayTaintType
 
-        if original.val is not None and original.val.equals(val) and original.base_type.equals(
-                new_type) and original.arrayTaintType == array_taint_type:
+        if original.val is not None and original.val == val and original.base_type == new_type \
+                and original.arrayTaintType == array_taint_type:
             return original
 
         new_ap = self.create_access_path( val, original.fields, new_type, original.field_types, original.taintSubFields,
                                           cut_first_field, reduce_bases, array_taint_type,
                                           original.can_have_immutable_aliases )
 
-        if new_ap is not None and new_ap.equals(original):
+        if new_ap is not None and new_ap == original:
             return original
         else:
             return new_ap

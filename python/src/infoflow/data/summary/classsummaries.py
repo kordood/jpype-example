@@ -128,12 +128,11 @@ class ClassSummaries:
         for class_name in self.summaries.keys():
             self.summaries.get(class_name).validate()
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.dependencies is None:
             if other.dependencies is not None:
                 return False

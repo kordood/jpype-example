@@ -38,10 +38,10 @@ class ClassMethodSummaries:
             raise RuntimeError("Class name mismatch")
         if other_class_name is not None and self.class_name is None:
             raise RuntimeError("Class name mismatch")
-        if other_class_name is not None and not other_class_name.equals(self.class_name):
+        if other_class_name is not None and not other_class_name == self.class_name:
             raise RuntimeError("Class name mismatch")
         if self.has_superclass() and method_flows.hasSuperclass():
-            if not self.super_class.equals(method_flows.superClass):
+            if not self.super_class == method_flows.superClass:
                 raise RuntimeError("Class name mismatch")
 
         has_new_data = False
@@ -82,16 +82,15 @@ class ClassMethodSummaries:
     def has_interface_info(self):
         return self.is_interface is not None
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.class_name is None:
             if other.class_name is not None:
                 return False
-        elif not self.class_name.equals(other.class_name):
+        elif not self.class_name == other.class_name:
             return False
         if self.interfaces is None:
             if other.interfaces is not None:
@@ -108,11 +107,11 @@ class ClassMethodSummaries:
         if self.method_summaries is None:
             if other.method_summaries is not None:
                 return False
-        elif not self.method_summaries.equals(other.method_summaries):
+        elif not self.method_summaries == other.method_summaries:
             return False
         if self.super_class is None:
             if other.super_class is not None:
                 return False
-        elif not self.super_class.equals(other.super_class):
+        elif not self.super_class == other.super_class:
             return False
         return True

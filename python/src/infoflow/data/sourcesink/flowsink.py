@@ -29,11 +29,11 @@ class FlowSink(AbstractFlowSinkSource):
         res[XMLConstants.ATTRIBUTE_TAINT_SUB_FIELDS] = self.taint_sub_fields() + ""
         return res
 
-    def equals(self, obj):
-        if not super().equals(obj):
+    def __eq__(self, other):
+        if not super().__eq__(other):
             return False
 
-        return self.taint_sub_fields == obj.taint_sub_fields
+        return self.taint_sub_fields == other.taint_sub_fields
 
     def validate(self, method_name):
         if self.type == SourceSinkType.GapBaseObject and self.gap is None:

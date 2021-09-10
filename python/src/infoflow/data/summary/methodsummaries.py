@@ -142,7 +142,7 @@ class MethodSummaries:
 
         if gd.signature is None or gd.signature.is_empty():
             gd.signature = signature
-        elif not gd.signature.equals(signature):
+        elif not gd.signature == signature:
             raise RuntimeError("Gap signature mismatch detected")
 
         return gd
@@ -308,31 +308,30 @@ class MethodSummaries:
     def is_excluded(self, subsignature):
         return self.excluded_methods is not None and subsignature in self.excluded_methods
 
-    def equals(self, obj):
-        if self == obj:
+    def __eq__(self, other):
+        if self == other:
             return True
-        if obj is None:
+        if other is None:
             return False
-        other = obj
         if self.clears is None:
             if other.clears is not None:
                 return False
-        elif not self.clears.equals(other.clears):
+        elif not self.clears == other.clears:
             return False
         if self.excluded_methods is None:
             if other.excluded_methods is not None:
                 return False
-        elif not self.excluded_methods.equals(other.excluded_methods):
+        elif not self.excluded_methods == other.excluded_methods:
             return False
         if self.flows is None:
             if other.flows is not None:
                 return False
-        elif not self.flows.equals(other.flows):
+        elif not self.flows == other.flows:
             return False
         if self.gaps is None:
             if other.gaps is not None:
                 return False
-        elif not self.gaps.equals(other.gaps):
+        elif not self.gaps == other.gaps:
             return False
         return True
 
