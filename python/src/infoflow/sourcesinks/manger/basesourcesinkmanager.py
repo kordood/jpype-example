@@ -1,12 +1,23 @@
+import Scene
+import MethodSourceSinkDefinition
+import FieldSourceSinkDefinition
+import StatementSourceSinkDefinition
+import SinkInfo, SourceInfo
+import VoidType, CallType
+
+
 import logging
 from ...sootir.soot_class import SootClass, SootMethod
-from ...sootir.soot_value import SootInstanceFieldRef as FieldRef
-from ...sootir.soot_statement import SootStmt as Stmt, AssignStmt, ReturnStmt
+from ...sootir.soot_value import SootInstanceFieldRef as FieldRef, SootParamRef as ParameterRef
+from ...sootir.soot_statement import SootStmt as Stmt, AssignStmt, ReturnStmt, DefinitionStmt, IdentityStmt
+from ...sootir.soot_expr import SootInvokeExpr as InstanceInvokeExpr
 from ...infoflowmanager import InfoflowManager
-from ...data.accesspath import AccessPath
+from ...data.accesspath import AccessPath, ArrayTaintType
 
+from ...solver.cfg.infoflowcfg import InfoflowCFG
 from ...misc.pyenum import PyEnum
-from ...infoflowconfiguration import InfoflowConfiguration
+from ...util.systemclasshandler import SystemClassHandler
+from ...infoflowconfiguration import InfoflowConfiguration, CallbackSourceMode
 
 logger = logging.getLogger( __file__ )
 
@@ -31,8 +42,8 @@ class BaseSourceSinkManager:
 
     SourceType = PyEnum( 'NoSource', 'MethodCall', 'Callback', 'UISource' )
 
-
     def __init__(self, sources, sinks, callback_methods: dict=None, config: InfoflowConfiguration=None):
+        self.config = config
         self.source_sink_config = config.source_sink_configuration
         self.source_methods = None
         self.source_statements = None
@@ -234,7 +245,6 @@ class BaseSourceSinkManager:
 
     def get_source(self, s_call_site, cfg: InfoflowCFG):
         assert cfg is not None
-        assert isinstance( cfg, BiDiInterproceduralCFG )
 
         define = self.source_statements.get( s_call_site )
         if define is not None:
@@ -259,7 +269,7 @@ class BaseSourceSinkManager:
                 if define is not None:
                     return define
 
-            if callee.class_name.isPhantom() or callee.hasTag( SimulatedCodeElementTag.TAG_NAME ):
+            if callee.class_name.isPhantom():
                 define = self.find_definition_in_hierarchy( callee, self.source_methods )
                 if define is not None:
                     return define
@@ -311,15 +321,16 @@ class BaseSourceSinkManager:
             return None
 
         if self.source_sink_config.getCallbackSourceMode() == CallbackSourceMode.AllParametersAsSources:
-            return MethodSourceSinkDefinition.createParameterSource( param_ref.getIndex(), CallType.Callback )
+            return MethodSourceSinkDefinition.createParameterSource( param_ref.index, CallType.Callback )
 
         source_sink_def = self.source_methods.get( define.getParentMethod() )
         if isinstance( source_sink_def, MethodSourceSinkDefinition ):
             method_def = source_sink_def
-            if self.source_sink_config.getCallbackSourceMode() == CallbackSourceMode.SourceListOnly and source_sink_def is not None
+            if self.source_sink_config.getCallbackSourceMode() == CallbackSourceMode.SourceListOnly \
+                    and source_sink_def is not None:
                 method_param_defs = method_def.getParameters()
-                if method_param_defs is not None and len(method_param_defs) > param_ref.getIndex():
-                    ap_tuples = method_def.getParameters()[param_ref.getIndex()]
+                if method_param_defs is not None and len(method_param_defs) > param_ref.index:
+                    ap_tuples = method_def.getParameters()[param_ref.index]
                     if ap_tuples is not None and not ap_tuples.isEmpty():
                         for curTuple in ap_tuples:
                             if curTuple.getSourceSinkType().isSource():
@@ -423,24 +434,25 @@ class BaseSourceSinkManager:
         return self.one_source_at_a_time
 
     def reset_current_source(self):
-        self.osaat_iterator = iter(self.source_methods.keys)
+        self.osaat_iterator = self.source_methods.keys()
         self.osaat_type = self.SourceType.MethodCall
 
     def next_source(self):
         if self.osaat_type == self.SourceType.MethodCall or self.osaat_type == self.SourceType.Callback:
-            self.current_source = next( self.osaat_iterator )
+            self.current_source = self.osaat_iterator[0]
+            self.osaat_iterator = self.osaat_iterator[1:]
 
     def has_next_source(self):
         if self.osaat_type == self.SourceType.MethodCall:
-            if self.osaat_iterator.hasNext():
+            if len(self.osaat_iterator) > 2:
                 return True
             else:
                 self.osaat_type = self.SourceType.Callback
-                self.osaat_iterator = iter(self.callback_methods.keys())
+                self.osaat_iterator = self.callback_methods.keys()
                 return self.has_next_source()
 
         elif self.osaat_type == self.SourceType.Callback:
-            if self.osaat_iterator.hasNext():
+            if len(self.osaat_iterator) > 2:
                 return True
             else:
                 self.osaat_type = self.SourceType.UISource
