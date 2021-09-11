@@ -161,13 +161,13 @@ class Infoflow:
         elif logger.is_info_enabled():
             for sink in self.results.get_results().keySet():
                 logger.info("The sink { in method { was called with values from the following sources:", sink,
-                            i_cfg.getMethodOf(sink.getStmt()).get_signature() )
+                            i_cfg.get_method_of( sink.getStmt() ).get_signature() )
                 for source in self.results.get_results().get( sink ):
-                    logger.info("- { in method {", source, i_cfg.getMethodOf(source.getStmt()).get_signature() )
+                    logger.info("- { in method {", source, i_cfg.get_method_of( source.getStmt() ).get_signature() )
                     if source.get_path() is not None:
                         logger.info("\ton Path: ")
                         for p in source.get_path():
-                            logger.info("\t -> " + i_cfg.getMethodOf(p))
+                            logger.info("\t -> " + i_cfg.get_method_of( p ) )
                             logger.info("\t\t -> " + p)
 
     def get_methods_for_seeds(self, icfg):
@@ -196,7 +196,7 @@ class Infoflow:
         for u in sm.retrieveActiveBody().getUnits():
             stmt = u
             if stmt.containsInvokeExpr():
-                for callee in icfg.getCalleesOfCallAt(stmt):
+                for callee in icfg.get_callees_of_call_at( stmt ):
                     if self.is_valid_seed_method(callee):
                         self.get_methods_for_seeds_incremental(callee, done_set, seeds, icfg)
 

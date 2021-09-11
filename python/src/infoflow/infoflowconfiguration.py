@@ -219,6 +219,7 @@ class InfoflowConfiguration:
         self.inspect_sources = False
         self.inspect_sinks = False
 
+        self.source_sink_configuration = SourceSinkConfiguration()
         self.path_configuration = PathConfiguration()
         self.output_configuration = OutputConfiguration()
         self.solver_configuration = SolverConfiguration()

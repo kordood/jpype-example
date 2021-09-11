@@ -112,7 +112,7 @@ class SolverReturnFlowFunction(FlowFunction):
                     if not source.getAccessPath().getTaintSubFields():
                         continue
 
-                    if self.interprocedural_cfg().methodWritesValue(self.callee, self.paramLocals[i]):
+                    if self.interprocedural_cfg().method_writes_value( self.callee, self.paramLocals[i] ):
                         continue
 
                     ap = self.manager.getAccessPathFactory().copy_with_new_value(

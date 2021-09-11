@@ -356,7 +356,7 @@ class SummaryTaintWrapper:
             self.summary_taint_wrapper = summary_taint_wrapper
 
         def handle_follow_returns_past_seeds(self, d1, u, d2):
-            sm = self.summary_taint_wrapper.manager.icfg.getMethodOf(u)
+            sm = self.summary_taint_wrapper.manager.icfg.get_method_of( u )
             propagators = self.summary_taint_wrapper.get_user_code_taints(d1, sm)
             if propagators is not None:
                 for propagator in propagators:
@@ -386,7 +386,7 @@ class SummaryTaintWrapper:
                         root_propagator = self.get_original_call_site(propagator)
                         for ap in result_aps:
                             new_abs = root_propagator.d2.deriveNewAbstraction(ap, root_propagator.stmt)
-                            for succ_unit in self.summary_taint_wrapper.manager.icfg.getSuccsOf(root_propagator.stmt):
+                            for succ_unit in self.summary_taint_wrapper.manager.icfg.get_succs_of( root_propagator.stmt ):
                                 self.summary_taint_wrapper.manager.getForwardSolver().processEdge(
                                     PathEdge(root_propagator.d1, succ_unit, new_abs))
 
@@ -453,7 +453,7 @@ class SummaryTaintWrapper:
         return new_taints
 
     def create_taint_from_access_path_on_return(self, ap, stmt, gap):
-        sm = self.manager.icfg.getMethodOf(stmt)
+        sm = self.manager.icfg.get_method_of( stmt )
         res = None
 
         if not sm.isStatic() and (
@@ -748,7 +748,7 @@ class SummaryTaintWrapper:
 
             return outgoing_taints
 
-        for start_point in self.manager.icfg.getStartPointsOf(implementor):
+        for start_point in self.manager.icfg.get_start_points_of( implementor ):
             edge = PathEdge(abstraction, start_point, abstraction)
             self.manager.getForwardSolver().processEdge(edge)
 
@@ -783,7 +783,7 @@ class SummaryTaintWrapper:
         if not method.isConstructor() and not method.isStaticInitializer() and not method.isStatic():
             if stmt is not None:
 
-                for callee in self.manager.icfg.getCalleesOfCallAt(stmt):
+                for callee in self.manager.icfg.get_callees_of_call_at( stmt ):
                     flows = self.flows.getMethodFlows(callee.declaring_class, subsig)
                     if flows is not None and len(flows) != 0:
                         if class_supported.value is not None:
@@ -1239,7 +1239,7 @@ class SummaryTaintWrapper:
                     return True
             else:
 
-                for callee in self.manager.icfg.getCalleesOfCallAt(call_site):
+                for callee in self.manager.icfg.get_callees_of_call_at( call_site ):
                     if not callee.isStaticInitializer():
                         if self.supports_callee(callee):
                             return True

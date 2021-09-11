@@ -63,7 +63,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                 and (self.hasValidCallees \
                      or (self.taintWrapper is not None and self.taintWrapper.is_exclusive( self.i_call_stmt, new_source ))):
 
-            callees = self.interprocedural_cfg().getCalleesOfCallAt(self.call)
+            callees = self.interprocedural_cfg().get_callees_of_call_at( self.call )
             all_callees_read = not callees.is_empty()
             for callee in callees:
                 if callee.isConcrete() and callee.hasActiveBody():
@@ -71,7 +71,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     if callee_aps is not None:
                         for ap in callee_aps:
                             if ap is not None:
-                                if not self.interprocedural_cfg().methodReadsValue(callee, ap.getPlainValue()):
+                                if not self.interprocedural_cfg().method_reads_value( callee, ap.getPlainValue() ):
                                     all_callees_read = False
                                     break
 
@@ -91,7 +91,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     pass_on = False
 
         if source.getAccessPath().is_static_field_ref():
-            if not self.interprocedural_cfg().isStaticFieldUsed( callee, source.getAccessPath().get_first_field() ):
+            if not self.interprocedural_cfg().is_static_field_used( callee, source.getAccessPath().get_first_field() ):
                 pass_on = True
 
         pass_on |= source.get_top_postdominator() is not None or source.getAccessPath().is_empty()

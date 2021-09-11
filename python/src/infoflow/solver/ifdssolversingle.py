@@ -109,7 +109,7 @@ class IFDSSolver:
         else:
             if self.icfg.is_exit_stmt(target):
                 self.process_exit(edge)
-            if not self.icfg.getSuccsOf(target).is_empty():
+            if not self.icfg.get_succs_of( target ).is_empty():
                 self.process_normal_flow(edge)
 
         self.propagation_count += 1
@@ -123,7 +123,7 @@ class IFDSSolver:
         else:
             if self.icfg.is_exit_stmt(target):
                 self.process_exit(edge)
-            if not self.icfg.getSuccsOf(target).is_empty():
+            if not self.icfg.get_succs_of( target ).is_empty():
                 self.process_normal_flow(edge)
 
     def process_call(self, edge):
@@ -132,8 +132,8 @@ class IFDSSolver:
         d2 = edge.d_target
         assert d2 is not None
 
-        return_site_ns = self.icfg.getReturnSitesOfCallAt(n)
-        callees = self.icfg.getCalleesOfCallAt(n)
+        return_site_ns = self.icfg.get_return_sites_of_call_at( n )
+        callees = self.icfg.get_callees_of_call_at( n )
 
         if callees is not None and not callees.is_empty():
             if self.max_callees_per_call_site < 0 or callees.size() <= self.max_callees_per_call_site:
@@ -146,7 +146,7 @@ class IFDSSolver:
                     result = self.compute_call_flow_function(function, d1, d2)
 
                     if result is not None and not result.is_empty():
-                        start_points_of = self.icfg.getStartPointsOf(s_called_proc_n)
+                        start_points_of = self.icfg.get_start_points_of( s_called_proc_n )
                         for d3 in result:
                             if self.memory_manager is not None:
                                 d3 = self.memory_manager.handle_generated_memory_object(d2, d3)
@@ -230,7 +230,7 @@ class IFDSSolver:
 
                 c = entry.getKey()
                 caller_side_ds = entry.getValue().keySet()
-                for ret_site_c in self.icfg.getReturnSitesOfCallAt(c):
+                for ret_site_c in self.icfg.get_return_sites_of_call_at( c ):
                     ret_function = self.flow_functions.get_return_flow_function(c, method_that_needs_summary, n,
                                                                                 ret_site_c)
                     targets = self.compute_return_flow_function(ret_function, d1, d2, c, caller_side_ds)
@@ -257,10 +257,10 @@ class IFDSSolver:
                                 self.propagate(d4, ret_site_c, d5p, c, False)
 
         if self.follow_returns_past_seeds and d1 == self.zero_value and (inc is None or inc.is_empty()):
-            callers = self.icfg.getCallersOf(method_that_needs_summary)
+            callers = self.icfg.get_callers_of( method_that_needs_summary )
 
             for c in callers:
-                for ret_site_c in self.icfg.getReturnSitesOfCallAt(c):
+                for ret_site_c in self.icfg.get_return_sites_of_call_at( c ):
                     ret_function = self.flow_functions.get_return_flow_function(c, method_that_needs_summary, n,
                                                                                 ret_site_c)
                     targets = self.compute_return_flow_function(ret_function, d1, d2, c, set(self.zero_value))
@@ -283,7 +283,7 @@ class IFDSSolver:
         n = edge.target
         d2 = edge.d_target
 
-        for m in self.icfg.getSuccsOf(n):
+        for m in self.icfg.get_succs_of( n ):
             if self.kill_flag is not None:
                 return
             flow_function = self.flow_functions.get_normal_flow_function(n, m)

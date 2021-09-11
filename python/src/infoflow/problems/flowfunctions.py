@@ -87,7 +87,7 @@ class FlowFunctions:
                     aliasing.computeAliases(d1, assign_stmt, left_value, taint_set, method, new_abs)
 
     def has_valid_callees(self, call):
-        callees = self.interprocedural_cfg().getCalleesOfCallAt(call)
+        callees = self.interprocedural_cfg().get_callees_of_call_at( call )
 
         for callee in callees:
             if callee.isConcrete():
@@ -263,7 +263,7 @@ class FlowFunctions:
         if ap.is_empty():
             return None
 
-        is_executor_execute = self.interprocedural_cfg().isExecutorExecute(ie, callee)
+        is_executor_execute = self.interprocedural_cfg().is_executor_execute( ie, callee )
 
         res = None
 

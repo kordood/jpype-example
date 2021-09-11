@@ -15,351 +15,351 @@ class InfoflowCFG:
     MAX_SIDE_EFFECT_ANALYSIS_DEPTH = 25
     MAX_STATIC_USE_ANALYSIS_DEPTH = 50
 
-    StaticFieldUse = PyEnum( 'Unknown', 'Unused', 'Read', 'Write', 'ReadWrite' )
+    StaticFieldUse = PyEnum('Unknown', 'Unused', 'Read', 'Write', 'ReadWrite')
 
     def __init__(self, delegate):
-        #( JimpleBasedInterproceduralCFG( True, True ) )
+        #(JimpleBasedInterproceduralCFG(True, True))
         self.delegate = delegate
-        self.staticFieldUses = dict()
-        self.staticFieldUses = dict()
+        self.static_field_uses = dict()
+        self.unit_to_postdominator = list()
+        self.method_to_used_locals = list()
+        self.method_to_written_locals = list()
 
-        self.unitToPostdominator = list()
-        self.methodToUsedLocals = list()
-        self.methodToWrittenLocals = list()
+    def get_postdominator_of(self, u):
+        return self.unit_to_postdominator.append(u)
 
-    def getPostdominatorOf(self, u):
-        return self.unitToPostdominator.append( u )
+    def get_method_of(self, u):
+        return self.delegate.get_method_of(u)
 
-    def getMethodOf(self, u):
-        return self.delegate.getMethodOf( u )
+    def get_succs_of(self, u):
+        return self.delegate.get_succs_of(u)
 
-    def getSuccsOf(self, u):
-        return self.delegate.getSuccsOf( u )
+    def is_exit_stmt(self, u):
+        return self.delegate.is_exit_stmt(u)
 
-    def isExitStmt(self, u):
-        return self.delegate.isExitStmt( u )
+    def is_start_point(self, u):
+        return self.delegate.is_start_point(u)
 
-    def isStartPoint(self, u):
-        return self.delegate.isStartPoint( u )
+    def is_fall_through_successor(self, u, succ):
+        return self.delegate.is_fall_through_successor(u, succ)
 
-    def isFallThroughSuccessor(self, u, succ):
-        return self.delegate.isFallThroughSuccessor( u, succ )
+    def is_branch_target(self, u, succ):
+        return self.delegate.is_branch_target(u, succ)
 
-    def isBranchTarget(self, u, succ):
-        return self.delegate.isBranchTarget( u, succ )
+    def get_start_points_of(self, m):
+        return self.delegate.get_start_points_of(m)
 
-    def getStartPointsOf(self, m):
-        return self.delegate.getStartPointsOf( m )
+    def is_call_stmt(self, u):
+        return self.delegate.is_call_stmt(u)
 
-    def isCallStmt(self, u):
-        return self.delegate.isCallStmt( u )
+    def all_non_call_start_nodes(self):
+        return self.delegate.all_non_call_start_nodes()
 
-    def allNonCallStartNodes(self):
-        return self.delegate.allNonCallStartNodes()
+    def get_callees_of_call_at(self, u):
+        return self.delegate.get_callees_of_call_at(u)
 
-    def getCalleesOfCallAt(self, u):
-        return self.delegate.getCalleesOfCallAt( u )
+    def get_callers_of(self, m):
+        return self.delegate.get_callers_of(m)
 
-    def getCallersOf(self, m):
-        return self.delegate.getCallersOf( m )
+    def get_return_sites_of_call_at(self, u):
+        return self.delegate.get_return_sites_of_call_at(u)
 
-    def getReturnSitesOfCallAt(self, u):
-        return self.delegate.getReturnSitesOfCallAt( u )
+    def get_calls_from_within(self, m):
+        return self.delegate.get_calls_from_within(m)
 
-    def getCallsFromWithin(self, m):
-        return self.delegate.getCallsFromWithin( m )
+    def get_preds_of(self, u):
+        return self.delegate.get_preds_of(u)
 
-    def getPredsOf(self, u):
-        return self.delegate.getPredsOf( u )
+    def get_end_points_of(self, m):
+        return self.delegate.get_end_points_of(m)
 
-    def getEndPointsOf(self, m):
-        return self.delegate.getEndPointsOf( m )
+    def get_preds_of_call_at(self, u):
+        return self.delegate.get_preds_of(u)
 
-    def getPredsOfCallAt(self, u):
-        return self.delegate.getPredsOf( u )
+    def all_non_call_end_nodes(self):
+        return self.delegate.all_non_call_end_nodes()
 
-    def allNonCallEndNodes(self):
-        return self.delegate.allNonCallEndNodes()
+    def get_or_create_unit_graph(self, m):
+        return self.delegate.get_or_create_unit_graph(m)
 
-    def getOrCreateUnitGraph(self, m):
-        return self.delegate.getOrCreateUnitGraph( m )
+    def get_parameter_refs(self, m):
+        return self.delegate.get_parameter_refs(m)
 
-    def getParameterRefs(self, m):
-        return self.delegate.getParameterRefs( m )
+    def is_return_site(self, n):
+        return self.delegate.is_return_site(n)
 
-    def isReturnSite(self, n):
-        return self.delegate.isReturnSite( n )
+    def is_static_field_read(self, method, variable):
+        use = self.check_static_field_used(method, variable)
+        return use == self.StaticFieldUse.Read or use == self.StaticFieldUse.ReadWrite \
+               or use == self.StaticFieldUse.Unknown
 
-    def isStaticFieldRead(self, method, variable):
-        use = self.checkStaticFieldUsed( method, variable )
-        return use == self.StaticFieldUse.Read or use == self.StaticFieldUse.ReadWrite or use == self.StaticFieldUse.Unknown
+    def is_static_field_used(self, method, variable):
+        use = self.check_static_field_used(method, variable)
+        return use == self.StaticFieldUse.Write or use == self.StaticFieldUse.ReadWrite \
+               or use == self.StaticFieldUse.Unknown
 
-    def isStaticFieldUsed(self, method, variable):
-        use = self.checkStaticFieldUsed( method, variable )
-        return use == self.StaticFieldUse.Write or use == self.StaticFieldUse.ReadWrite or use == self.StaticFieldUse.Unknown
-
-    def checkStaticFieldUsed(self, smethod, variable):
-        if not smethod.isConcrete() or not smethod.hasActiveBody():
+    def check_static_field_used(self, smethod, variable):
+        if not smethod.is_concrete or not smethod.hasActiveBody():
             return self.StaticFieldUse.Unused
 
-        workList = list()
-        workList.append( smethod )
-        tempUses = dict()
+        work_list = list()
+        work_list.append(smethod)
+        temp_uses = dict()
 
-        processedMethods = 0
-        while len( workList ) > 0:
-            method = workList.pop( len( workList ) - 1 )
-            processedMethods += 1
+        processed_methods = 0
+        while len(work_list) > 0:
+            method = work_list.pop(len(work_list) - 1)
+            processed_methods += 1
 
             if not method.hasActiveBody():
                 continue
 
-            if processedMethods > self.MAX_STATIC_USE_ANALYSIS_DEPTH:
+            if processed_methods > self.MAX_STATIC_USE_ANALYSIS_DEPTH:
                 return self.StaticFieldUse.Unknown
 
-            hasInvocation = False
+            has_invocation = False
             reads = False
             writes = False
 
-            entry = self.staticFieldUses.get( method )
+            entry = self.static_field_uses.get(method)
             if entry is not None:
-                b = entry.get( variable )
+                b = entry.get(variable)
                 if b is not None and b != self.StaticFieldUse.Unknown:
-                    tempUses[method] = b
+                    temp_uses[method] = b
                     continue
 
-            oldUse = tempUses.get( method )
+            old_use = temp_uses.get(method)
 
             for u in method.active_body.units:
-                if isinstance( u, AssignStmt ):
+                if isinstance(u, AssignStmt):
                     assign = u
 
-                    if isinstance( assign.getLeftOp(), StaticFieldRef ):
+                    if isinstance(assign.getLeftOp(), StaticFieldRef):
                         sf = assign.getLeftOp().getField()
-                        self.registerStaticVariableUse( method, sf, self.StaticFieldUse.Write )
+                        self.register_static_variable_use(method, sf, self.StaticFieldUse.Write)
                         if variable == sf:
                             writes = True
 
-                    if isinstance( assign.getRightOp(), StaticFieldRef ):
+                    if isinstance(assign.getRightOp(), StaticFieldRef):
                         sf = assign.getRightOp().getField()
-                        self.registerStaticVariableUse( method, sf, self.StaticFieldUse.Read )
+                        self.register_static_variable_use(method, sf, self.StaticFieldUse.Read)
                         if variable == sf:
                             reads = True
 
                 if u.containsInvokeExpr():
-                    for edge in Scene.v().getCallGraph().edgesOutOf( u ):
-                        callee = edge.getTgt().method()
-                        if callee.isConcrete():
+                    for edge in Scene.v().getCallGraph().edgesOutOf(u):
+                        callee = edge.target.method
+                        if callee.is_concrete:
 
-                            calleeUse = tempUses.get( callee )
-                            if calleeUse is None:
+                            callee_use = temp_uses.get(callee)
+                            if callee_use is None:
 
-                                if not hasInvocation:
-                                    workList.append( method )
+                                if not has_invocation:
+                                    work_list.append(method)
 
-                                workList.append( callee )
-                                hasInvocation = True
+                                work_list.append(callee)
+                                has_invocation = True
                             else:
-                                reads |= calleeUse == self.StaticFieldUse.Read or calleeUse == self.StaticFieldUse.ReadWrite
-                                writes |= calleeUse == self.StaticFieldUse.Write or calleeUse == self.StaticFieldUse.ReadWrite
+                                reads |= callee_use == self.StaticFieldUse.Read or \
+                                         callee_use == self.StaticFieldUse.ReadWrite
+                                writes |= callee_use == self.StaticFieldUse.Write or \
+                                          callee_use == self.StaticFieldUse.ReadWrite
 
-            fieldUse = self.StaticFieldUse.Unused
+            field_use = self.StaticFieldUse.Unused
             if reads and writes:
-                fieldUse = self.StaticFieldUse.ReadWrite
+                field_use = self.StaticFieldUse.ReadWrite
             elif reads:
-                fieldUse = self.StaticFieldUse.Read
+                field_use = self.StaticFieldUse.Read
             elif writes:
-                fieldUse = self.StaticFieldUse.Write
+                field_use = self.StaticFieldUse.Write
 
-            if fieldUse == oldUse:
+            if field_use == old_use:
                 continue
-            tempUses[method] = fieldUse
+            temp_uses[method] = field_use
 
-        for key, value in tempUses.items():
-            self.registerStaticVariableUse( key, variable, value )
+        for key, value in temp_uses.items():
+            self.register_static_variable_use(key, variable, value)
 
-        outerUse = tempUses.get( smethod )
-        return self.StaticFieldUse.Unknown if outerUse is None else outerUse
+        outer_use = temp_uses.get(smethod)
+        return self.StaticFieldUse.Unknown if outer_use is None else outer_use
 
-    def registerStaticVariableUse(self, method, variable, fieldUse):
-        entry = self.staticFieldUses.get( method )
+    def register_static_variable_use(self, method, variable, field_use):
+        entry = self.static_field_uses.get(method)
         if entry is None:
             entry = dict()
-            self.staticFieldUses[method] = entry
-            entry[variable] = fieldUse
+            self.static_field_uses[method] = entry
+            entry[variable] = field_use
             return
 
-        oldUse = entry.get( variable )
-        if oldUse is None:
-            entry[variable] = fieldUse
+        old_use = entry.get(variable)
+        if old_use is None:
+            entry[variable] = field_use
             return
 
-        newUse = None
-        if oldUse == self.StaticFieldUse.Unknown:
+        new_use = None
+        if old_use == self.StaticFieldUse.Unknown:
             pass
-        elif oldUse == self.StaticFieldUse.Unused:
+        elif old_use == self.StaticFieldUse.Unused:
             pass
-        elif oldUse == self.StaticFieldUse.ReadWrite:
-            newUse = fieldUse
-        elif oldUse == self.StaticFieldUse.Read:
-            newUse = oldUse if (fieldUse == self.StaticFieldUse.Read) else self.StaticFieldUse.ReadWrite
-        elif oldUse == self.StaticFieldUse.Write:
-            newUse = oldUse if (fieldUse == self.StaticFieldUse.Write) else self.StaticFieldUse.ReadWrite
+        elif old_use == self.StaticFieldUse.ReadWrite:
+            new_use = field_use
+        elif old_use == self.StaticFieldUse.Read:
+            new_use = old_use if (field_use == self.StaticFieldUse.Read) else self.StaticFieldUse.ReadWrite
+        elif old_use == self.StaticFieldUse.Write:
+            new_use = old_use if (field_use == self.StaticFieldUse.Write) else self.StaticFieldUse.ReadWrite
         else:
-            raise RuntimeError( "Invalid field use" )
-        entry[variable] = newUse
+            raise RuntimeError("Invalid field use")
+        entry[variable] = new_use
 
-    def hasSideEffects(self, method, runList=None, depth=0):
-        if runList is None:
-            runList = list()
+    def has_side_effects(self, method, run_list=None, depth=0):
+        if run_list is None:
+            run_list = list()
 
         if not method.hasActiveBody():
             return False
 
-        if not runList.add( method ):
+        if not run_list.add(method):
             return False
 
-        hasSideEffects = self.staticFieldUses.get( method )
-        if hasSideEffects is not None:
-            return hasSideEffects
+        has_side_effects = self.static_field_uses.get(method)
+        if has_side_effects is not None:
+            return has_side_effects
 
         if depth > self.MAX_SIDE_EFFECT_ANALYSIS_DEPTH:
             return True
 
         for u in method.active_body.units:
-            if isinstance( u, AssignStmt ):
+            if isinstance(u, AssignStmt):
                 assign = u
 
-                if isinstance( assign.getLeftOp(), FieldRef ):
-                    self.staticFieldUses[method] = True
+                if isinstance(assign.getLeftOp(), FieldRef):
+                    self.static_field_uses[method] = True
                     return True
 
             if u.containsInvokeExpr():
-                for edge in Scene.v().getCallGraph().edgesOutOf( u ):
+                for edge in Scene.v().getCallGraph().edgesOutOf(u):
                     depth += 1
-                    if self.hasSideEffects( edge.getTgt().method(), runList, depth ):
+                    if self.has_side_effects(edge.target.method, run_list, depth):
                         return True
 
-        self.staticFieldUses[method] = False
+        self.static_field_uses[method] = False
         return False
 
     """
     NOT YET
     def notifyMethodChanged(self, m):
-        if isinstance( self.delegate, JimpleBasedInterproceduralCFG ):
-            self.delegate.initializeUnitToOwner( m )
+        if isinstance(self.delegate, JimpleBasedInterproceduralCFG):
+            self.delegate.initializeUnitToOwner(m)
     """
 
-    def methodReadsValue(self, m, v):
-        self.methodToUsedLocals.append( m )
+    def method_reads_value(self, m, v):
+        self.method_to_used_locals.append(m)
         reads = m['value']
         if reads is not None:
-            for l in reads:
-                if l == v:
+            for local in reads:
+                if local == v:
                     return True
         return False
 
-    def methodWritesValue(self, m, v):
-        self.methodToWrittenLocals.append( m )
+    def method_writes_value(self, m, v):
+        self.method_to_written_locals.append(m)
         writes = m['value']
         if writes is not None:
-            for l in writes:
-                if l == v:
+            for local in writes:
+                if local == v:
                     return True
         return False
 
-    def isExceptionalEdgeBetween(self, u1, u2):
-        m1 = self.getMethodOf( u1 )
-        m2 = self.getMethodOf( u2 )
+    def is_exceptional_edge_between(self, u1, u2):
+        m1 = self.get_method_of(u1)
+        m2 = self.get_method_of(u2)
         if m1 != m2:
-            raise RuntimeError( "Exceptional edges are only supported inside the same method" )
-        ug1 = self.getOrCreateUnitGraph( m1 )
+            raise RuntimeError("Exceptional edges are only supported inside the same method")
+        ug1 = self.get_or_create_unit_graph(m1)
 
         """
         NOT YET
-        if not isinstance( ug1, ExceptionalUnitGraph ):
+        if not isinstance(ug1, ExceptionalUnitGraph):
             return False
         """
 
         eug = ug1
-        if not eug.getExceptionalSuccsOf( u1 ).contains( u2 ):
+        if not eug.getExceptionalSuccsOf(u1).contains(u2):
             return False
 
-        dests = eug.getExceptionDests( u1 )
+        dests = eug.getExceptionDests(u1)
         if dests is not None and not dests.isEmpty():
-            ts = Scene.v().getDefaultThrowAnalysis().mightThrow( u1 )
+            ts = Scene.v().getDefaultThrowAnalysis().mightThrow(u1)
             if ts is not None:
-                hasTraps = False
+                has_traps = False
                 for dest in dests:
                     trap = dest.getTrap()
                     if trap is not None:
-                        hasTraps = True
-                        if not ts.catchableAs( trap.getException().getType() ):
+                        has_traps = True
+                        if not ts.catchableAs(trap.getException().getType()):
                             return False
 
-                if not hasTraps:
+                if not has_traps:
                     return False
         return True
 
-    def isReachable(self, u):
-        return self.delegate.isReachable( u )
+    def is_reachable(self, u):
+        return self.delegate.is_reachable(u)
 
-    def isExecutorExecute(self, ie, dest):
+    @staticmethod
+    def is_executor_execute(ie, dest):
         if ie is None or dest is None:
             return False
 
-        ieMethod = ie.getMethod()
-        if not ieMethod.name == "execute" and not ieMethod.name == "doPrivileged":
+        ie_method = ie.getMethod()
+        if not ie_method.name == "execute" and not ie_method.name == "doPrivileged":
             return False
 
-        ieSubSig = ieMethod.getSubSignature()
-        calleeSubSig = dest.getSubSignature()
+        ie_sub_sig = ie_method.getSubSignature()
+        callee_sub_sig = dest.getSubSignature()
 
-        if ieSubSig == "execute(java.lang.Runnable)" and calleeSubSig == "run()":
+        if ie_sub_sig == "execute(java.lang.Runnable)" and callee_sub_sig == "run()":
             return True
 
-        if dest.name == "run"  and dest.getParameterCount() == 0 and isinstance( dest.getReturnType(), RefType ):
-            if ieSubSig == "java.lang.Object doPrivileged(java.security.PrivilegedAction)":
+        if dest.name == "run" and dest.getParameterCount() == 0 and isinstance(dest.getReturnType(), RefType):
+            if ie_sub_sig == "java.lang.Object doPrivileged(java.security.PrivilegedAction)":
                 return True
-            if ieSubSig == "java.lang.Object doPrivileged(java.security.PrivilegedAction,"\
+            if ie_sub_sig == "java.lang.Object doPrivileged(java.security.PrivilegedAction,"\
                     + "java.security.AccessControlContext)":
                 return True
-            if ieSubSig == "java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)":
+            if ie_sub_sig == "java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)":
                 return True
-            if ieSubSig == "java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,"\
+            if ie_sub_sig == "java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,"\
                     + "java.security.AccessControlContext)":
                 return True
         return False
 
-    def getOrdinaryCalleesOfCallAt(self, u):
+    def get_ordinary_callees_of_call_at(self, u):
         iexpr = u.getInvokeExpr()
-
-        originalCallees = self.getCalleesOfCallAt( u )
-        callees = list( len( originalCallees ) )
-        for sm in originalCallees:
-            if not sm.isStaticInitializer() and not self.isExecutorExecute( iexpr, sm ):
-                callees.add( sm )
+        original_callees = self.get_callees_of_call_at(u)
+        callees = list()
+        for sm in original_callees:
+            if not sm.isStaticInitializer() and not self.is_executor_execute(iexpr, sm):
+                callees.append(sm)
         return callees
 
-    def isReflectiveCallSite(self, u, iexpr=None):
+    def is_reflective_call_site(self, u, iexpr=None):
         if iexpr is None:
-            if self.isCallStmt( u ):
+            if self.is_call_stmt(u):
                 iexpr = u.getInvokeExpr()
-                return self.isReflectiveCallSite( iexpr )
+                return self.is_reflective_call_site(iexpr)
             return False
         else:
-            if isinstance( iexpr, VirtualInvokeExpr ):
+            if isinstance(iexpr, VirtualInvokeExpr):
                 viexpr = iexpr
-                if isinstance( viexpr.getBase().getType(), RefType ):
+                if isinstance(viexpr.getBase().getType(), RefType):
                     if (viexpr.getBase().getType()).getSootClass().name == "java.lang.reflect.Method":
                         if viexpr.getMethod().name == "invoke":
                             return True
             return False
 
     def purge(self):
-        self.staticFieldUses.clear()
-        self.staticFieldUses.clear()
-
-        self.methodToUsedLocals.clear()
-        self.methodToWrittenLocals.clear()
-        self.unitToPostdominator.clear()
+        self.static_field_uses.clear()
+        self.method_to_used_locals.clear()
+        self.method_to_written_locals.clear()
+        self.unit_to_postdominator.clear()

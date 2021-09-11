@@ -59,7 +59,7 @@ class SolverCallFlowFunction(FlowFunction):
             if ap is not None:
                 if self.aliasing.getAliasingStrategy().isLazyAnalysis() \
                         or source.isImplicit() \
-                        or self.interprocedural_cfg().methodReadsValue(self.dest, ap.getPlainValue()):
+                        or self.interprocedural_cfg().method_reads_value( self.dest, ap.getPlainValue() ):
                     new_abs = source.deriveNewAbstraction(ap, self.stmt)
                     if new_abs is not None:
                         res_abs.add(new_abs)
