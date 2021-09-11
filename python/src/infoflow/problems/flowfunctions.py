@@ -247,10 +247,10 @@ class FlowFunctions:
         for i in range(invExpr.getArgCount()):
             call_args[i] = invExpr.getArg(i)
 
-        isSink = self.manager.getSourceSinkManager().getSinkInfo(i_call_stmt, self.manager, None) is not None \
+        isSink = self.manager.getSourceSinkManager().get_sink_info( i_call_stmt, self.manager, None ) is not None \
             if (self.manager.getSourceSinkManager() is not None) \
             else False
-        isSource = self.manager.getSourceSinkManager().getSourceInfo(i_call_stmt, self.manager) is not None \
+        isSource = self.manager.getSourceSinkManager().get_source_info( i_call_stmt, self.manager ) is not None \
             if self.manager.getSourceSinkManager() is not None \
             else False
 

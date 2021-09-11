@@ -213,13 +213,13 @@ class Infoflow:
             units = m.getActiveBody().getUnits()
             for u in units:
                 s = u
-                if sources_sinks.getSourceInfo(s, self.manager) is not None:
+                if sources_sinks.get_source_info( s, self.manager ) is not None:
                     forward_problem.add_initial_seeds(u, forward_problem.zeroValue())
                     if self.config.getLogSourcesAndSinks():
                         self.collected_sources.add(s)
                     logger.debug("Source found: { in {", u, m.get_signature() )
                 
-                if sources_sinks.getSinkInfo(s, self.manager, None) is not None:
+                if sources_sinks.get_sink_info( s, self.manager, None ) is not None:
                     sink_count += 1
                     if self.config.getLogSourcesAndSinks():
                         self.collected_sinks.add(s)
