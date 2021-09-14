@@ -2,12 +2,13 @@ from ...misc.copymember import copy_member
 from ..sourcecontextandpath import SourceContextAndPath
 from ..sourcecontextandpath import SourceContext
 from ..abstraction import Abstraction
-
+from ...misc.copymember import copy_member
+from ....infoflow import infoflowconfiguration
 
 class SourceFindingTask:
 
-    def __init__(self, path_builder, abstraction: Abstraction):
-        self.path_member = path_builder
+    def __init__(self, path_builder: , abstraction: Abstraction):
+        self.path_config = path_builder
         self.abstraction = abstraction
 
     def run(self):

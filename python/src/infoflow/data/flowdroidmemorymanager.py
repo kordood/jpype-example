@@ -1,6 +1,8 @@
 import logging
+from ..sootir.soot_statement import ReturnStmt
+from ..sootir.soot_statement import ReturnVoidStmt
+from ..cfg
 
-import ReturnStmt, ReturnVoidStmt
 import AtomicInteger
 from ..misc.pyenum import PyEnum
 
@@ -13,7 +15,7 @@ class FlowDroidMemoryManager:
 
     class AbstractionCacheKey:
 
-        def __init__(self, _abs):
+        def __init__(self, _abs: Abstraction):
             self.abs = _abs
 
         def __eq__(self, other):

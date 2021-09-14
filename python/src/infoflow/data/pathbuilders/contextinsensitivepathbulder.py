@@ -4,7 +4,7 @@ from ..abstractionatsink import AbstractionAtSink
 from ..sourcecontextandpath import SourceContextAndPath
 from ...results.infoflowresults import InfoflowResults
 from ..abstraction import Abstraction
-
+from ...misc.copymember import copy_member
 
 logger = logging.getLogger(__file__)
 

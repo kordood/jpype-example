@@ -1,3 +1,5 @@
+from ..s
+
 from soot.ArrayType import ArrayType
 from soot.Local import Local
 from soot.PrimType import PrimType

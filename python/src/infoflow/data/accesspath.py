@@ -11,8 +11,8 @@ class ArrayTaintType:
 
 class AccessPath:
 
-    def __init__(self, val=None, appending_fields=None, val_type=None, appending_field_types=None, taint_sub_fields=True,
-                 is_cut_off_approximation=False, array_taint_type=None, can_have_immutable_aliases=False):
+    def __init__(self, val: Local = None, appending_fields: list=None, val_type=None, appending_field_types: list =None, taint_sub_fields: bool=True,
+                 is_cut_off_approximation: bool =False, array_taint_type: ArrayTaintType =None, can_have_immutable_aliases: bool =False):
         self.value = val
         self.fields = appending_fields
         self.baseType = val_type

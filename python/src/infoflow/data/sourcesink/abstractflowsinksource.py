@@ -2,7 +2,7 @@ from ...data.summary.sourcesinktype import SourceSinkType
 from ...methodsummary.xml.xmlconstants import XMLConstants
 from ...methodsummary.taintwrappers.summarytaintwrapper import AccessPathFragment
 from ..summary.gapdefinition import GapDefinition
-
+from ...misc.copymember import copy_member
 
 class AbstractFlowSinkSource:
 
