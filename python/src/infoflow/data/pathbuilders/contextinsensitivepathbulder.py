@@ -3,6 +3,8 @@ import logging
 from ..abstractionatsink import AbstractionAtSink
 from ..sourcecontextandpath import SourceContextAndPath
 from ...results.infoflowresults import InfoflowResults
+from ..abstraction import Abstraction
+
 
 logger = logging.getLogger(__file__)
 
@@ -16,11 +18,11 @@ class ContextInsensitivePathBuilder:
         self.kill_flag = None
         self.path_config = None
 
-    def compute_taint_paths(self, res):
-        if res is None or res.isEmpty():
+    def compute_taint_paths(self, res: list):
+        if res is None or len(res) <= 0:
             return
 
-        logger.info("Obtainted {} connections between sources and sinks", res.size())
+        logger.info("Obtainted {} connections between sources and sinks", len(res))
 
         cur_res_idx = 0
         for abs in res:
@@ -37,7 +39,7 @@ class ContextInsensitivePathBuilder:
                     neighbor_at_sink = AbstractionAtSink(abs.sinkDefinition, neighbor, abs.sinkStmt)
                     self.get_taint_path_task(neighbor_at_sink)
 
-    def source_finding_task(self, abstraction):
+    def source_finding_task(self, abstraction: Abstraction):
         paths = self.path_cache.get(abstraction)
         pred = abstraction.predecessor
 
@@ -51,7 +53,7 @@ class ContextInsensitivePathBuilder:
                         if self.process_predecessor(scap, neighbor):
                             self.source_finding_task(neighbor)
 
-    def process_predecessor(self, scap, pred):
+    def process_predecessor(self, scap: SourceContextAndPath, pred: Abstraction):
         extended_scap = scap.extend_path(pred, self.path_config)
         if extended_scap is None:
             return False
@@ -61,26 +63,26 @@ class ContextInsensitivePathBuilder:
         max_paths = self.path_config.getMaxPathsPerAbstraction()
         if max_paths > 0:
             existing_paths = self.path_cache.get(pred)
-            if existing_paths is not None and existing_paths.size() > max_paths:
+            if existing_paths is not None and len(existing_paths) > max_paths:
                 return False
 
         self.path_cache[pred] = extended_scap
         return True
 
-    def check_for_source(self, abs, scap):
+    def check_for_source(self, abs: Abstraction, scap: SourceContextAndPath):
         if abs.predecessor is not None:
             return False
 
-        assert abs.getSourceContext() is not None
+        assert abs.source_context is not None
         assert abs.neighbors is None
 
-        source_context = abs.souce_context
+        source_context = abs.source_context
         self.results.add_result(scap.definition, scap.access_path, scap.stmt, source_context.definition,
                                 source_context.access_path, source_context.stmt, source_context.user_data,
                                 scap.get_abstraction_path())
         return True
 
-    def get_taint_path_task(self, abs):
+    def get_taint_path_task(self, abs: AbstractionAtSink):
         scap = SourceContextAndPath(abs.sinkDefinition,
                                      abs.abstraction.access_path, abs.sinkStmt)
         scap = scap.extend_path(abs.abstraction, self.path_config)
@@ -93,16 +95,16 @@ class ContextInsensitivePathBuilder:
 
     def run_incremental_path_compuation(self):
         incremental_abs = set()
-        for abs in self.path_cache.keySet():
+        for abs in self.path_cache.keys():
             for scap in self.path_cache.get(abs):
-                if abs.neighbors is not None and abs.neighbors.size() is not len(scap.neighbors):
-                    scap.setNeighborCounter(abs.neighbors.size())
+                if abs.neighbors is not None and len(abs.neighbors) is not len(scap.neighbors):
+                    scap.setNeighborCounter(len(abs.neighbors))
 
                     for neighbor in abs.neighbors:
                         incremental_abs.add(AbstractionAtSink(scap.definition, neighbor, scap.stmt))
 
-        if len(incremental_abs.isEmpty()) > 0:
-            self.compute_taint_paths(incremental_abs)
+        if len(incremental_abs) > 0:
+            self.compute_taint_paths(list(incremental_abs))
 
 
 

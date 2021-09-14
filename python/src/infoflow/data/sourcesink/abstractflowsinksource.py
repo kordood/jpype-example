@@ -1,10 +1,12 @@
 from ...data.summary.sourcesinktype import SourceSinkType
 from ...methodsummary.xml.xmlconstants import XMLConstants
+from ...methodsummary.taintwrappers.summarytaintwrapper import AccessPathFragment
+from ..summary.gapdefinition import GapDefinition
 
 
 class AbstractFlowSinkSource:
 
-    def __init__(self, type, parameter_idx, base_type, access_path=None, gap=None, user_data=None, match_strict=None):
+    def __init__(self, type: SourceSinkType, parameter_idx: int, base_type: str, access_path: AccessPathFragment =None, gap: GapDefinition=None, user_data=None, match_strict: bool=None):
         self.type = type
         self.parameter_idx = parameter_idx
         self.base_type = base_type
@@ -21,7 +23,7 @@ class AbstractFlowSinkSource:
                 self.safe_compare(self.base_type, other.base_type) or not self.safe_compare(self.gap, other.gap):
             return False
         if self.access_path is not None and other.access_path is not None:
-            if self.access_path.length() > other.access_path.length():
+            if len(self.access_path) > other.access_path.length():
                 return False
             for i in range(0, len(self.access_path)):
                 if not self.access_path.get_field( i ) == other.access_path.get_field( i ):
