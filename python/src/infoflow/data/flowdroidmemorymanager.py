@@ -69,7 +69,7 @@ class FlowDroidMemoryManager:
     def handle_memory_object(self, obj):
         return obj
 
-    def handle_generated_memory_object(self, _input, output):
+    def handle_generated_memory_object(self, _input: Abstraction, output: Abstraction):
         if _input == output:
             return output
 
@@ -98,7 +98,7 @@ class FlowDroidMemoryManager:
 
         return output
 
-    def erase_path_data(self, output):
+    def erase_path_data(self, output:Abstraction):
         if self.erase_path_data != PathDataErasureMode.EraseNothing:
 
             if self.erase_path_data == PathDataErasureMode.EraseAll:
@@ -120,5 +120,5 @@ class FlowDroidMemoryManager:
                 output.current_stmt = None
                 output.corresponding_call_site = None
 
-    def is_essential_join_point(self, _abs, related_call_site):
+    def is_essential_join_point(self, _abs: Abstraction, related_call_site):
         return related_call_site is not None and self.erase_path_data != PathDataErasureMode.EraseAll
