@@ -5,13 +5,13 @@ from .sourcesinktype import SourceSinkType
 class MethodSummaries:
     EMPTY_SUMMARIES = ImmutableMethodSummaries()
 
-    def __init__(self, flows=None, clears=None, gaps=None):
+    def __init__(self, flows = None, clears =None, gaps = None):
         self.flows = dict() if flows is None else flows
         self.clears = dict() if clears is None else clears
         self.gaps = dict() if gaps is None else gaps
         self.excluded_methods = None
 
-    def flow_set_to_flow_map(self, flows):
+    def flow_set_to_flow_map(self, flows: set):
         flow_set = dict()
         if flows is not None and not len(flows) != 0:
             for flow in flows:
@@ -91,10 +91,10 @@ class MethodSummaries:
 
             return new_data
 
-    def get_flows_for_method(self, method_sig):
+    def get_flows_for_method(self, method_sig: str):
         return None if self.flows is None else self.flows[method_sig]
 
-    def filter_for_method(self, signature):
+    def filter_for_method(self, signature: str):
         summaries = None
 
         if self.flows is not None and not len(self.flows) != 0:
@@ -121,7 +121,7 @@ class MethodSummaries:
         self.ensure_clears()
         self.clears[clear.method_sig] = clear
 
-    def get_gap(self, id):
+    def get_gap(self, id: int):
         return None if self.gaps is None else self.gaps[id]
 
     def get_all_gaps(self):
@@ -133,30 +133,30 @@ class MethodSummaries:
     def get_all_clears(self):
         return None if self.clears is None else self.clears.values()
 
-    def get_or_create_gap(self, gap_id, signature):
+    def get_or_create_gap(self, gap_id: int , signature: str ):
         self.ensure_gaps()
         gd = self.gaps[gap_id]
         if gd is None:
             gd = GapDefinition(gap_id, signature)
             self.gaps[gap_id] = gd
 
-        if gd.signature is None or gd.signature.is_empty():
+        if gd.signature is None or len(gd.signature)<=0:
             gd.signature = signature
         elif not gd.signature == signature:
             raise RuntimeError("Gap signature mismatch detected")
 
         return gd
 
-    def create_temporary_gap(self, gap_id):
+    def create_temporary_gap(self, gap_id: int):
         if self.gaps is not None and gap_id in self.gaps:
-            raise RuntimeError("A gap with the ID " + gap_id + " already exists")
+            raise RuntimeError("A gap with the ID " + str(gap_id) + " already exists")
 
         self.ensure_gaps()
         gd = GapDefinition(gap_id)
         self.gaps[gap_id] = gd
         return gd
 
-    def remove_gap(self, gap):
+    def remove_gap(self, gap: GapDefinition):
         if self.gaps is None or len(self.gaps) != 0:
             return False
         for key, value in self.gaps.items():
@@ -239,7 +239,7 @@ class MethodSummaries:
 
         return res
 
-    def get_out_flows_for_gap(self, gd):
+    def get_out_flows_for_gap(self, gd: GapDefinition):
         res = dict()
         for method_name in self.flows.keys():
             for flow in self.flows[method_name]:
@@ -300,7 +300,7 @@ class MethodSummaries:
                 reversed_flows[class_name] = flow.reverse()
         return MethodSummaries(reversed_flows, self.clears, self.gaps)
 
-    def add_excluded_method(self, method_signature):
+    def add_excluded_method(self, method_signature: str):
         if self.excluded_methods is None:
             self.excluded_methods = dict()
         self.excluded_methods.update(method_signature)

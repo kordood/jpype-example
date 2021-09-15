@@ -2,7 +2,7 @@ from .immutableclasssummaries import ImmutableClassSummaries
 from .classmethodsummaries import ClassMethodSummaries
 from .methodsummaries import MethodSummaries
 from .summarymetadata import SummaryMetaData
-
+from __future__ import annotations
 
 class ClassSummaries:
     EMPTY_SUMMARIES = ImmutableClassSummaries()
@@ -12,13 +12,13 @@ class ClassSummaries:
         self.dependencies = list()
         self.meta_data = None
 
-    def get_class_summaries(self, class_name):
+    def get_class_summaries(self, class_name: str):
         return self.summaries.get(class_name)
 
-    def get_or_create_class_summaries(self, class_name):
+    def get_or_create_class_summaries(self, class_name: str):
         return self.summaries.setdefault(class_name, ClassMethodSummaries(class_name))
 
-    def get_method_summaries(self, class_name):
+    def get_method_summaries(self, class_name: str):
         cms = self.summaries.get(class_name)
         if cms is None:
             return None
@@ -31,7 +31,7 @@ class ClassSummaries:
     def get_all_method_summaries(self):
         return [v.get_method_summaries() for v in self.summaries.values()]
 
-    def get_all_flows_for_method(self, signature):
+    def get_all_flows_for_method(self, signature: str):
         flows = set()
         for class_name in self.summaries.keys():
             class_summaries = self.summaries.get(class_name)
@@ -42,7 +42,7 @@ class ClassSummaries:
 
         return flows
 
-    def get_all_summaries_for_method(self, signature):
+    def get_all_summaries_for_method(self, signature: str):
         summaries = MethodSummaries()
         for class_name in self.summaries.keys():
             class_summaries = self.summaries.get(class_name)
@@ -54,7 +54,7 @@ class ClassSummaries:
     def get_all_flows(self):
         return [cs.get_method_summaries().get_all_flows() for cs in self.summaries.values()]
 
-    def filter_for_method(self, signature, classes=None):
+    def filter_for_method(self, signature: str, classes: set =None):
         assert signature is not None
 
         if classes is None:
@@ -68,7 +68,7 @@ class ClassSummaries:
 
         return new_summaries
 
-    def merge(self, class_name=None, new_sums=None, summaries=None):
+    def merge(self, class_name: str = None, new_sums=None, summaries: ClassSummaries = None):
         if summaries is None:
             if new_sums is None or len(new_sums) != 0:
                 return
@@ -106,15 +106,15 @@ class ClassSummaries:
     def get_classes(self):
         return self.summaries.keys()
 
-    def has_summaries_for_class(self, class_name):
+    def has_summaries_for_class(self, class_name: str):
         return class_name in self.summaries
 
-    def add_dependency(self, class_name):
+    def add_dependency(self, class_name: str):
         if self.is_primitive_type(class_name) or class_name in self.summaries:
             return False
         return self.dependencies.append(class_name)
 
-    def is_primitive_type(self, type_name):
+    def is_primitive_type(self, type_name: str):
         return type_name == "int" or type_name == "long" or type_name == "float" or type_name == "double" or \
                type_name == "char" or type_name == "byte" or type_name == "short" or type_name == "boolean"
 
