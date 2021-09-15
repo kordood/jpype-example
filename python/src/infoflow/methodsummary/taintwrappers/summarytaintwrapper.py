@@ -51,9 +51,6 @@ class AccessPathFragment:
             return None
         return self.field_types[-1]
 
-    def is_empty(self):
-        return self.fields is None or len(self.fields) == 0
-
     def append(self, to_append):
         if to_append is None or to_append.isEmpty():
             if self.is_empty():

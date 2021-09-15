@@ -1,5 +1,4 @@
 import Jimple
-import NoneType
 
 from ..sootir.soot_value import SootLocal, SootInstanceFieldRef, SootStaticFieldRef, SootArrayRef
 
@@ -12,8 +11,20 @@ class ArrayTaintType:
 
 class AccessPath:
 
-    def __init__(self, val=None, appending_fields=None, val_type=None, appending_field_types=None, taint_sub_fields=True,
-                 is_cut_off_approximation=False, array_taint_type=None, can_have_immutable_aliases=False):
+    def __init__(self, val=None, appending_fields=None, val_type=None, appending_field_types=None,
+                 taint_sub_fields=True, is_cut_off_approximation=False, array_taint_type=None,
+                 can_have_immutable_aliases=False):
+        """
+
+        :param SootLocal val:
+        :param list appending_fields:
+        :param val_type:
+        :param list appending_field_types:
+        :param bool taint_sub_fields:
+        :param bool is_cut_off_approximation:
+        :param ArrayTaintType or int array_taint_type:
+        :param bool can_have_immutable_aliases:
+        """
         self.value = val
         self.fields = appending_fields
         self.baseType = val_type
@@ -134,6 +145,11 @@ class AccessPath:
         return self.value is None and (self.fields is None or len(self.fields) == 0)
 
     def entails(self, a2):
+        """
+
+        :param AccessPath a2:
+        :return:
+        """
         if self.is_empty() or a2.is_empty():
             return False
 
@@ -144,7 +160,7 @@ class AccessPath:
             return False
 
         if self.fields is not None and a2.fields is not None:
-            if len(self.fields) > a2.len(self.fields):
+            if len(self.fields) > len(a2.fields):
                 return False
 
             for i in range(0, len(self.fields)):
@@ -188,6 +204,6 @@ class AccessPath:
     def get_zero_access_path(self):
         zero_access_path = None
         if self.zeroAccessPath is None:
-            zero_access_path = AccessPath(Jimple.v().newLocal("zero", NoneType.v()), None, NoneType.v(), None, False,
+            zero_access_path = AccessPath(Jimple.v().newLocal("zero", None), None, None, None, False,
                                           False, self.array_taint_type.ContentsAndLength, False)
         return zero_access_path
