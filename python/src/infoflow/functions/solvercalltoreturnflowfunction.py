@@ -80,7 +80,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     break
 
             if all_callees_read:
-                if self.aliasing.mayAlias(self.invExpr.getBase(), new_source.getAccessPath().getPlainValue()):
+                if self.aliasing.mayAlias(self.invExpr.base, new_source.getAccessPath().getPlainValue()):
                     pass_on = False
                 if pass_on:
                     for i in range(self.call_args.length):
@@ -106,18 +106,18 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     if native_abs is not None:
                         res.add_all(native_abs)
 
-                        for abs in native_abs:
-                            if abs.getAccessPath().is_static_field_ref() \
+                        for abstraction in native_abs:
+                            if abstraction.getAccessPath().is_static_field_ref() \
                                     or self.aliasing.canHaveAliases(self.i_call_stmt,
-                                                                abs.getAccessPath().get_complete_value(),
-                                                                abs):
+                                                                abstraction.getAccessPath().get_complete_value(),
+                                                                abstraction):
                                 self.aliasing.computeAliases(d1, self.i_call_stmt,
-                                                         abs.getAccessPath().getPlainValue(), res,
-                                                         self.interprocedural_cfg().get_method_of(self.call), abs)
+                                                         abstraction.getAccessPath().getPlainValue(), res,
+                                                         self.interprocedural_cfg().get_method_of(self.call), abstraction)
                     break
 
-        for abs in res:
-            if abs != new_source:
-                abs.setCorrespondingCallSite(self.i_call_stmt)
+        for abstraction in res:
+            if abstraction != new_source:
+                abstraction.setCorrespondingCallSite(self.i_call_stmt)
 
         return res

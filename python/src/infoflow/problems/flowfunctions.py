@@ -1,10 +1,10 @@
-import StaticFieldRef, StaticFieldTrackingMode, ArrayRef, FieldRef, InstanceFieldRef
+import SootStaticFieldRef, StaticFieldTrackingMode, SootArrayRef, FieldRef, SootInstanceFieldRef
 import CastExpr, InstanceOfExpr, LengthExpr, NewArrayExpr, InstanceInvokeExpr
 import Stmt, ReturnStmt
 import TypeUtils, BooleanType, ArrayTaintType, RefType, NoneType, PrimType
 import Collections
 import Aliasing
-import Local
+import SootLocal
 import HashSet
 import KillAll
 import Value
@@ -40,13 +40,13 @@ class FlowFunctions:
         left_value = assign_stmt.getLeftOp()
         right_value = assign_stmt.getRightOp()
 
-        if isinstance(left_value, StaticFieldRef) \
+        if isinstance(left_value, SootStaticFieldRef) \
             and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode._None:
             return
 
         new_abs = None
         if not source.getAccessPath().is_empty():
-            if isinstance(left_value, ArrayRef and target_type is not None):
+            if isinstance(left_value, SootArrayRef and target_type is not None):
                 array_ref = left_value
                 target_type = TypeUtils.build_array_or_add_dimension( target_type, array_ref.getType().getArrayType() )
 
@@ -60,7 +60,7 @@ class FlowFunctions:
             assert target_type is None
 
         array_taint_type = source.getAccessPath().getArrayTaintType()
-        if isinstance(left_value, ArrayRef) and self.manager.getConfig().getEnableArraySizeTainting():
+        if isinstance(left_value, SootArrayRef) and self.manager.getConfig().getEnableArraySizeTainting():
             array_taint_type = ArrayTaintType.Contents
 
         if new_abs is None:
@@ -77,7 +77,7 @@ class FlowFunctions:
                 new_abs = source.derive_new_abstraction( ap, assign_stmt )
 
         if new_abs is not None:
-            if isinstance(left_value, StaticFieldRef) \
+            if isinstance(left_value, SootStaticFieldRef) \
                 and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode.ContextFlowInsensitive:
                 self.manager.getGlobalTaintManager().add_to_global_taint_state( new_abs )
             else:
@@ -130,21 +130,21 @@ class FlowFunctions:
             for rightVal in right_vals:
                 if isinstance(rightVal, FieldRef):
                     right_ref = rightVal
-                    if isinstance(right_ref, InstanceFieldRef) \
-                            and isinstance(right_ref.getBase().getType(), NoneType):
+                    if isinstance(right_ref, SootInstanceFieldRef) \
+                            and isinstance(right_ref.base.getType(), NoneType):
                         return None
 
                     mapped_ap = aliasing.mayAlias(new_source.getAccessPath(), right_ref)
 
-                    if isinstance(rightVal, StaticFieldRef):
+                    if isinstance(rightVal, SootStaticFieldRef):
                         if self.manager.getConfig().getStaticFieldTrackingMode() is not StaticFieldTrackingMode._None \
                                 and mapped_ap is not None:
                             add_left_value = True
                             cut_first_field = True
-                    elif isinstance(rightVal, InstanceFieldRef):
-                        right_base = right_ref.getBase()
+                    elif isinstance(rightVal, SootInstanceFieldRef):
+                        right_base = right_ref.base
                         source_base = new_source.getAccessPath().getPlainValue()
-                        right_field = right_ref.get_field()
+                        right_field = right_ref.field
 
                         if mapped_ap is not None:
                             add_left_value = True
@@ -157,7 +157,7 @@ class FlowFunctions:
                             target_type = right_field.getType()
                             if (mapped_ap is None):
                                 mapped_ap = self.manager.getAccessPathFactory().create_access_path( right_base, True )
-                elif isinstance(rightVal, Local) and new_source.getAccessPath().is_instance_field_ref():
+                elif isinstance(rightVal, SootLocal) and new_source.getAccessPath().is_instance_field_ref():
                     base = new_source.getAccessPath().getPlainValue()
                     if aliasing.mayAlias(rightVal, base):
                         add_left_value = True
@@ -284,7 +284,7 @@ class FlowFunctions:
             else:
                 assert isinstance(ie, InstanceInvokeExpr)
                 vie = ie
-                base_local = vie.getBase()
+                base_local = vie.base
 
         if base_local is not None:
             if aliasing.mayAlias(base_local, ap.getPlainValue()):
@@ -311,7 +311,7 @@ class FlowFunctions:
                         res = HashSet()
 
                     if param_locals is None:
-                        param_locals = callee.getActiveBody().getParameterLocals().toArray( Local[callee.getParameterCount()] )
+                        param_locals = callee.getActiveBody().getParameterLocals().toArray( SootLocal[callee.getParameterCount()] )
 
                     if is_reflective_call_site:
                         for j in range( param_locals.length ):

@@ -3,14 +3,15 @@ import logging
 logger = logging.getLogger(__file__)
 
 
-class BatchPathBuilder(AbstractAbstractionPathBuilder):
+class BatchPathBuilder:
 
-    def __init__(self, manager, inner_builder):
-        super(manager)
+    def __init__(self, manager, path_config, inner_builder):
+        self.manager = manager
+        self.path_config = path_config
         self.batch_size = 5
         self.inner_builder = inner_builder
 
-    def compute_taint_paths(self, res):
+    def compute_taint_paths(self, result):
         batch = set()
 
         self.inner_builder.reset()

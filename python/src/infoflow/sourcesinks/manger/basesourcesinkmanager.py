@@ -216,7 +216,7 @@ class BaseSourceSinkManager:
                                                                                 False ) )
         elif isinstance( iexpr, InstanceInvokeExpr ) and return_type == VoidType.v():
             iinv = s_call_site.getInvokeExpr()
-            return SourceInfo( define, manager.access_path_factory.createAccessPath( iinv.getBase(), True ) )
+            return SourceInfo( define, manager.access_path_factory.createAccessPath( iinv.base, True ) )
         else:
             return None
 

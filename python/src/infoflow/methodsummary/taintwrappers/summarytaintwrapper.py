@@ -509,7 +509,7 @@ class SummaryTaintWrapper:
             iexpr = stmt.getInvokeExpr()
             if isinstance(iexpr, InstanceInvokeExpr):
                 iiexpr = iexpr
-                return self.manager.getAccessPathFactory().createAccessPath(iiexpr.getBase(), fields, base_type, types,
+                return self.manager.getAccessPathFactory().createAccessPath(iiexpr.base, fields, base_type, types,
                                                                             t.taint_sub_fields, False, True,
                                                                             ArrayTaintType.ContentsAndLength)
             elif isinstance(iexpr, StaticInvokeExpr):
@@ -810,7 +810,7 @@ class SummaryTaintWrapper:
         declared_class = None
         if stmt is not None and isinstance(stmt.getInvokeExpr(), InstanceInvokeExpr):
             iinv = stmt.getInvokeExpr()
-            base_type = iinv.getBase().getType()
+            base_type = iinv.base.getType()
             if isinstance(base_type, RefType):
                 declared_class = base_type.getSootClass()
 
@@ -1194,7 +1194,7 @@ class SummaryTaintWrapper:
             raise RuntimeError("Statement is not a method call: " + stmt)
         inv_expr = stmt.getInvokeExpr()
         if isinstance(inv_expr, InstanceInvokeExpr):
-            return inv_expr.getBase()
+            return inv_expr.base
         return None
 
     def is_exclusive(self, stmt, tainted_path):

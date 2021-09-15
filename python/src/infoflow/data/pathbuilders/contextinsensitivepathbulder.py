@@ -23,18 +23,18 @@ class ContextInsensitivePathBuilder:
         logger.info("Obtainted {} connections between sources and sinks", res.size())
 
         cur_res_idx = 0
-        for abs in res:
+        for abstraction in res:
             if self.kill_flag is not None:
                 res.clear()
                 break
 
             cur_res_idx += 1
             logger.info("Building path %d..." % cur_res_idx)
-            self.get_taint_path_task(abs)
+            self.get_taint_path_task(abstraction)
 
-            if self.trigger_computation_for_neighbors() and abs.abstraction.neighbors is not None:
-                for neighbor in abs.abstraction.neighbors:
-                    neighbor_at_sink = AbstractionAtSink(abs.sinkDefinition, neighbor, abs.sinkStmt)
+            if self.trigger_computation_for_neighbors() and abstraction.abstraction.neighbors is not None:
+                for neighbor in abstraction.abstraction.neighbors:
+                    neighbor_at_sink = AbstractionAtSink(abstraction.sinkDefinition, neighbor, abstraction.sinkStmt)
                     self.get_taint_path_task(neighbor_at_sink)
 
     def source_finding_task(self, abstraction):
@@ -67,38 +67,38 @@ class ContextInsensitivePathBuilder:
         self.path_cache[pred] = extended_scap
         return True
 
-    def check_for_source(self, abs, scap):
-        if abs.predecessor is not None:
+    def check_for_source(self, abstraction, scap):
+        if abstraction.predecessor is not None:
             return False
 
-        assert abs.getSourceContext() is not None
-        assert abs.neighbors is None
+        assert abstraction.getSourceContext() is not None
+        assert abstraction.neighbors is None
 
-        source_context = abs.souce_context
+        source_context = abstraction.source_context
         self.results.add_result(scap.definition, scap.access_path, scap.stmt, source_context.definition,
                                 source_context.access_path, source_context.stmt, source_context.user_data,
                                 scap.get_abstraction_path())
         return True
 
-    def get_taint_path_task(self, abs):
-        scap = SourceContextAndPath(abs.sinkDefinition,
-                                     abs.abstraction.access_path, abs.sinkStmt)
-        scap = scap.extend_path(abs.abstraction, self.path_config)
-        if self.path_cache.put(abs.abstraction, scap):
-            if not self.check_for_source(abs.abstraction, scap):
-                self.source_finding_task(abs.abstraction)
+    def get_taint_path_task(self, abstraction):
+        scap = SourceContextAndPath(abstraction.sinkDefinition,
+                                     abstraction.abstraction.access_path, abstraction.sinkStmt)
+        scap = scap.extend_path(abstraction.abstraction, self.path_config)
+        if self.path_cache.put(abstraction.abstraction, scap):
+            if not self.check_for_source(abstraction.abstraction, scap):
+                self.source_finding_task(abstraction.abstraction)
 
     def trigger_computation_for_neighbors(self):
         return True
 
     def run_incremental_path_compuation(self):
         incremental_abs = set()
-        for abs in self.path_cache.keySet():
-            for scap in self.path_cache.get(abs):
-                if abs.neighbors is not None and abs.neighbors.size() is not len(scap.neighbors):
-                    scap.setNeighborCounter(abs.neighbors.size())
+        for abstraction in self.path_cache.keySet():
+            for scap in self.path_cache.get(abstraction):
+                if abstraction.neighbors is not None and abstraction.neighbors.size() is not len(scap.neighbors):
+                    scap.setNeighborCounter(abstraction.neighbors.size())
 
-                    for neighbor in abs.neighbors:
+                    for neighbor in abstraction.neighbors:
                         incremental_abs.add(AbstractionAtSink(scap.definition, neighbor, scap.stmt))
 
         if len(incremental_abs.isEmpty()) > 0:

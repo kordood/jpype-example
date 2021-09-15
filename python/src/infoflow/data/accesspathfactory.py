@@ -1,15 +1,15 @@
 from soot.ArrayType import ArrayType
-from soot.Local import Local
+from soot.Local import SootLocal
 from soot.PrimType import PrimType
 from soot.RefLikeType import RefLikeType
 from soot.RefType import RefType
 from soot.SootField import SootField
 from soot.Type import Type
 from soot.Value import Value
-from soot.jimple.ArrayRef import ArrayRef
+from soot.jimple.ArrayRef import SootArrayRef
 from soot.jimple.FieldRef import FieldRef
-from soot.jimple.InstanceFieldRef import InstanceFieldRef
-from soot.jimple.StaticFieldRef import StaticFieldRef
+from soot.jimple.InstanceFieldRef import SootInstanceFieldRef
+from soot.jimple.StaticFieldRef import SootStaticFieldRef
 
 import logging
 
@@ -58,7 +58,7 @@ class AccessPathFactory:
         if isinstance(val, FieldRef):
             ref = val
 
-            if isinstance(val, InstanceFieldRef):
+            if isinstance(val, SootInstanceFieldRef):
                 iref = val
                 value = iref.base
                 base_type = value.type
@@ -77,7 +77,7 @@ class AccessPathFactory:
 
             if appending_field_types is not None:
                 field_types.extend(appending_field_types)
-        elif isinstance(val, ArrayRef):
+        elif isinstance(val, SootArrayRef):
             ref = val
             value = ref.base
             base_type = value.type if val_type is None else val_type
@@ -180,7 +180,7 @@ class AccessPathFactory:
 
         recursive_cut_off = False
         if access_path_config.useRecursiveAccessPaths() and reduce_bases and fields is not None:
-            ei = 1 if isinstance(val, StaticFieldRef) else 0
+            ei = 1 if isinstance(val, SootStaticFieldRef) else 0
             while ei < len(fields):
                 ei_type = base_type if ei == 0 else field_types[ei - 1]
                 ej = ei

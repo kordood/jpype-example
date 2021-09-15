@@ -1,6 +1,7 @@
-import Local, InstanceFieldRef, StaticFieldRef, ArrayRef
 import Jimple
 import NoneType
+
+from ..sootir.soot_value import SootLocal, SootInstanceFieldRef, SootStaticFieldRef, SootArrayRef
 
 
 class ArrayTaintType:
@@ -18,7 +19,7 @@ class AccessPath:
         self.baseType = val_type
         self.fieldTypes = appending_field_types
         self.taint_sub_fields = taint_sub_fields
-        self.cutOffApproximation = is_cut_off_approximation
+        self.cut_off_approximation = is_cut_off_approximation
         self.array_taint_type = array_taint_type if array_taint_type else ArrayTaintType.ContentsAndLength
         self.can_have_immutable_aliases = can_have_immutable_aliases
 
@@ -31,8 +32,8 @@ class AccessPath:
         if val is None:
             return False
 
-        return isinstance(val, Local) or isinstance(val, InstanceFieldRef) or isinstance(val, StaticFieldRef) \
-               or isinstance(val, ArrayRef)
+        return isinstance(val, SootLocal) or isinstance(val, SootInstanceFieldRef) \
+               or isinstance(val, SootStaticFieldRef) or isinstance(val, SootArrayRef)
 
     def get_complete_value(self):
         f = self.get_first_field()
@@ -118,14 +119,15 @@ class AccessPath:
         return self.fields is not None and len(self.fields) > 0
 
     def is_local(self):
-        return self.value is not None and isinstance(self.value, Local) and (self.fields is None or len(self.fields) == 0)
+        return self.value is not None and isinstance(self.value, SootLocal) \
+               and (self.fields is None or len(self.fields) == 0)
 
     def clone(self):
         if self == self.emptyAccessPath:
             return self
 
-        a = AccessPath(self.value, self.fields, self.baseType, self.fieldTypes, self.taint_sub_fields,
-                       self.cutOffApproximation, self.array_taint_type, self.can_have_immutable_aliases)
+        a = AccessPath( self.value, self.fields, self.baseType, self.fieldTypes, self.taint_sub_fields,
+                        self.cut_off_approximation, self.array_taint_type, self.can_have_immutable_aliases )
         return a
 
     def is_empty(self):
@@ -161,25 +163,25 @@ class AccessPath:
             new_fields = self.fields[:-1]
             new_types = self.fieldTypes[:-1]
 
-        return AccessPath(self.value, new_fields, self.baseType, new_types, self.taint_sub_fields,
-                          self.cutOffApproximation, self.array_taint_type, self.can_have_immutable_aliases)
+        return AccessPath( self.value, new_fields, self.baseType, new_types, self.taint_sub_fields,
+                           self.cut_off_approximation, self.array_taint_type, self.can_have_immutable_aliases )
 
     def is_cut_off_approximation(self):
-        return self.cutOffApproximation
+        return self.cut_off_approximation
 
     def starts_with(self, val):
-        if not self.can_contain_value( val ):
+        if not self.can_contain_value(val):
             return False
 
-        if isinstance(val, Local) and self.value == val:
+        if isinstance(val, SootLocal) and self.value == val:
             return True
-        elif isinstance(val, StaticFieldRef):
+        elif isinstance(val, SootStaticFieldRef):
             return self.value is None and self.fields is not None and len(self.fields) > 0 \
-                   and self.fields[0] == val.get_field()
-        elif isinstance(val, InstanceFieldRef):
+                   and self.fields[0] == val.field
+        elif isinstance(val, SootInstanceFieldRef):
             iref = val
-            return self.value == iref.getBase() and self.fields is not None and len(self.fields) > 0 \
-                   and self.fields[0] == iref.get_field()
+            return self.value == iref.base and self.fields is not None and len(self.fields) > 0 \
+                   and self.fields[0] == iref.field
         else:
             return False
 

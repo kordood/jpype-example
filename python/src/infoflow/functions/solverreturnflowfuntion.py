@@ -72,14 +72,14 @@ class SolverReturnFlowFunction(FlowFunction):
                 if self.aliasing.mayAlias(ret_local, new_source.getAccessPath().getPlainValue()) \
                         and not self.isExceptionHandler(self.retSite):
                     ap = self.manager.getAccessPathFactory().copy_with_new_value( new_source.getAccessPath(), left_op )
-                    abs = new_source.deriveNewAbstraction(ap, self.exit_stmt)
-                    if abs is not None:
-                        res.add(abs)
+                    abstraction = new_source.deriveNewAbstraction(ap, self.exit_stmt)
+                    if abstraction is not None:
+                        res.add(abstraction)
                         if self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                             for d1 in caller_d1s:
                                 self.aliasing.computeAliases(d1, self.i_call_stmt, left_op, res,
                                                               self.interprocedural_cfg().get_method_of(self.call_site),
-                                                              abs)
+                                                              abstraction)
 
             source_base = new_source.getAccessPath().getPlainValue()
             parameter_aliases = False
@@ -119,10 +119,10 @@ class SolverReturnFlowFunction(FlowFunction):
                         new_source.getAccessPath(), original_call_arg,
                         None if self.is_reflective_call_site else new_source.getAccessPath().getBaseType(),
                         False)
-                    abs = new_source.deriveNewAbstraction(ap, self.exit_stmt)
+                    abstraction = new_source.deriveNewAbstraction(ap, self.exit_stmt)
 
-                    if abs is not None:
-                        res.add(abs)
+                    if abstraction is not None:
+                        res.add(abstraction)
 
             this_aliases = False
             if isinstance(self.call_site, DefinitionStmt) and not self.isExceptionHandler(self.retSite):
@@ -139,22 +139,22 @@ class SolverReturnFlowFunction(FlowFunction):
                     i_i_expr = self.i_call_stmt.getInvokeExpr()
 
                     caller_base_local = i_i_expr.getArg(0) \
-                        if self.interprocedural_cfg().is_reflective_call_site(i_i_expr) else i_i_expr.getBase()
+                        if self.interprocedural_cfg().is_reflective_call_site(i_i_expr) else i_i_expr.base
                     ap = self.manager.getAccessPathFactory().copy_with_new_value(
                         new_source.getAccessPath(), caller_base_local,
                         None if self.is_reflective_call_site else new_source.getAccessPath().getBaseType(),
                         False)
-                    abs = new_source.deriveNewAbstraction(ap, self.exit_stmt)
-                    if abs is not None:
-                        res.add(abs)
+                    abstraction = new_source.deriveNewAbstraction(ap, self.exit_stmt)
+                    if abstraction is not None:
+                        res.add(abstraction)
 
-        for abs in res:
-            if abs.isImplicit() and not caller_d1s_conditional \
+        for abstraction in res:
+            if abstraction.isImplicit() and not caller_d1s_conditional \
                     or self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
                 for d1 in caller_d1s:
                     self.aliasing.computeAliases(d1, self.i_call_stmt, None, res,
-                                                  self.interprocedural_cfg().get_method_of(self.call_site), abs)
+                                                  self.interprocedural_cfg().get_method_of(self.call_site), abstraction)
 
-            if abs != new_source:
-                abs.setCorrespondingCallSite(self.i_call_stmt)
+            if abstraction != new_source:
+                abstraction.setCorrespondingCallSite(self.i_call_stmt)
         return res

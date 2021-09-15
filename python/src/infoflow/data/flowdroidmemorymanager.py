@@ -14,7 +14,7 @@ class FlowDroidMemoryManager:
     class AbstractionCacheKey:
 
         def __init__(self, _abs):
-            self.abs = _abs
+            self.abstraction = _abs
 
         def __eq__(self, other):
             if self == other:
@@ -22,13 +22,13 @@ class FlowDroidMemoryManager:
             if other is None:
                 return False
 
-            if not self.abs == other.abs:
+            if not self.abstraction == other.abstraction:
                 return False
-            if self.abs.predecessor != other.abs.predecessor:
+            if self.abstraction.predecessor != other.abstraction.predecessor:
                 return False
-            if self.abs.current_stmt != other.abs.current_stmt:
+            if self.abstraction.current_stmt != other.abstraction.current_stmt:
                 return False
-            if self.abs.corresponding_call_site != other.abs.corresponding_call_site:
+            if self.abstraction.corresponding_call_site != other.abstraction.corresponding_call_site:
                 return False
 
             return True
@@ -58,9 +58,9 @@ class FlowDroidMemoryManager:
             self.reuse_counter.incrementAndGet()
         return old_ap
 
-    def get_cached_abstraction(self, abs):
-        old_abs = self.abs_cache.putIfAbsent( self.AbstractionCacheKey( abs ), abs )
-        if old_abs is not None and old_abs != abs:
+    def get_cached_abstraction(self, abstraction):
+        old_abs = self.abs_cache.putIfAbsent( self.AbstractionCacheKey( abstraction ), abstraction )
+        if old_abs is not None and old_abs != abstraction:
             if self.tracing_enabled:
                 self.reuse_counter.incrementAndGet()
         return old_abs

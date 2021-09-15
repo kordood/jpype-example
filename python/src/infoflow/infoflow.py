@@ -161,9 +161,9 @@ class Infoflow:
         elif logger.is_info_enabled():
             for sink in self.results.get_results().keySet():
                 logger.info("The sink { in method { was called with values from the following sources:", sink,
-                            i_cfg.get_method_of( sink.getStmt() ).get_signature() )
+                            i_cfg.get_method_of( sink.stmt ).get_signature() )
                 for source in self.results.get_results().get( sink ):
-                    logger.info("- { in method {", source, i_cfg.get_method_of( source.getStmt() ).get_signature() )
+                    logger.info("- { in method {", source, i_cfg.get_method_of( source.stmt ).get_signature() )
                     if source.get_path() is not None:
                         logger.info("\ton Path: ")
                         for p in source.get_path():

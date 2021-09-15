@@ -1,6 +1,6 @@
 import AssignStmt
 import FieldRef
-import StaticFieldRef
+import SootStaticFieldRef
 import VirtualInvokeExpr
 import RefType
 import Scene
@@ -134,13 +134,13 @@ class InfoflowCFG:
                 if isinstance(u, AssignStmt):
                     assign = u
 
-                    if isinstance(assign.getLeftOp(), StaticFieldRef):
+                    if isinstance(assign.getLeftOp(), SootStaticFieldRef):
                         sf = assign.getLeftOp().getField()
                         self.register_static_variable_use(method, sf, self.StaticFieldUse.Write)
                         if variable == sf:
                             writes = True
 
-                    if isinstance(assign.getRightOp(), StaticFieldRef):
+                    if isinstance(assign.getRightOp(), SootStaticFieldRef):
                         sf = assign.getRightOp().getField()
                         self.register_static_variable_use(method, sf, self.StaticFieldUse.Read)
                         if variable == sf:
@@ -352,8 +352,8 @@ class InfoflowCFG:
         else:
             if isinstance(iexpr, VirtualInvokeExpr):
                 viexpr = iexpr
-                if isinstance(viexpr.getBase().getType(), RefType):
-                    if (viexpr.getBase().getType()).getSootClass().name == "java.lang.reflect.Method":
+                if isinstance(viexpr.base.getType(), RefType):
+                    if (viexpr.base.getType()).getSootClass().name == "java.lang.reflect.Method":
                         if viexpr.getMethod().name == "invoke":
                             return True
             return False
