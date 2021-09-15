@@ -1,6 +1,9 @@
+from __future__ import annotations
+from ..summary.classsummaries import ClassSummaries
+
 class SummaryMetaData:
 
-    def __init__(self, meta_data=None):
+    def __init__(self, meta_data: SummaryMetaData = None):
         self.exclusive_classes = dict()
         self.exclusive_packages = dict()
         self.class_to_superclass = dict()
@@ -9,12 +12,12 @@ class SummaryMetaData:
             self.exclusive_classes.update( meta_data.exclusive_classes )
             self.exclusive_packages.update( meta_data.exclusive_packages )
 
-    def merge(self, original):
+    def merge(self, original: SummaryMetaData):
         if original is not None:
             self.exclusive_classes.update( original.exclusive_classes )
             self.exclusive_packages.update( original.exclusive_packages )
 
-    def is_class_exclusive(self, class_name):
+    def is_class_exclusive(self, class_name: str):
         if class_name in self.exclusive_classes:
             return True
 
@@ -29,13 +32,13 @@ class SummaryMetaData:
 
         return False
 
-    def set_superclass(self, name, superclass):
+    def set_superclass(self, name: str, superclass: str):
         self.class_to_superclass[name] = superclass
 
-    def get_superclass(self, name):
+    def get_superclass(self, name: str):
         return self.class_to_superclass.get(name)
 
-    def merge_hierarchy_data(self, summaries):
+    def merge_hierarchy_data(self, summaries: ClassSummaries):
         for class_name in self.class_to_superclass.keys():
             clazz_summaries = summaries.get_or_create_class_summaries( class_name )
             if not clazz_summaries.has_superclass():

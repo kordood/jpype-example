@@ -3,7 +3,7 @@ from .methodsummaries import MethodSummaries
 
 class ClassMethodSummaries:
 
-    def __init__(self, class_name, method_summaries=None):
+    def __init__(self, class_name: str, method_summaries: MethodSummaries =None):
         self.class_name = class_name
         self.method_summaries = MethodSummaries() if method_summaries is None else method_summaries
         self.interfaces = dict()
@@ -15,7 +15,7 @@ class ClassMethodSummaries:
         return (self.method_summaries is None or self.method_summaries.is_empty()) and not self.has_interfaces() and \
                not self.has_superclass() and self.is_interface is None
 
-    def filter_for_method(self, signature):
+    def filter_for_method(self, signature: str):
         if self.is_empty():
             return None
 

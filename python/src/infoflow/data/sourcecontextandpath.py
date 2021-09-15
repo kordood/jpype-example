@@ -1,7 +1,7 @@
 from copy import copy, deepcopy
+from .sourcecontext import SourceContext
 
-
-class SourceContextAndPath:
+class SourceContextAndPath(SourceContext):
 
     def __init__(self, definition, value, stmt, user_data=None):
         self.path = None

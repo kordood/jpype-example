@@ -1,10 +1,10 @@
 class GapDefinition:
 
-    def __init__(self, id, signature=None):
+    def __init__(self, id: int, signature: str=None):
         self.id = id
         self.signature = signature
 
-    def renumber(self, new_id):
+    def renumber(self, new_id: int):
         return GapDefinition(new_id, self.signature)
 
     def __eq__(self, other):
