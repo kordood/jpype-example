@@ -1,19 +1,14 @@
 from soot.ArrayType import ArrayType
-from soot.Local import SootLocal
 from soot.PrimType import PrimType
 from soot.RefLikeType import RefLikeType
 from soot.RefType import RefType
-from soot.SootField import SootField
-from soot.Type import Type
-from soot.Value import Value
-from soot.jimple.ArrayRef import SootArrayRef
-from soot.jimple.FieldRef import FieldRef
-from soot.jimple.InstanceFieldRef import SootInstanceFieldRef
-from soot.jimple.StaticFieldRef import SootStaticFieldRef
+
+from ..sootir.soot_value import SootArrayRef, SootInstanceFieldRef, SootInstanceFieldRef,  SootStaticFieldRef
+from ..infoflowconfiguration import InfoflowConfiguration
 
 import logging
 
-from .accesspath import *
+from .accesspath import AccessPath, ArrayTaintType
 from ..util.typeutils import TypeUtils
 
 logger = logging.getLogger(__file__)
@@ -22,21 +17,45 @@ logger = logging.getLogger(__file__)
 class AccessPathFactory:
 
     def __init__(self, config=None):
+        """
+
+        :param InfoflowConfiguration config:
+        """
         self.config = config
         self.baseRegister = dict()
 
     class BasePair:
 
         def __init__(self, fields, types):
+            """
+
+            :param list fields:
+            :param list types:
+            """
             self.fields = fields
             self.types = types
 
             if fields is None or len(fields) == 0:
                 raise RuntimeError("A base must contain at least one field")
 
-    def create_access_path(self, val, taint_sub_fields, appending_fields=None, val_type=None, appending_field_types=None,
-                           cut_first_field=False, reduce_bases=True, array_taint_type=ArrayTaintType.ContentsAndLength,
+    def create_access_path(self, val, taint_sub_fields, appending_fields=None, val_type=None,
+                           appending_field_types=None, cut_first_field=False, reduce_bases=True, array_taint_type=None,
                            can_have_immutable_aliases=False):
+        """
+
+        :param val:
+        :param bool taint_sub_fields:
+        :param appending_fields:
+        :param val_type:
+        :param ArrayTaintType appending_field_types:
+        :param bool cut_first_field:
+        :param bool reduce_bases:
+        :param ArrayTaintType array_taint_type:
+        :param bool can_have_immutable_aliases:
+        :return:
+        """
+        if array_taint_type is None:
+            array_taint_type = ArrayTaintType.ContentsAndLength
         if val is not None and not AccessPath.can_contain_value(val):
             logger.error("Access paths cannot be rooted in values of type {}", val.getClass().getName())
             return None
@@ -55,7 +74,7 @@ class AccessPathFactory:
             for i in range(0, len(appending_fields)):
                 appending_field_types[i] = appending_fields[i].type
 
-        if isinstance(val, FieldRef):
+        if isinstance(val, SootInstanceFieldRef):
             ref = val
 
             if isinstance(val, SootInstanceFieldRef):
@@ -66,7 +85,7 @@ class AccessPathFactory:
                 value = None
                 base_type = None
 
-            fields = SootField()
+            fields = list()
             fields[0] = ref.field
 
             if appending_fields is not None:
@@ -258,6 +277,13 @@ class AccessPathFactory:
                            array_taint_type, can_have_immutable_aliases)
 
     def register_base(self, ei_type, base, base_types):
+        """
+
+        :param ei_type:
+        :param list base:
+        :param list base_types:
+        :return:
+        """
         assert len(base) == len(base_types)
         for i in range(0, len(base)):
             if base_types[i] == ei_type:
@@ -271,20 +297,30 @@ class AccessPathFactory:
         bases = self.baseRegister.setdefault(ei_type, set())
         bases.add(self.BasePair(base, base_types))
 
-    def copy_with_new_value(self, original, val, new_type=None, cut_first_field=False,
-                            reduce_bases=True, array_taint_type=None):
+    def copy_with_new_value(self, original, val, new_type=None, cut_first_field=False, reduce_bases=True,
+                            array_taint_type=None):
+        """
+
+        :param AccessPath original:
+        :param val:
+        :param new_type:
+        :param bool cut_first_field:
+        :param bool reduce_bases:
+        :param ArrayTaintType array_taint_type:
+        :return:
+        """
         if new_type is None:
             new_type = original.base_type
 
         if array_taint_type is None:
-            array_taint_type = original.arrayTaintType
+            array_taint_type = original.array_taint_type
 
-        if original.val is not None and original.val == val and original.base_type == new_type \
-                and original.arrayTaintType == array_taint_type:
+        if original.value is not None and original.value == val and original.base_type == new_type \
+                and original.array_taint_type == array_taint_type:
             return original
 
-        new_ap = self.create_access_path( val, original.fields, new_type, original.field_types, original.taintSubFields,
-                                          cut_first_field, reduce_bases, array_taint_type,
+        new_ap = self.create_access_path( val, original.fields, new_type, original.field_types,
+                                          original.taint_sub_fields, cut_first_field, reduce_bases, array_taint_type,
                                           original.can_have_immutable_aliases )
 
         if new_ap is not None and new_ap == original:
@@ -293,9 +329,23 @@ class AccessPathFactory:
             return new_ap
 
     def merge(self, ap1, ap2):
-        return self.append_fields( ap1, ap2.fields, ap2.field_types, ap2.taintSubFields )
+        """
+
+        :param AccessPath ap1:
+        :param AccessPath ap2:
+        :return:
+        """
+        return self.append_fields( ap1, ap2.fields, ap2.field_types, ap2.taint_sub_fields )
 
     def append_fields(self, original, ap_fields, ap_field_types, taint_sub_fields):
+        """
+
+        :param AccessPath original:
+        :param list ap_fields:
+        :param list ap_field_types:
+        :param bool taint_sub_fields:
+        :return:
+        """
         offset = 0 if original.fields is None else len(original.fields)
         fields = list()
         field_types = list()
@@ -306,5 +356,5 @@ class AccessPathFactory:
             fields = ap_fields[offset:offset + len(ap_fields)]
             field_types = ap_field_types[offset:offset + len(ap_field_types)]
 
-        return self.create_access_path( original.val, fields, original.base_type, field_types, taint_sub_fields, False,
-                                        True, original.arrayTaintType )
+        return self.create_access_path( original.value, fields, original.base_type, field_types, taint_sub_fields, False,
+                                        True, original.array_taint_type )

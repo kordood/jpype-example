@@ -1,4 +1,4 @@
-import SootStaticFieldRef, StaticFieldTrackingMode, SootArrayRef, FieldRef, SootInstanceFieldRef
+import SootStaticFieldRef, StaticFieldTrackingMode, SootArrayRef, SootInstanceFieldRef, SootInstanceFieldRef
 import CastExpr, InstanceOfExpr, LengthExpr, NewArrayExpr, InstanceInvokeExpr
 import Stmt, ReturnStmt
 import TypeUtils, BooleanType, ArrayTaintType, RefType, NoneType, PrimType
@@ -107,7 +107,7 @@ class FlowFunctions:
         implicit_taint |= new_source.getAccessPath().is_empty()
 
         if implicit_taint:
-            if d1 is None or d1.getAccessPath().is_empty() and not isinstance( left_value, FieldRef ):
+            if d1 is None or d1.getAccessPath().is_empty() and not isinstance( left_value, SootInstanceFieldRef ):
                 return set(new_source)
 
             if new_source.getAccessPath().is_empty():
@@ -128,7 +128,7 @@ class FlowFunctions:
         target_type = None
         if not add_left_value and not alias_overwritten:
             for rightVal in right_vals:
-                if isinstance(rightVal, FieldRef):
+                if isinstance(rightVal, SootInstanceFieldRef):
                     right_ref = rightVal
                     if isinstance(right_ref, SootInstanceFieldRef) \
                             and isinstance(right_ref.base.getType(), NoneType):

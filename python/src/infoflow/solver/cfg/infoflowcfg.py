@@ -1,5 +1,5 @@
 import AssignStmt
-import FieldRef
+import SootInstanceFieldRef
 import SootStaticFieldRef
 import VirtualInvokeExpr
 import RefType
@@ -232,7 +232,7 @@ class InfoflowCFG:
             if isinstance(u, AssignStmt):
                 assign = u
 
-                if isinstance(assign.getLeftOp(), FieldRef):
+                if isinstance(assign.getLeftOp(), SootInstanceFieldRef):
                     self.static_field_uses[method] = True
                     return True
 

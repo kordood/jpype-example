@@ -8,7 +8,7 @@ import VoidType, CallType
 
 import logging
 from ...sootir.soot_class import SootClass, SootMethod
-from ...sootir.soot_value import SootInstanceFieldRef as FieldRef, SootParamRef as ParameterRef
+from ...sootir.soot_value import SootInstanceFieldRef as SootInstanceFieldRef, SootParamRef as ParameterRef
 from ...sootir.soot_statement import SootStmt as Stmt, AssignStmt, ReturnStmt, DefinitionStmt, IdentityStmt
 from ...sootir.soot_expr import SootInvokeExpr as InstanceInvokeExpr
 from ...infoflowmanager import InfoflowManager
@@ -140,7 +140,7 @@ class BaseSourceSinkManager:
 
         elif isinstance( s_call_site, AssignStmt ):
             assign_stmt = s_call_site
-            if isinstance( assign_stmt.left_op, FieldRef ):
+            if isinstance( assign_stmt.left_op, SootInstanceFieldRef ):
                 field_ref = assign_stmt.left_op
                 define = self.sink_fields.get( field_ref.field )
                 if define is not None:
@@ -292,7 +292,7 @@ class BaseSourceSinkManager:
     def check_field_source(self, stmt: Stmt, cfg: InfoflowCFG):
         if isinstance( stmt, AssignStmt ):
             assign_stmt = stmt
-            if isinstance( assign_stmt.right_op, FieldRef ):
+            if isinstance( assign_stmt.right_op, SootInstanceFieldRef ):
                 field_ref = assign_stmt.right_op
                 return self.source_fields.get( field_ref.field )
             return None

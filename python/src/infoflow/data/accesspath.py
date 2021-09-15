@@ -27,16 +27,16 @@ class AccessPath:
         """
         self.value = val
         self.fields = appending_fields
-        self.baseType = val_type
-        self.fieldTypes = appending_field_types
+        self.base_type = val_type
+        self.field_types = appending_field_types
         self.taint_sub_fields = taint_sub_fields
         self.cut_off_approximation = is_cut_off_approximation
         self.array_taint_type = array_taint_type if array_taint_type else ArrayTaintType.ContentsAndLength
         self.can_have_immutable_aliases = can_have_immutable_aliases
 
         self.array_taint_type = ArrayTaintType
-        self.zeroAccessPath = None
-        self.emptyAccessPath = AccessPath()
+        self.zero_access_path = None
+        self.empty_access_path = AccessPath()
 
     @staticmethod
     def can_contain_value(val):
@@ -64,9 +64,9 @@ class AccessPath:
         return self.fields[len(self.fields) - 1]
 
     def get_last_field_type(self):
-        if self.fieldTypes is None or len(self.fieldTypes) == 0:
-            return self.baseType
-        return self.fieldTypes[len(self.fieldTypes) - 1]
+        if self.field_types is None or len( self.field_types ) == 0:
+            return self.base_type
+        return self.field_types[len( self.field_types ) - 1]
 
     def get_first_field(self):
         if self.fields is None or len(self.fields) == 0:
@@ -81,9 +81,9 @@ class AccessPath:
         return False
 
     def get_first_field_type(self):
-        if self.fieldTypes is None or len(self.fieldTypes) == 0:
+        if self.field_types is None or len( self.field_types ) == 0:
             return None
-        return self.fieldTypes[0]
+        return self.field_types[0]
 
     def get_field_count(self):
         return 0 if self.fields is None else len(self.fields)
@@ -99,15 +99,15 @@ class AccessPath:
                 return False
         elif not self.value == other.value:
             return False
-        if self.baseType is None:
+        if self.base_type is None:
             if other.baseType is not None:
                 return False
-        elif not self.baseType == other.baseType:
+        elif not self.base_type == other.baseType:
             return False
 
         if self.fields != other.fields:
             return False
-        if self.fieldTypes != other.fieldTypes:
+        if self.field_types != other.fieldTypes:
             return False
 
         if self.taint_sub_fields != other.taint_sub_fields:
@@ -134,10 +134,10 @@ class AccessPath:
                and (self.fields is None or len(self.fields) == 0)
 
     def clone(self):
-        if self == self.emptyAccessPath:
+        if self == self.empty_access_path:
             return self
 
-        a = AccessPath( self.value, self.fields, self.baseType, self.fieldTypes, self.taint_sub_fields,
+        a = AccessPath( self.value, self.fields, self.base_type, self.field_types, self.taint_sub_fields,
                         self.cut_off_approximation, self.array_taint_type, self.can_have_immutable_aliases )
         return a
 
@@ -177,9 +177,9 @@ class AccessPath:
         new_types = None
         if len(self.fields) > 1:
             new_fields = self.fields[:-1]
-            new_types = self.fieldTypes[:-1]
+            new_types = self.field_types[:-1]
 
-        return AccessPath( self.value, new_fields, self.baseType, new_types, self.taint_sub_fields,
+        return AccessPath( self.value, new_fields, self.base_type, new_types, self.taint_sub_fields,
                            self.cut_off_approximation, self.array_taint_type, self.can_have_immutable_aliases )
 
     def is_cut_off_approximation(self):
@@ -203,7 +203,7 @@ class AccessPath:
 
     def get_zero_access_path(self):
         zero_access_path = None
-        if self.zeroAccessPath is None:
+        if self.zero_access_path is None:
             zero_access_path = AccessPath(Jimple.v().newLocal("zero", None), None, None, None, False,
                                           False, self.array_taint_type.ContentsAndLength, False)
         return zero_access_path
