@@ -15,7 +15,7 @@ class ClassMethodSummaries:
         return (self.method_summaries is None or self.method_summaries.is_empty()) and not self.has_interfaces() and \
                not self.has_superclass() and self.is_interface is None
 
-    def filter_for_method(self, signature:str):
+    def filter_for_method(self, signature: str):
         if self.is_empty():
             return None
 

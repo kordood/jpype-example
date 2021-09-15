@@ -1,7 +1,12 @@
-import Local, InstanceFieldRef, StaticFieldRef, ArrayRef
+from __future__ import annotations
 import Jimple
 import NoneType
+from ...infoflow.sootir.soot_value import SootLocal
+from ...infoflow.sootir.soot_value import SootInstanceFieldRef
+from ...infoflow.sootir.soot_value import SootStaticFieldRef
+from ...infoflow.sootir.soot_value import SootArrayRef
 
+from __future__ import annotations
 
 class ArrayTaintType:
     Contents = 0
@@ -11,8 +16,8 @@ class ArrayTaintType:
 
 class AccessPath:
 
-    def __init__(self, val: Local = None, appending_fields: list=None, val_type=None, appending_field_types: list =None, taint_sub_fields: bool=True,
-                 is_cut_off_approximation: bool =False, array_taint_type: ArrayTaintType =None, can_have_immutable_aliases: bool =False):
+    def __init__(self, val: Local = None, appending_fields: list = None, val_type=None, appending_field_types: list =None, taint_sub_fields: bool=True,
+                 is_cut_off_approximation: bool = False, array_taint_type: ArrayTaintType = None, can_have_immutable_aliases: bool =False):
         self.value = val
         self.fields = appending_fields
         self.baseType = val_type
@@ -131,7 +136,7 @@ class AccessPath:
     def is_empty(self):
         return self.value is None and (self.fields is None or len(self.fields) == 0)
 
-    def entails(self, a2):
+    def entails(self, a2: AccessPath):
         if self.is_empty() or a2.is_empty():
             return False
 

@@ -3,12 +3,13 @@ from copy import copy
 from .sourcecontext import SourceContext
 from .accesspath import AccessPath
 from ..infoflowconfiguration import InfoflowConfiguration
-
+from ..misc.copymember import copy_member
+from __future__ import annotations
 
 class Abstraction:
 
-    def __init__(self, ap_to_taint=None, definition=None, source_val=None, source_stmt=None, user_data=None,
-                 source_context=None, exception_thrown=None, is_implicit=None, p=None, original=None):
+    def __init__(self, ap_to_taint: AccessPath =None, definition=None, source_val: AccessPath =None, source_stmt=None, user_data=None,
+                 source_context: SourceContext =None, exception_thrown: bool =None, is_implicit: bool =None, p: AccessPath =None, original: Abstraction=None):
         self.flow_sensitive_aliasing = True
         self.predecessor = None
         self.corresponding_call_site = None
@@ -26,7 +27,7 @@ class Abstraction:
 
             self.neighbors = None
             self.is_implicit = is_implicit
-            self.current_stmt = None if source_context is None else source_context.getStmt()
+            self.current_stmt = None if source_context is None else source_context.stmt
 
         else:
             if original is None:
@@ -49,8 +50,8 @@ class Abstraction:
             self.neighbors = None
             self.current_stmt = None
 
-    def initialize(self, config):
-        flow_sensitive_aliasing = config.getFlowSensitiveAliasing()
+    def initialize(self, config: InfoflowConfiguration):
+        flow_sensitive_aliasing = config.flow_sensitive_aliasing
 
     def derive_inactive_abstraction(self, activation_unit):
         if not self.flow_sensitive_aliasing:
@@ -66,10 +67,10 @@ class Abstraction:
 
         a.postdominators = None
         a.activation_unit = activation_unit
-        a.depends_on_cut_ap |= a.access_path.isCutOffApproximation()
+        a.depends_on_cut_ap |= a.access_path.cutOffApproximation
         return a
 
-    def derive_new_abstraction(self, p, current_stmt, is_implicit=None):
+    def derive_new_abstraction(self, p: AccessPath, current_stmt, is_implicit: bool =None):
         is_implicit = is_implicit if is_implicit else self.is_implicit
         if self.access_path == p and self.current_stmt == current_stmt and self.is_implicit == is_implicit:
             return self
@@ -81,7 +82,7 @@ class Abstraction:
         abs.is_implicit = is_implicit
         return abs
 
-    def derive_new_abstraction_mutable(self, p, current_stmt):
+    def derive_new_abstraction_mutable(self, p: AccessPath, current_stmt):
         if p is None:
             return None
 
@@ -111,7 +112,7 @@ class Abstraction:
         abs.exception_thrown = True
         return abs
 
-    def derive_new_abstraction_on_catch(self, ap):
+    def derive_new_abstraction_on_catch(self, ap: AccessPath):
         assert self.exception_thrown
         abs = self.derive_new_abstraction_mutable( ap, None )
         if abs is None:
@@ -135,24 +136,24 @@ class Abstraction:
     def derive_conditional_abstraction_enter(self, postdom, conditional_unit):
         assert self.is_abstraction_active()
 
-        if self.postdominators is not None and self.postdominators.contains( postdom ):
+        if self.postdominators is not None and postdom in self.postdominators:
             return self
 
-        abs = self.derive_new_abstraction_mutable( AccessPath.getEmptyAccessPath(), conditional_unit )
+        abs = self.derive_new_abstraction_mutable( AccessPath.emptyAccessPath, conditional_unit ) ##emptyAccessPath -> java에서 static 이더라구요
         if abs is None:
             return None
 
         if abs.postdominators is None:
             abs.postdominators = list( postdom )
         else:
-            abs.postdominators.add( 0, postdom )
+            abs.postdominators.a( 0, postdom )
         return abs
 
     def derive_conditional_abstraction_call(self, conditional_call_site):
         assert self.is_abstraction_active()
         assert conditional_call_site is not None
 
-        abs = self.derive_new_abstraction_mutable( AccessPath.getEmptyAccessPath(), conditional_call_site )
+        abs = self.derive_new_abstraction_mutable( AccessPath.emptyAccessPath, conditional_call_site )
         if abs is None:
             return None
 
@@ -161,7 +162,7 @@ class Abstraction:
         return abs
 
     def drop_top_postdominator(self):
-        if self.postdominators is None or self.postdominators.isEmpty():
+        if self.postdominators is None or len(self.postdominators) <= 0:
             return self
 
         abs = copy(self)
@@ -170,9 +171,9 @@ class Abstraction:
         return abs
 
     def get_top_postdominator(self):
-        if self.postdominators is None or self.postdominators.isEmpty():
+        if self.postdominators is None or len(self.postdominators) <= 0:
             return None
-        return self.postdominators.get( 0 )
+        return self.postdominators[0]
 
     def is_top_postdominator(self, sm):
         uc = self.get_top_postdominator()
@@ -241,7 +242,7 @@ class Abstraction:
             return False
         return self.local_equals( other )
 
-    def add_neighbor(self, original_abstraction):
+    def add_neighbor(self, original_abstraction: Abstraction):
         InfoflowConfiguration().mergeNeighbors = False
         if original_abstraction == self:
             return False
@@ -264,8 +265,8 @@ class Abstraction:
 
         return self.neighbors.add( original_abstraction )
 
-    def get_zero_abstraction(self, flow_sensitive_aliasing):
-        zero_value = Abstraction( AccessPath.get_zero_access_path(), None, False, False )
+    def get_zero_abstraction(self, flow_sensitive_aliasing: bool):
+        zero_value = Abstraction(AccessPath.zeroAccessPath , None, False, False) ##zeroAccessPath -> java에서 static 이더라구요
         Abstraction.flow_sensitive_aliasing = flow_sensitive_aliasing
         return zero_value
     
@@ -287,7 +288,7 @@ class Abstraction:
         return self.path_flags.set( id )
     """
 
-    def inject_source_context(self, source_context):
+    def inject_source_context(self, source_context: SourceContext):
         if self.source_context is not None and self.source_context == source_context:
             return self
     

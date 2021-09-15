@@ -1,5 +1,6 @@
 from .methodsummaries import MethodSummaries
-
+from .gapdefinition import GapDefinition
+import collections
 
 class ImmutableMethodSummaries(MethodSummaries):
 
@@ -12,16 +13,16 @@ class ImmutableMethodSummaries(MethodSummaries):
     def clear(self):
         raise RuntimeError("This object is immutable")
 
-    def create_temporary_gap(self, gap_id):
+    def create_temporary_gap(self, gap_id: int):
         raise RuntimeError("This object is immutable")
 
-    def merge(self, new_flows):
+    def merge(self, new_flows: MethodSummaries):
         raise RuntimeError("This object is immutable")
 
     def merge_clears(self, new_clears):
         raise RuntimeError("This object is immutable")
 
-    def merge_flows(self, new_flows):
+    def merge_flows(self, new_flows ):
         raise RuntimeError("This object is immutable")
 
     def merge_summaries(self, new_summaries):
@@ -33,5 +34,5 @@ class ImmutableMethodSummaries(MethodSummaries):
     def remove_all(self, to_remove):
         raise RuntimeError("This object is immutable")
 
-    def remove_gap(self, gap):
+    def remove_gap(self, gap: GapDefinition):
         raise RuntimeError("This object is immutable")
