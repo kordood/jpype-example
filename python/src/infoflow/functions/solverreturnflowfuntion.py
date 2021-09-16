@@ -100,7 +100,7 @@ class SolverReturnFlowFunction(FlowFunction):
                         continue
                     if not self.is_reflective_call_site \
                             and not self.manager.getTypeUtils().check_cast( source.getAccessPath(),
-                                                                            original_call_arg.getType() ):
+                                                                            original_call_arg.type ):
                         continue
 
                     if isinstance(source.getAccessPath().getBaseType(), PrimType):
@@ -135,7 +135,7 @@ class SolverReturnFlowFunction(FlowFunction):
                     and isinstance(self.i_call_stmt.getInvokeExpr(), InstanceInvokeExpr) \
                     and self.aliasing.mayAlias(self.this_local, source_base):
 
-                if self.manager.getTypeUtils().check_cast( source.getAccessPath(), self.this_local.getType() ):
+                if self.manager.getTypeUtils().check_cast( source.getAccessPath(), self.this_local.type ):
                     i_i_expr = self.i_call_stmt.getInvokeExpr()
 
                     caller_base_local = i_i_expr.getArg(0) \

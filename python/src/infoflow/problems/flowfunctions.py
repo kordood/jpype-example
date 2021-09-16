@@ -48,11 +48,11 @@ class FlowFunctions:
         if not source.getAccessPath().is_empty():
             if isinstance(left_value, SootArrayRef and target_type is not None):
                 array_ref = left_value
-                target_type = TypeUtils.build_array_or_add_dimension( target_type, array_ref.getType().getArrayType() )
+                target_type = TypeUtils.build_array_or_add_dimension( target_type, array_ref.type.getArrayType() )
 
             if isinstance(right_value, CastExpr):
                 cast = assign_stmt.getRightOp()
-                target_type = cast.getType()
+                target_type = cast.type
             elif isinstance(right_value, InstanceOfExpr):
                 new_abs = source.derive_new_abstraction(self.manager.getAccessPathFactory().create_access_path(
                     left_value, BooleanType.v(), True, ArrayTaintType.ContentsAndLength), assign_stmt)
@@ -116,7 +116,7 @@ class FlowFunctions:
         alias_overwritten = not add_left_value \
                            and not new_source.is_abstraction_active() \
                            and Aliasing.baseMatchesStrict(right_value, new_source) \
-                           and isinstance(right_value.getType(), RefType) \
+                           and isinstance(right_value.type, RefType) \
                            and not new_source.dependsOnCutAP()
 
         aliasing = self.manager.getAliasing()
@@ -131,7 +131,7 @@ class FlowFunctions:
                 if isinstance(rightVal, SootInstanceFieldRef):
                     right_ref = rightVal
                     if isinstance(right_ref, SootInstanceFieldRef) \
-                            and isinstance(right_ref.base.getType(), NoneType):
+                            and isinstance(right_ref.base.type, NoneType):
                         return None
 
                     mapped_ap = aliasing.mayAlias(new_source.getAccessPath(), right_ref)
@@ -154,7 +154,7 @@ class FlowFunctions:
                               and new_source.getAccessPath().get_field_count() == 0
                               and new_source.getAccessPath().getTaintSubFields()):
                             add_left_value = True
-                            target_type = right_field.getType()
+                            target_type = right_field.type
                             if (mapped_ap is None):
                                 mapped_ap = self.manager.getAccessPathFactory().create_access_path( right_base, True )
                 elif isinstance(rightVal, SootLocal) and new_source.getAccessPath().is_instance_field_ref():
@@ -176,8 +176,8 @@ class FlowFunctions:
             return None
 
         if not new_source.is_abstraction_active() \
-                and isinstance(assign_stmt.getLeftOp().getType(), PrimType) \
-                or TypeUtils.is_string_type( assign_stmt.getLeftOp().getType() ) \
+                and isinstance(assign_stmt.getLeftOp().type, PrimType) \
+                or TypeUtils.is_string_type( assign_stmt.getLeftOp().type ) \
                 and not new_source.getAccessPath().getCanHaveImmutableAliases():
             return set(new_source)
 

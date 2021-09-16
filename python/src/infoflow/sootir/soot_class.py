@@ -50,7 +50,7 @@ class SootClass(object):
 
         fields = {}
         for field in ir_class.getFields():
-            fields[field.getName()] = (convert_soot_attributes(field.getModifiers()), str(field.getType()))
+            fields[field.getName()] = (convert_soot_attributes(field.getModifiers()), str(field.type))
 
         interface_names = [it.getName() for it in ir_class.getInterfaces()]
         if class_name != "java.lang.Object":

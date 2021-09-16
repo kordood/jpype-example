@@ -24,7 +24,8 @@ class TypeUtils:
         ref_type = tp
         return ref_type.cls.name == "java.lang.String"
 
-    def is_object_like_type(self, tp):
+    @staticmethod
+    def is_object_like_type(tp):
         if not isinstance(tp, RefType):
             return False
 
@@ -78,7 +79,7 @@ class TypeUtils:
                         return False
 
             if access_path.isFieldRef() and access_path.getFieldCount() > field_start_idx:
-                if not self.check_cast(_type, access_path.getFields()[field_start_idx].getDeclaringClass().getType()):
+                if not self.check_cast(_type, access_path.getFields()[field_start_idx].getDeclaringClass().type):
                     return False
 
             return True
@@ -101,7 +102,7 @@ class TypeUtils:
         if isinstance( ap_base.base_type, ArrayType ):
             return dest.getName() == "java.lang.Object"
 
-        return self.check_cast(ap_base, dest.getType())
+        return self.check_cast(ap_base, dest.type)
 
     def getMorePreciseType(self, tp1, tp2):
         fast_hierarchy = Scene.v().getOrMakeFastHierarchy()

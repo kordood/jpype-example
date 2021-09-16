@@ -16,7 +16,7 @@ class SootExpr(SootValue):
         if cls is None:
             raise NotImplementedError('Unsupported Soot expression type %s.' % subtype)
 
-        return cls.from_ir(str(ir_expr.getType()), subtype, ir_expr)
+        return cls.from_ir(str(ir_expr.type), subtype, ir_expr)
 
 
 class SootBinopExpr(SootExpr):

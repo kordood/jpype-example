@@ -193,13 +193,13 @@ class MethodSummaries:
                 if not flow.is_custom():
 
                     if flow.source().get_gap() is not None:
-                        if flow.source().getType() == SourceSinkType.GapBaseObject:
+                        if flow.source().type == SourceSinkType.GapBaseObject:
                             gaps_with_bases.update(flow.source().get_gap())
                         else:
                             gaps_with_flows.update(flow.source().get_gap())
 
                     if flow.sink().get_gap() is not None:
-                        if flow.sink().getType() == SourceSinkType.GapBaseObject:
+                        if flow.sink().type == SourceSinkType.GapBaseObject:
                             gaps_with_bases.update(flow.sink().get_gap())
                         else:
                             gaps_with_flows.update(flow.sink().get_gap())

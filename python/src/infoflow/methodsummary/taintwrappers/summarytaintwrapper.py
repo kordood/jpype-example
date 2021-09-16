@@ -698,7 +698,7 @@ class SummaryTaintWrapper:
         if not self.can_type_alias(flow.sink().get_last_field_type()):
             return None
 
-        if flow.source().gap is not None and flow.source().getType() == SourceSinkType.Return:
+        if flow.source().gap is not None and flow.source().type == SourceSinkType.Return:
             return None
 
         return flow.reverse()
@@ -807,7 +807,7 @@ class SummaryTaintWrapper:
         declared_class = None
         if stmt is not None and isinstance(stmt.getInvokeExpr(), InstanceInvokeExpr):
             iinv = stmt.getInvokeExpr()
-            base_type = iinv.base.getType()
+            base_type = iinv.base.type
             if isinstance(base_type, RefType):
                 declared_class = base_type.getSootClass()
 
@@ -1051,7 +1051,7 @@ class SummaryTaintWrapper:
                 if fields is not None and len(fields) > 0:
                     types = Type[len(fields)]
                     for i in range(0, len(fields)):
-                        types[i] = fields[i].getType()
+                        types[i] = fields[i].type
                     return types
 
                 return None
@@ -1082,7 +1082,7 @@ class SummaryTaintWrapper:
         if (check_types is None or check_types.booleanValue()) and sink_type is not None and taint_type is not None:
             if not (isinstance(sink_type, PrimType)) \
                     and not self.is_cast_compatible(taint_type, sink_type \
-                                                                and flow_sink.getType() == SourceSinkType.Field):
+                                                                and flow_sink.type == SourceSinkType.Field):
                 found = False
 
                 while isinstance(sink_type, ArrayType):
@@ -1100,10 +1100,10 @@ class SummaryTaintWrapper:
                 if not found:
                     return None
 
-        source_sink_type = flow_sink.getType()
-        if flow_sink.getType() == SourceSinkType.GapBaseType and remaining_fields is not None \
+        sink_source = flow_sink.type
+        if flow_sink.type == SourceSinkType.GapBaseType and remaining_fields is not None \
                 and len(remaining_fields) != 0:
-            source_sink_type = SourceSinkType.Field
+            sink_source = SourceSinkType.Field
 
         s_base_type = None if sink_type is None else "" + sink_type
         if not flow.getIgnoreTypes():
@@ -1118,7 +1118,7 @@ class SummaryTaintWrapper:
                                                                         str(new_base_type))
                 s_base_type = flow_sink.getBaseType()
 
-        return Taint(source_sink_type, flow_sink.parameter_index, s_base_type, appended_fields,
+        return Taint(sink_source, flow_sink.parameter_index, s_base_type, appended_fields,
                      taint_sub_fields or taint.taint_sub_fields, gap)
 
     def cut_sub_fields(self, flow, access_path):

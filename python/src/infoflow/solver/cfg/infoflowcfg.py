@@ -288,7 +288,7 @@ class InfoflowCFG:
             return False
 
         dests = eug.getExceptionDests(u1)
-        if dests is not None and not dests.isEmpty():
+        if dests is not None and not dests.is_empty():
             ts = Scene.v().getDefaultThrowAnalysis().mightThrow(u1)
             if ts is not None:
                 has_traps = False
@@ -296,7 +296,7 @@ class InfoflowCFG:
                     trap = dest.getTrap()
                     if trap is not None:
                         has_traps = True
-                        if not ts.catchableAs(trap.getException().getType()):
+                        if not ts.catchableAs(trap.getException().type):
                             return False
 
                 if not has_traps:
@@ -352,8 +352,8 @@ class InfoflowCFG:
         else:
             if isinstance(iexpr, VirtualInvokeExpr):
                 viexpr = iexpr
-                if isinstance(viexpr.base.getType(), RefType):
-                    if (viexpr.base.getType()).getSootClass().name == "java.lang.reflect.Method":
+                if isinstance(viexpr.base.type, RefType):
+                    if (viexpr.base.type).getSootClass().name == "java.lang.reflect.Method":
                         if viexpr.getMethod().name == "invoke":
                             return True
             return False
