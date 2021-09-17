@@ -29,12 +29,12 @@ class InfoflowResults:
     def num_connections(self):
         num = 0
         if self.results is not None:
-            for sink in self.results.keySet():
+            for sink in self.results.keys():
                 num += self.results.get(sink).size()
         return num
 
     def contains_sink(self, sink):
-        for si in self.results.keySet():
+        for si in self.results.keys():
             if si.stmt == sink:
                 return True
         return False
@@ -85,7 +85,7 @@ class InfoflowResults:
                 self.add_exception(e)
 
         if not results.isEmpty() and not results.getResults().is_empty():
-            for sink in results.getResults().keySet():
+            for sink in results.getResults().keys():
                 for source in results.getResults().get(sink):
                     self.add_result(sink=sink, source=source)
 
@@ -102,7 +102,7 @@ class InfoflowResults:
             return None
 
         _set = set(self.results.size() * 10)
-        for sink in self.results.keySet():
+        for sink in self.results.keys():
             for source in self.results.get(sink):
                 _set.add(DataFlowResult(source, sink))
 
@@ -113,7 +113,7 @@ class InfoflowResults:
             return False
 
         sources = None
-        for s_i in self.results.keySet():
+        for s_i in self.results.keys():
             if s_i.stmt == sink:
                 sources = self.results.get(s_i)
                 break
@@ -129,7 +129,7 @@ class InfoflowResults:
         if self.results is None:
             return False
 
-        for si in self.results.keySet():
+        for si in self.results.keys():
             if str(si.access_path.value) == sink:
                 sources = self.results.get(si)
                 for src in sources:
@@ -157,7 +157,7 @@ class InfoflowResults:
             return list()
 
         sink_vals = list()
-        for si in self.results.keySet():
+        for si in self.results.keys():
             if si.stmt.containsInvokeExpr():
                 expr = si.stmt.invoke_expr
                 if expr.method.signature == sink_signature:

@@ -30,31 +30,31 @@ class PropagationRuleManager:
 
 		rule_list = []
 
-		rule_list.append( SourcePropagationRule( manager, zero_value, results ) )
-		rule_list.append( SinkPropagationRule( manager, zero_value, results ) )
-		rule_list.append( StaticPropagationRule( manager, zero_value, results ) )
+		rule_list.append(SourcePropagationRule(manager, zero_value, results))
+		rule_list.append(SinkPropagationRule(manager, zero_value, results))
+		rule_list.append(StaticPropagationRule(manager, zero_value, results))
 
 		if manager.getConfig().getEnableArrayTracking():
-			rule_list.append( ArrayPropagationRule( manager, zero_value, results ) )
+			rule_list.append(ArrayPropagationRule(manager, zero_value, results))
 
 		if manager.getConfig().getEnableExceptionTracking():
-			rule_list.append( ExceptionPropagationRule( manager, zero_value, results ) )
+			rule_list.append(ExceptionPropagationRule(manager, zero_value, results))
 
 		if manager.getTaintWrapper() is not None:
-			rule_list.append( WrapperPropagationRule( manager, zero_value, results ) )
+			rule_list.append(WrapperPropagationRule(manager, zero_value, results))
 			
 		if manager.getConfig().getImplicitFlowMode().trackControlFlowDependencies():
-			rule_list.append( ImplicitPropagtionRule( manager, zero_value, results ) )
+			rule_list.append(ImplicitPropagtionRule(manager, zero_value, results))
 		
-		rule_list.append( StrongUpdatePropagationRule( manager, zero_value, results ) )
+		rule_list.append(StrongUpdatePropagationRule(manager, zero_value, results))
 		
 		if manager.getConfig().getEnableTypeChecking():
-			rule_list.append( TypingPropagationRule( manager, zero_value, results ) )
+			rule_list.append(TypingPropagationRule(manager, zero_value, results))
 		
-		rule_list.append( SkipSystemClassRule( manager, zero_value, results ) )
+		rule_list.append(SkipSystemClassRule(manager, zero_value, results))
 		
 		if manager.getConfig().getStopAfterFirstKFlows() > 0:
-			rule_list.append( StopAfterFirstKFlowsPropagationRule( manager, zero_value, results ) )
+			rule_list.append(StopAfterFirstKFlowsPropagationRule(manager, zero_value, results))
 
 		self.rules = rule_list.toArray(ITaintPropagationRule[rule_list.size()])
 
@@ -63,7 +63,7 @@ class PropagationRuleManager:
 		if kill_source is None:
 			kill_source = ByReferenceBoolean()
 		for rule in self.rules:
-			rule_out = rule.propagate_normal_flow( d1, source, stmt, dest_stmt, kill_source, kill_all )
+			rule_out = rule.propagate_normal_flow(d1, source, stmt, dest_stmt, kill_source, kill_all)
 			if kill_all is not None and kill_all.value:
 				return None
 
@@ -86,7 +86,7 @@ class PropagationRuleManager:
 	def apply_call_flow_function(self, d1, source, stmt, dest, kill_all):
 		res = []
 		for rule in self.rules:
-			rule_out = rule.propagateCallFlow( d1, source, stmt, dest, kill_all )
+			rule_out = rule.propagateCallFlow(d1, source, stmt, dest, kill_all)
 			if kill_all.value:
 				return None
 
@@ -100,7 +100,7 @@ class PropagationRuleManager:
 	def apply_call_to_return_flow_function(self, d1, source, stmt, kill_source, kill_all=None, no_append_source=False):
 		res = []
 		for rule in self.rules:
-			rule_out = rule.propagateCallToReturnFlow( d1, source, stmt, kill_source, kill_all )
+			rule_out = rule.propagateCallToReturnFlow(d1, source, stmt, kill_source, kill_all)
 			if kill_all is not None and kill_all.value:
 				return None
 			if rule_out is not None and not rule_out.is_empty():
@@ -121,7 +121,7 @@ class PropagationRuleManager:
 	def apply_return_flow_function(self, caller_d1s, source, stmt, ret_site, call_site, kill_all):
 		res = []
 		for rule in self.rules:
-			rule_out = rule.propagateReturnFlow( caller_d1s, source, stmt, ret_site, call_site, kill_all )
+			rule_out = rule.propagateReturnFlow(caller_d1s, source, stmt, ret_site, call_site, kill_all)
 			if kill_all is not None and kill_all.value:
 				return None
 			if rule_out is not None and not rule_out.is_empty():

@@ -99,7 +99,7 @@ class MethodSourceSinkDefinition(AbstractSourceSinkDefinition):
             return MethodSourceSinkDefinition(method_andclass, filtered_base_objects, filtered_parameters,
                                               filtered_return_values, call_type)
         else:
-            definition = self.build_new_definition( self.method, base_apts, param_apts, return_apts, self.call_type )
+            definition = self.build_new_definition(self.method, base_apts, param_apts, return_apts, self.call_type)
             definition.category = self.category
             return definition
 
@@ -146,8 +146,8 @@ class MethodSourceSinkDefinition(AbstractSourceSinkDefinition):
 
     def get_base_object_sink(self):
         if self.BASE_OBJ_SINK is None:
-            self.BASE_OBJ_SINK = MethodSourceSinkDefinition( AccessPathTuple().get_blank_sink_tuple(), list(), None,
-                                                             self.call_type.MethodCall )
+            self.BASE_OBJ_SINK = MethodSourceSinkDefinition(AccessPathTuple().get_blank_sink_tuple(), list(), None,
+                                                             self.call_type.MethodCall)
         return self.BASE_OBJ_SINK
 
     def __eq__(self, obj):
@@ -202,7 +202,7 @@ class MethodSourceSinkDefinition(AbstractSourceSinkDefinition):
             return base_obj_sink
         else:
             for i in range(0, len(self.PARAM_OBJ_SOURCE)):
-                definition = self.create_parameter_source( i, self.call_type )
+                definition = self.create_parameter_source(i, self.call_type)
                 if self.__eq__(definition):
                     return definition
             return self
@@ -243,7 +243,7 @@ class MethodSourceSinkDefinition(AbstractSourceSinkDefinition):
                         if access_paths.contains(ap):
                             filtered_parameters[i] = ap
 
-        define = self.build_new_definition( self.method, filtered_base_objects, filtered_parameters,
-                                            filtered_return_values, self.call_type )
+        define = self.build_new_definition(self.method, filtered_base_objects, filtered_parameters,
+                                            filtered_return_values, self.call_type)
         define.setCategory(self.category)
         return define

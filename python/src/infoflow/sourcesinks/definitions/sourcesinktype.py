@@ -8,7 +8,8 @@ class SourceSinkType:
     def __init__(self, type_value=0):
         self.type_value = type_value
 
-    def from_flags(self, is_sink, is_source):
+    @staticmethod
+    def from_flags(is_sink, is_source):
         if is_sink and is_source:
             return SourceSinkType.Both
         elif not is_sink and not is_source:
@@ -30,9 +31,11 @@ class SourceSinkType:
             if self == self.Neither:
                 return self
         if self == self.Source:
-            return to_remove == SourceSinkType.Neither if SourceSinkType.Source or to_remove == SourceSinkType.Both else self
+            return to_remove == SourceSinkType.Neither if SourceSinkType.Source or to_remove == SourceSinkType.Both \
+                else self
         if self == self.Sink:
-            return to_remove == SourceSinkType.Neither if SourceSinkType.Sink or to_remove == SourceSinkType.Both else self
+            return to_remove == SourceSinkType.Neither if SourceSinkType.Sink or to_remove == SourceSinkType.Both \
+                else self
         if self == self.Both:
             if to_remove == self.Neither:
                 pass

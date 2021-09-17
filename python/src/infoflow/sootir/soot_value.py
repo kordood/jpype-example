@@ -113,7 +113,7 @@ class SootStaticFieldRef(SootValue):
     __slots__ = ['field']
 
     def __str__(self):
-        return "StaticFieldRef %s" % (self.field, )
+        return "StaticFieldRef %s" % (self.field,)
 
     @staticmethod
     def from_ir(type_, ir_value):

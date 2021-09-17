@@ -48,7 +48,7 @@ class FlowFunctions:
         if not source.getAccessPath().is_empty():
             if isinstance(left_value, SootArrayRef and target_type is not None):
                 array_ref = left_value
-                target_type = TypeUtils.build_array_or_add_dimension( target_type, array_ref.type.getArrayType() )
+                target_type = TypeUtils.build_array_or_add_dimension(target_type, array_ref.type.getArrayType())
 
             if isinstance(right_value, CastExpr):
                 cast = assign_stmt.getRightOp()
@@ -66,20 +66,20 @@ class FlowFunctions:
         if new_abs is None:
             if source.getAccessPath().is_empty():
                 new_abs = source.derive_new_abstraction(
-                        self.manager.getAccessPathFactory().create_access_path( left_value, True ), assign_stmt, True)
+                        self.manager.getAccessPathFactory().create_access_path(left_value, True), assign_stmt, True)
             else:
-                ap = self.manager.getAccessPathFactory().copy_with_new_value( source.getAccessPath(),
+                ap = self.manager.getAccessPathFactory().copy_with_new_value(source.getAccessPath(),
                                                                               left_value,
                                                                               target_type,
                                                                               cut_first_field,
                                                                               True,
-                                                                              array_taint_type )
-                new_abs = source.derive_new_abstraction( ap, assign_stmt )
+                                                                              array_taint_type)
+                new_abs = source.derive_new_abstraction(ap, assign_stmt)
 
         if new_abs is not None:
             if isinstance(left_value, SootStaticFieldRef) \
                 and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode.ContextFlowInsensitive:
-                self.manager.getGlobalTaintManager().add_to_global_taint_state( new_abs )
+                self.manager.getGlobalTaintManager().add_to_global_taint_state(new_abs)
             else:
                 taint_set.add(new_abs)
                 aliasing = self.manager.getAliasing()
@@ -87,7 +87,7 @@ class FlowFunctions:
                     aliasing.computeAliases(d1, assign_stmt, left_value, taint_set, method, new_abs)
 
     def has_valid_callees(self, call):
-        callees = self.interprocedural_cfg().get_callees_of_call_at( call )
+        callees = self.interprocedural_cfg().get_callees_of_call_at(call)
 
         for callee in callees:
             if callee.isConcrete():
@@ -107,7 +107,7 @@ class FlowFunctions:
         implicit_taint |= new_source.getAccessPath().is_empty()
 
         if implicit_taint:
-            if d1 is None or d1.getAccessPath().is_empty() and not isinstance( left_value, SootInstanceFieldRef ):
+            if d1 is None or d1.getAccessPath().is_empty() and not isinstance(left_value, SootInstanceFieldRef):
                 return set(new_source)
 
             if new_source.getAccessPath().is_empty():
@@ -156,7 +156,7 @@ class FlowFunctions:
                             add_left_value = True
                             target_type = right_field.type
                             if (mapped_ap is None):
-                                mapped_ap = self.manager.getAccessPathFactory().create_access_path( right_base, True )
+                                mapped_ap = self.manager.getAccessPathFactory().create_access_path(right_base, True)
                 elif isinstance(rightVal, SootLocal) and new_source.getAccessPath().is_instance_field_ref():
                     base = new_source.getAccessPath().getPlainValue()
                     if aliasing.mayAlias(rightVal, base):
@@ -177,15 +177,15 @@ class FlowFunctions:
 
         if not new_source.is_abstraction_active() \
                 and isinstance(assign_stmt.getLeftOp().type, PrimType) \
-                or TypeUtils.is_string_type( assign_stmt.getLeftOp().type ) \
+                or TypeUtils.is_string_type(assign_stmt.getLeftOp().type) \
                 and not new_source.getAccessPath().getCanHaveImmutableAliases():
             return set(new_source)
 
         res = HashSet()
         target_ab = new_source if mapped_ap == new_source.getAccessPath() \
-            else new_source.derive_new_abstraction( mapped_ap, None )
-        self.add_taint_via_stmt( d1, assign_stmt, target_ab, res, cut_first_field,
-                                 self.interprocedural_cfg().get_method_of(assign_stmt), target_type )
+            else new_source.derive_new_abstraction(mapped_ap, None)
+        self.add_taint_via_stmt(d1, assign_stmt, target_ab, res, cut_first_field,
+                                 self.interprocedural_cfg().get_method_of(assign_stmt), target_type)
         res.add(new_source)
         return res
 
@@ -247,15 +247,15 @@ class FlowFunctions:
         for i in range(invExpr.getArgCount()):
             call_args[i] = invExpr.getArg(i)
 
-        isSink = self.manager.getSourceSinkManager().get_sink_info( i_call_stmt, self.manager, None ) is not None \
+        isSink = self.manager.getSourceSinkManager().get_sink_info(i_call_stmt, self.manager, None) is not None \
             if (self.manager.getSourceSinkManager() is not None) \
             else False
-        isSource = self.manager.getSourceSinkManager().get_source_info( i_call_stmt, self.manager ) is not None \
+        isSource = self.manager.getSourceSinkManager().get_source_info(i_call_stmt, self.manager) is not None \
             if self.manager.getSourceSinkManager() is not None \
             else False
 
         callee = invExpr.getMethod()
-        hasValidCallees = self.has_valid_callees( call )
+        hasValidCallees = self.has_valid_callees(call)
 
         return SolverCallToReturnFlowFunction(self, call, returnSite)
 
@@ -263,7 +263,7 @@ class FlowFunctions:
         if ap.is_empty():
             return None
 
-        is_executor_execute = self.interprocedural_cfg().is_executor_execute( ie, callee )
+        is_executor_execute = self.interprocedural_cfg().is_executor_execute(ie, callee)
 
         res = None
 
@@ -288,20 +288,20 @@ class FlowFunctions:
 
         if base_local is not None:
             if aliasing.mayAlias(base_local, ap.getPlainValue()):
-                if self.manager.getTypeUtils().has_compatible_types_for_call( ap, callee.getDeclaringClass() ):
+                if self.manager.getTypeUtils().has_compatible_types_for_call(ap, callee.getDeclaringClass()):
                     if res is None:
                         res = HashSet()
 
                     if this_local is None:
                         this_local = callee.getActiveBody().getThisLocal()
 
-                    res.add( self.manager.getAccessPathFactory().copy_with_new_value( ap, this_local ) )
+                    res.add(self.manager.getAccessPathFactory().copy_with_new_value(ap, this_local))
 
         if is_executor_execute:
             if aliasing.mayAlias(ie.getArg(0), ap.getPlainValue()):
                 if res is None:
                     res = HashSet()
-                res.add( self.manager.getAccessPathFactory().copy_with_new_value( ap, callee.getActiveBody().getThisLocal() ) )
+                res.add(self.manager.getAccessPathFactory().copy_with_new_value(ap, callee.getActiveBody().getThisLocal()))
         elif callee.getParameterCount() > 0:
             is_reflective_call_site = self.interprocedural_cfg().is_reflective_call_site(ie)
 
@@ -311,15 +311,15 @@ class FlowFunctions:
                         res = HashSet()
 
                     if param_locals is None:
-                        param_locals = callee.getActiveBody().getParameterLocals().toArray( SootLocal[callee.getParameterCount()] )
+                        param_locals = callee.getActiveBody().getParameterLocals().toArray(SootLocal[callee.getParameterCount()])
 
                     if is_reflective_call_site:
-                        for j in range( param_locals.length ):
-                            new_ap = self.manager.getAccessPathFactory().copy_with_new_value( ap, param_locals[j], None, False )
+                        for j in range(param_locals.length):
+                            new_ap = self.manager.getAccessPathFactory().copy_with_new_value(ap, param_locals[j], None, False)
                             if new_ap is not None:
                                 res.add(new_ap)
                     else:
-                        new_ap = self.manager.getAccessPathFactory().copy_with_new_value( ap, param_locals[i] )
+                        new_ap = self.manager.getAccessPathFactory().copy_with_new_value(ap, param_locals[i])
                         if new_ap is not None:
                             res.add(new_ap)
         return res

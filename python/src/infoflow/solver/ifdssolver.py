@@ -55,17 +55,17 @@ class IFDSSolver:
             self.flow_function_cache_builder = flow_function_cache_builder.recordStats()
             self.zero_value = tabulation_problem.zero_value()
             self.icfg = tabulation_problem.interprocedural_cfg()
-            self.flow_functions = ZeroedFlowFunctions( tabulation_problem.flow_functions(), self.zero_value )\
+            self.flow_functions = ZeroedFlowFunctions(tabulation_problem.flow_functions(), self.zero_value)\
                 if tabulation_problem.auto_add_zero() else tabulation_problem.flow_functions()
         if self.flow_function_cache_builder is not None:
-            self.ff_cache = FlowFunctionCache( self.flow_functions, flow_function_cache_builder )
+            self.ff_cache = FlowFunctionCache(self.flow_functions, flow_function_cache_builder)
             self.flow_functions = self.ff_cache
         else:
             self.ff_cache = None
             self.flow_functions = self.flow_functions
             self.initial_seeds = tabulation_problem.initial_seeds()
             self.follow_returns_past_seeds = tabulation_problem.follow_returns_past_seeds()
-            self.num_threads = max( 1, tabulation_problem.num_threads() )
+            self.num_threads = max(1, tabulation_problem.num_threads())
             self.executor = self.get_executor()
 
     def set_solver_id(self, solver_id: bool):
@@ -126,8 +126,8 @@ class IFDSSolver:
         d2 = edge.factAtTarget()
         assert d2 is not None
 
-        return_site_ns = self.icfg.get_return_sites_of_call_at( n )
-        callees = self.icfg.get_callees_of_call_at( n )
+        return_site_ns = self.icfg.get_return_sites_of_call_at(n)
+        callees = self.icfg.get_callees_of_call_at(n)
 
         if callees is not None and not callees.is_empty():
             if self.max_callees_per_call_site < 0 or callees.size() <= self.max_callees_per_call_site:
@@ -140,10 +140,10 @@ class IFDSSolver:
                     res = self.compute_call_flow_function(function, d1, d2)
 
                     if res is not None and not res.is_empty():
-                        start_points_of = self.icfg.get_start_points_of( s_called_proc_n )
+                        start_points_of = self.icfg.get_start_points_of(s_called_proc_n)
                         for d3 in res:
                             if self.memory_manager is not None:
-                                d3 = self.memory_manager.handle_generated_memory_object( d2, d3 )
+                                d3 = self.memory_manager.handle_generated_memory_object(d2, d3)
                             if d3 is None:
                                 continue
 
@@ -162,7 +162,7 @@ class IFDSSolver:
             if res is not None and not res.is_empty():
                 for d3 in res:
                     if self.memory_manager is not None:
-                        d3 = self.memory_manager.handle_generated_memory_object( d2, d3 )
+                        d3 = self.memory_manager.handle_generated_memory_object(d2, d3)
                     if d3 is not None:
                         self.propagate(d1, return_site_n, d3, n, False)
 
@@ -184,7 +184,7 @@ class IFDSSolver:
                     if ret_flow_res is not None and not ret_flow_res.is_empty():
                         for d5 in ret_flow_res:
                             if self.memory_manager is not None:
-                                d5 = self.memory_manager.handle_generated_memory_object( d4, d5 )
+                                d5 = self.memory_manager.handle_generated_memory_object(d4, d5)
 
                             d5p = d5
                             if self.shortening_mode == PredecessorShorteningMode['AlwaysShorten']:
@@ -222,8 +222,8 @@ class IFDSSolver:
                     return
 
                 c = entry.getKey()
-                caller_side_ds = entry.getValue().keySet()
-                for ret_site_c in self.icfg.get_return_sites_of_call_at( c ):
+                caller_side_ds = entry.getValue().keys()
+                for ret_site_c in self.icfg.get_return_sites_of_call_at(c):
                     ret_function = self.flow_functions.get_return_flow_function(c, method_that_needs_summary, n, ret_site_c)
                     targets = self.compute_return_flow_function(ret_function, d1, d2, c, caller_side_ds)
 
@@ -234,7 +234,7 @@ class IFDSSolver:
 
                             for d5 in targets:
                                 if self.memory_manager is not None:
-                                    d5 = self.memory_manager.handle_generated_memory_object( d2, d5 )
+                                    d5 = self.memory_manager.handle_generated_memory_object(d2, d5)
                                 if d5 is None:
                                     continue
                                 d5p = d5
@@ -249,10 +249,10 @@ class IFDSSolver:
                                 self.propagate(d4, ret_site_c, d5p, c, False)
 
         if self.follow_returns_past_seeds and d1 == self.zero_value and (inc is None or inc.is_empty()):
-            callers = self.icfg.get_callers_of( method_that_needs_summary )
+            callers = self.icfg.get_callers_of(method_that_needs_summary)
 
             for c in callers:
-                for ret_site_c in self.icfg.get_return_sites_of_call_at( c ):
+                for ret_site_c in self.icfg.get_return_sites_of_call_at(c):
                     ret_function = self.flow_functions.get_return_flow_function(c, method_that_needs_summary, n,
                                                                                 ret_site_c)
                     targets = self.compute_return_flow_function(ret_function, d1, d2, c,
@@ -260,7 +260,7 @@ class IFDSSolver:
                     if targets is not None and not targets.is_empty():
                         for d5 in targets:
                             if self.memory_manager is not None:
-                                d5 = self.memory_manager.handle_generated_memory_object( d2, d5 )
+                                d5 = self.memory_manager.handle_generated_memory_object(d2, d5)
                             if d5 is not None:
                                 self.propagate(self.zero_value, ret_site_c, d5, c, True)
 
@@ -276,7 +276,7 @@ class IFDSSolver:
         n = edge.getTarget()
         d2 = edge.factAtTarget()
 
-        for m in self.icfg.get_succs_of( n ):
+        for m in self.icfg.get_succs_of(n):
             if self.kill_flag is not None:
                 return
             flow_function = self.flow_functions.getNormalFlowFunction(n, m)
@@ -284,7 +284,7 @@ class IFDSSolver:
             if res is not None and not res.is_empty():
                 for d3 in res:
                     if self.memory_manager is not None and d2 != d3:
-                        d3 = self.memory_manager.handle_generated_memory_object( d2, d3 )
+                        d3 = self.memory_manager.handle_generated_memory_object(d2, d3)
                     if d3 is not None:
                         self.propagate(d1, m, d3, None, False)
 
@@ -293,8 +293,8 @@ class IFDSSolver:
 
     def propagate(self, source_val, target, target_val, related_call_site, is_unbalanced_return):
         if self.memory_manager is not None:
-            source_val = self.memory_manager.handle_memory_object( source_val )
-            target_val = self.memory_manager.handle_memory_object( target_val )
+            source_val = self.memory_manager.handle_memory_object(source_val)
+            target_val = self.memory_manager.handle_memory_object(target_val)
             if target_val is None:
                 return
 
@@ -308,12 +308,12 @@ class IFDSSolver:
                 if self.memory_manager is None:
                     is_essential = related_call_site is not None and self.icfg.is_call_stmt(related_call_site)
                 else:
-                    is_essential = self.memory_manager.is_essential_join_point( target_val, related_call_site )
+                    is_essential = self.memory_manager.is_essential_join_point(target_val, related_call_site)
 
                 if self.max_join_point_abstractions < 0 \
                     or existing_val.get_neighbor_count() < self.max_join_point_abstractions \
                     or is_essential:
-                    existing_val.add_neighbor( target_val )
+                    existing_val.add_neighbor(target_val)
         else:
             active_val = target_val.getActiveCopy()
             if active_val != target_val:
@@ -327,7 +327,7 @@ class IFDSSolver:
 
     def end_summary(self, m, d3):
         map = self.end_summary.get(Pair(m, d3))
-        return None if map is None else map.keySet()
+        return None if map is None else map.keys()
 
     def add_end_summary(self, m, d1, e_p, d2):
         if d1 == self.zero_value:
@@ -336,7 +336,7 @@ class IFDSSolver:
         summaries = self.end_summary.putIfAbsentElseGet(Pair(m, d1), lambda: MyConcurrentHashMap()) # I don't know
         old_d2 = summaries.putIfAbsent(Pair(e_p, d2), d2)
         if old_d2 is not None:
-            old_d2.add_neighbor( d2 )
+            old_d2.add_neighbor(d2)
             return False
         return True
 
@@ -392,7 +392,7 @@ class IFDSSolver:
             else:
                 if self.icfg.is_exit_stmt(target):
                     self.processExit(self.edge)
-                if not self.icfg.get_succs_of( target ).is_empty():
+                if not self.icfg.get_succs_of(target).is_empty():
                     self.processNormalFlow(self.edge)
 
         def hash_code(self):

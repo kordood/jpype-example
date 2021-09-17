@@ -43,7 +43,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         self.nc_handler = handler
 
     def is_initial_method(self, sm):
-        for u in self.initial_seeds.keySet():
+        for u in self.initial_seeds.keys():
             if self.interprocedural_cfg().get_method_of(u) == sm:
                 return True
         return False
@@ -109,7 +109,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
 
     def create_zero_value(self):
         if self.zero_value is None:
-            self.zero_value = Abstraction.get_zero_abstraction( self.manager.getConfig().flow_sensitive_aliasing )
+            self.zero_value = Abstraction.get_zero_abstraction(self.manager.getConfig().flow_sensitive_aliasing)
         return self.zero_value
 
     def get_zero_value(self):
@@ -150,7 +150,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
 
         if self.manager.getConfig().getIgnoreFlowsInSystemPackages():
             self.decl_class = sm.getDeclaringClass()
-            if self.decl_class is not None and SystemClassHandler.v().is_class_in_system_package( self.decl_class.getName() ):
+            if self.decl_class is not None and SystemClassHandler.v().is_class_in_system_package(self.decl_class.getName()):
                 return True
 
         return False

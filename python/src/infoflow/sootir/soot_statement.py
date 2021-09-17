@@ -201,7 +201,7 @@ class LookupSwitchStmt(SootStmt):
         return "switch_table(%s) %s default: %s" % (str(self.key),
                                               repr(self.lookup_values_and_targets),
                                               str(self.default_target)
-                                              )
+                                             )
 
     @staticmethod
     def from_ir(label, offset, ir_stmt, stmt_map=None):
@@ -229,7 +229,7 @@ class TableSwitchStmt(SootStmt):
         return "switch_range(%s) %s default: %s" % (str(self.key),
                                               repr(self.lookup_values_and_targets),
                                               str(self.default_target)
-                                              )
+                                             )
 
     @staticmethod
     def from_ir(label, offset, ir_stmt, stmt_map=None):

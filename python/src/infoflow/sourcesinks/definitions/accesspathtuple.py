@@ -41,7 +41,7 @@ class AccessPathTuple:
     def from_path_elements(base_type=None, fields=None, field_types=None, is_source=None, is_sink=None,
                            sink_source=None):
         if sink_source is None:
-            sink_source = SourceSinkType.from_flags( is_sink, is_source )
+            sink_source = SourceSinkType.from_flags(is_source)
         fields = None if fields is None or fields.is_empty() else fields
         field_types = None if field_types is None or field_types.is_empty() else field_types
 
@@ -84,7 +84,7 @@ class AccessPathTuple:
                                                                    ArrayTaintType.ContentsAndLength,
                                                                    can_have_immutable_aliases)
 
-        base_type = None if self.base_type is None or self.base_type.is_empty() else RefType.v( self.base_type )
+        base_type = None if self.base_type is None or self.base_type.is_empty() else RefType.v(self.base_type)
         base_class = base_val.type.getSootClass() if self.base_type is None else self.base_type.getSootClass()
 
         fields = list()

@@ -24,7 +24,7 @@ class AbstractFlowSinkSource:
             if self.access_path.length() > other.access_path.length():
                 return False
             for i in range(0, len(self.access_path)):
-                if not self.access_path.get_field( i ) == other.access_path.get_field( i ):
+                if not self.access_path.get_field(i) == other.access_path.get_field(i):
                     return False
 
         return True

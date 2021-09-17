@@ -21,7 +21,7 @@ class SolverCallFlowFunction(FlowFunction):
             for abstraction in res:
                 self.flow_functions.aliasing.getAliasingStrategy().injectCallingContext(abstraction, self.flow_functions.solver, self.dest, self.src, source,
                                                                          d1
-                                                                         )
+                                                                        )
         return self.flow_functions.notify_out_flow_handlers(self.flow_functions.stmt, d1, source, res, FlowFunctionType.CallFlowFunction)
 
     def compute_targets_internal(self, d1, source):
@@ -41,14 +41,14 @@ class SolverCallFlowFunction(FlowFunction):
             source = source.get_active_copy()
 
         kill_all = ByReferenceBoolean()
-        res = self.propagation_rules.apply_call_flow_function( d1, source, self.stmt, self.dest, kill_all )
+        res = self.propagation_rules.apply_call_flow_function(d1, source, self.stmt, self.dest, kill_all)
         if kill_all.value:
             return None
 
-        res_mapping = self.map_access_path_to_callee( self.dest, self.ie,
+        res_mapping = self.map_access_path_to_callee(self.dest, self.ie,
                                                                     self.paramLocals,
                                                                     self.this_local,
-                                                                    source.getAccessPath() )
+                                                                    source.getAccessPath())
         if res_mapping is None:
             return res
 
@@ -59,7 +59,7 @@ class SolverCallFlowFunction(FlowFunction):
             if ap is not None:
                 if self.aliasing.getAliasingStrategy().isLazyAnalysis() \
                         or source.isImplicit() \
-                        or self.interprocedural_cfg().method_reads_value( self.dest, ap.getPlainValue() ):
+                        or self.interprocedural_cfg().method_reads_value(self.dest, ap.getPlainValue()):
                     new_abs = source.deriveNewAbstraction(ap, self.stmt)
                     if new_abs is not None:
                         res_abs.add(new_abs)

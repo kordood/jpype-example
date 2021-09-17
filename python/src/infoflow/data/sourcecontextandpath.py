@@ -72,9 +72,9 @@ class SourceContextAndPath:
     
             if scap.path is None:
                 scap.path = list()
-            scap.path.append( abstraction )
+            scap.path.append(abstraction)
     
-            if path_config is not None and 0 < len( path_config.max_path_size ) < len( scap.path ):
+            if path_config is not None and 0 < len(path_config.max_path_size) < len(scap.path):
                 return None
     
         if abstraction.getCorrespondingCallSite() is not None and abstraction.getCorrespondingCallSite() != abstraction.getCurrentStmt():
@@ -82,9 +82,9 @@ class SourceContextAndPath:
                 scap = deepcopy(self)
             if scap.call_stack is None:
                 scap.call_stack = list()
-            elif path_config is not None and 0 < path_config.max_callstack_size() <= len( scap.call_stack ):
+            elif path_config is not None and 0 < path_config.max_callstack_size() <= len(scap.call_stack):
                 return None
-            scap.call_stack.add( abstraction.getCorrespondingCallSite() )
+            scap.call_stack.add(abstraction.getCorrespondingCallSite())
     
         self.neighbor_counter = 0 if abstraction.getNeighbors() is None else abstraction.getNeighbors().size()
         return self if scap is None else scap

@@ -17,10 +17,15 @@ class ContextInsensitivePathBuilder:
         self.path_config = None
 
     def compute_taint_paths(self, res):
-        if res is None or res.isEmpty():
+        """
+
+        :param list res:
+        :return:
+        """
+        if res is None or len(res) <= 0:
             return
 
-        logger.info("Obtainted {} connections between sources and sinks", res.size())
+        logger.info("Obtainted {} connections between sources and sinks", len(res))
 
         cur_res_idx = 0
         for abstraction in res:
@@ -84,16 +89,17 @@ class ContextInsensitivePathBuilder:
         scap = SourceContextAndPath(abstraction.sinkDefinition,
                                      abstraction.abstraction.access_path, abstraction.sinkStmt)
         scap = scap.extend_path(abstraction.abstraction, self.path_config)
-        if self.path_cache.put(abstraction.abstraction, scap):
-            if not self.check_for_source(abstraction.abstraction, scap):
-                self.source_finding_task(abstraction.abstraction)
+        self.path_cache[abstraction.abstraction] = scap
+        if not self.check_for_source(abstraction.abstraction, scap):
+            self.source_finding_task(abstraction.abstraction)
 
-    def trigger_computation_for_neighbors(self):
+    @staticmethod
+    def trigger_computation_for_neighbors():
         return True
 
     def run_incremental_path_compuation(self):
         incremental_abs = set()
-        for abstraction in self.path_cache.keySet():
+        for abstraction in self.path_cache.keys():
             for scap in self.path_cache.get(abstraction):
                 if abstraction.neighbors is not None and abstraction.neighbors.size() is not len(scap.neighbors):
                     scap.setNeighborCounter(abstraction.neighbors.size())
@@ -101,8 +107,5 @@ class ContextInsensitivePathBuilder:
                     for neighbor in abstraction.neighbors:
                         incremental_abs.add(AbstractionAtSink(scap.definition, neighbor, scap.stmt))
 
-        if len(incremental_abs.isEmpty()) > 0:
+        if len(incremental_abs) > 0:
             self.compute_taint_paths(incremental_abs)
-
-
-

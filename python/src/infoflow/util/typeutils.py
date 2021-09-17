@@ -70,7 +70,7 @@ class TypeUtils:
                         return False
                 field_start_idx = 1
             else:
-                if not self.check_cast( _type, access_path.base_type ):
+                if not self.check_cast(_type, access_path.base_type):
                     return False
 
                 if self.is_primitive_array(_type):
@@ -96,10 +96,10 @@ class TypeUtils:
         if not self.manager.config.enableTypeChecking:
             return True
 
-        if isinstance( ap_base.base_type, PrimType ):
+        if isinstance(ap_base.base_type, PrimType):
             return False
 
-        if isinstance( ap_base.base_type, ArrayType ):
+        if isinstance(ap_base.base_type, ArrayType):
             return dest.getName() == "java.lang.Object"
 
         return self.check_cast(ap_base, dest.type)

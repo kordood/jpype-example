@@ -146,7 +146,7 @@ class Infoflow:
             if self.config.getIncrementalResultReporting():
                 builder.run_incremental_path_compuation()
             else:
-                builder.compute_taint_paths( res )
+                builder.compute_taint_paths(res)
                 res = None
 
                 self.results.add_all(builder.results())
@@ -159,15 +159,15 @@ class Infoflow:
         if self.results is None or len(self.results) <= 0:
             logger.warn("No results found.")
         elif logger.is_info_enabled():
-            for sink in self.results.get_results().keySet():
+            for sink in self.results.get_results().keys():
                 logger.info("The sink { in method { was called with values from the following sources:", sink,
-                            i_cfg.get_method_of( sink.stmt ).get_signature() )
-                for source in self.results.get_results().get( sink ):
-                    logger.info("- { in method {", source, i_cfg.get_method_of( source.stmt ).get_signature() )
+                            i_cfg.get_method_of(sink.stmt).get_signature())
+                for source in self.results.get_results().get(sink):
+                    logger.info("- { in method {", source, i_cfg.get_method_of(source.stmt).get_signature())
                     if source.get_path() is not None:
                         logger.info("\ton Path: ")
                         for p in source.get_path():
-                            logger.info("\t -> " + i_cfg.get_method_of( p ) )
+                            logger.info("\t -> " + i_cfg.get_method_of(p))
                             logger.info("\t\t -> " + p)
 
     def get_methods_for_seeds(self, icfg):
@@ -196,7 +196,7 @@ class Infoflow:
         for u in sm.retrieveActiveBody().getUnits():
             stmt = u
             if stmt.containsInvokeExpr():
-                for callee in icfg.get_callees_of_call_at( stmt ):
+                for callee in icfg.get_callees_of_call_at(stmt):
                     if self.is_valid_seed_method(callee):
                         self.get_methods_for_seeds_incremental(callee, done_set, seeds, icfg)
 
@@ -213,17 +213,17 @@ class Infoflow:
             units = m.getActiveBody().getUnits()
             for u in units:
                 s = u
-                if sources_sinks.get_source_info( s, self.manager ) is not None:
+                if sources_sinks.get_source_info(s, self.manager) is not None:
                     forward_problem.add_initial_seeds(u, forward_problem.zeroValue())
                     if self.config.getLogSourcesAndSinks():
                         self.collected_sources.add(s)
-                    logger.debug("Source found: { in {", u, m.get_signature() )
+                    logger.debug("Source found: { in {", u, m.get_signature())
                 
-                if sources_sinks.get_sink_info( s, self.manager, None ) is not None:
+                if sources_sinks.get_sink_info(s, self.manager, None) is not None:
                     sink_count += 1
                     if self.config.getLogSourcesAndSinks():
                         self.collected_sinks.add(s)
-                    logger.debug("Sink found: { in {", u, m.get_signature() )
+                    logger.debug("Sink found: { in {", u, m.get_signature())
                 
         return sink_count
 

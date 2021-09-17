@@ -6,13 +6,13 @@ class SummaryMetaData:
         self.class_to_superclass = dict()
 
         if meta_data is not None:
-            self.exclusive_classes.update( meta_data.exclusive_classes )
-            self.exclusive_packages.update( meta_data.exclusive_packages )
+            self.exclusive_classes.update(meta_data.exclusive_classes)
+            self.exclusive_packages.update(meta_data.exclusive_packages)
 
     def merge(self, original):
         if original is not None:
-            self.exclusive_classes.update( original.exclusive_classes )
-            self.exclusive_packages.update( original.exclusive_packages )
+            self.exclusive_classes.update(original.exclusive_classes)
+            self.exclusive_packages.update(original.exclusive_packages)
 
     def is_class_exclusive(self, class_name):
         if class_name in self.exclusive_classes:
@@ -20,7 +20,7 @@ class SummaryMetaData:
 
         temp_name = class_name
         while len(temp_name) != 0:
-            idx = temp_name.lastIndexOf( "." )
+            idx = temp_name.lastIndexOf(".")
             if idx < 0:
                 break
             temp_name = temp_name[:idx]
@@ -37,7 +37,7 @@ class SummaryMetaData:
 
     def merge_hierarchy_data(self, summaries):
         for class_name in self.class_to_superclass.keys():
-            clazz_summaries = summaries.get_or_create_class_summaries( class_name )
+            clazz_summaries = summaries.get_or_create_class_summaries(class_name)
             if not clazz_summaries.has_superclass():
                 clazz_summaries.set_superClass(self.class_to_superclass.get(class_name))
 
