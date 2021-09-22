@@ -1,7 +1,9 @@
 import logging
 import time
 
-import PathDataErasureMode, pathBuilderFactory
+
+from .data.flowdroidmemorymanager import PathDataErasureMode
+#pathBuilderFactory
 
 from .infoflowconfiguration import InfoflowConfiguration
 from .infoflowmanager import InfoflowManager
@@ -11,7 +13,7 @@ from .globaltaints.globaltaintmanager import GlobalTaintManager
 from .problems.infoflowproblems import InfoflowProblem
 from .problems.rules.propagationrulemanager import PropagationRuleManager
 from .solver.ifdssolversingle import IFDSSolver
-from .solver.memory.defaultmemorymanagerfactory import DefaultMemoryManagerFactory
+#from .solver.memory.defaultmemorymanagerfactory import DefaultMemoryManagerFactory
 from .data.pathbuilders.contextinsensitivepathbulder import ContextInsensitivePathBuilder as DefaultPathBuilder
 
 
@@ -20,7 +22,8 @@ logger = logging.getLogger(__file__)
 
 class Infoflow:
 
-    def __init__(self, config:InfoflowConfiguration):
+    def __init__(self, project, config:InfoflowConfiguration, callgraph=None):
+        self.native_call_handler = None
         self.config = config
         self.results = None
         self.taint_wrapper = None
@@ -30,9 +33,15 @@ class Infoflow:
         self.collected_sinks = set()
         self.manager = None
         self.dummy_main_method = None
-        self.memory_manager_factory = DefaultMemoryManagerFactory()
+        self.memory_manager_factory = None # DefaultMemoryManagerFactory()
+
+        self.project = project
+        self.callgraph = callgraph
 
     def create_memory_manager(self):
+        if self.memory_manager_factory is None:
+            return None
+
         if self.config.path_configuration.must_keep_statements():
             erasure_mode = PathDataErasureMode.EraseNothing
         elif pathBuilderFactory.supportsPathReconstruction():
@@ -55,11 +64,11 @@ class Infoflow:
 
         return forward_solver
 
-    def initialize_infoflow_manager(self, sources_sinks, i_cfg, global_taint_manager):
-        return InfoflowManager(self.config, None, i_cfg, sources_sinks, self.taint_wrapper, self.hierarchy,
+    def initialize_infoflow_manager(self, sources_sinks, icfg, global_taint_manager):
+        return InfoflowManager(self.config, None, icfg, sources_sinks, self.taint_wrapper, self.hierarchy,
                                AccessPathFactory(self.config), global_taint_manager)
 
-    def run_taint_analysis(self, sources_sinks, additional_seeds, i_cfg, performance_data=None):
+    def run_taint_analysis(self, sources_sinks, additional_seeds, icfg, performance_data=None):
 
         has_more_sources = sources_sinks[1:]
 
@@ -70,7 +79,7 @@ class Infoflow:
             solvers = dict()
             global_taint_manager = GlobalTaintManager(solvers)
 
-            self.manager = self.initialize_infoflow_manager(sources_sinks, i_cfg, global_taint_manager)
+            self.manager = self.initialize_infoflow_manager(sources_sinks, icfg, global_taint_manager)
 
             zero_value = None
             """
@@ -86,7 +95,7 @@ class Infoflow:
 
             forward_solver = self.create_forward_solver(forward_problem)
 
-            self.manager.forward_solver(forward_solver)
+            self.manager.forward_solver = forward_solver
             solvers['forward'] = forward_solver
 
             forward_solver.memory_manager = memory_manager
@@ -101,12 +110,12 @@ class Infoflow:
             before_path_reconstruction = 0
             sink_count = 0
 
-            for sm in self.get_methods_for_seeds(i_cfg):
+            for sm in self.get_methods_for_seeds(icfg):
                 sink_count += self.scan_method_for_sources_sinks(sources_sinks, forward_problem, sm)
 
             if additional_seeds is not None:
                 for meth in additional_seeds:
-                    m = Scene.v().getMethod(meth)
+                    m = self.project.loader.main_object.get_soot_method(meth)
                     if not m.hasActiveBody():
                         logger.warn("Seed method { has no active body", m)
                         continue
@@ -126,23 +135,22 @@ class Infoflow:
                         forward_problem.getInitialSeeds().size(), sink_count)
 
             #if taint_wrapper is not None:
-                taint_wrapper.initialize(self.manager)
+            self.taint_wrapper.initialize(self.manager)
+            if self.native_call_handler is not None:
+                self.native_call_handler.initialize(self.manager)
 
-            if native_call_handler is not None:
-                native_call_handler.initialize(self.manager)
-
-            propagation_results = forward_problem.getResults()
+            propagation_results = forward_problem.results
 
             builder = DefaultPathBuilder()
 
             forward_solver.solve()
 
-            if taint_wrapper is not None:
-                logger.info("Taint_wrapper hits: " + taint_wrapper.getWrapperHits())
-                logger.info("Taint_wrapper misses: " + taint_wrapper.getWrapperMisses())
+            if self.taint_wrapper is not None:
+                logger.info("Taint_wrapper hits: " + self.taint_wrapper.getWrapperHits())
+                logger.info("Taint_wrapper misses: " + self.taint_wrapper.getWrapperMisses())
 
             res = propagation_results.get_results()
-
+        """
             if self.config.getIncrementalResultReporting():
                 builder.run_incremental_path_compuation()
             else:
@@ -154,42 +162,43 @@ class Infoflow:
             has_more_sources = has_more_sources[1:]
 
         for handler in self.postProcessors:
-            self.results = handler.onResultsAvailable(self.results, i_cfg)
+            self.results = handler.onResultsAvailable(self.results, icfg)
 
         if self.results is None or len(self.results) <= 0:
             logger.warn("No results found.")
         elif logger.is_info_enabled():
             for sink in self.results.get_results().keys():
                 logger.info("The sink { in method { was called with values from the following sources:", sink,
-                            i_cfg.get_method_of(sink.stmt).get_signature())
+                            icfg.get_method_of(sink.stmt).get_signature())
                 for source in self.results.get_results().get(sink):
-                    logger.info("- { in method {", source, i_cfg.get_method_of(source.stmt).get_signature())
+                    logger.info("- { in method {", source, icfg.get_method_of(source.stmt).get_signature())
                     if source.get_path() is not None:
                         logger.info("\ton Path: ")
                         for p in source.get_path():
-                            logger.info("\t -> " + i_cfg.get_method_of(p))
+                            logger.info("\t -> " + icfg.get_method_of(p))
                             logger.info("\t\t -> " + p)
+        """
 
     def get_methods_for_seeds(self, icfg):
         seeds = list()
-        if Scene.v().hasCallGraph():
+        if self.callgraph is None:
+            done_set = set()
+#            for sm in Scene.v().getEntryPoints():
+#                self.get_methods_for_seeds_incremental(sm, done_set, seeds, icfg)
+            sm = self.project.entry
+            self.get_methods_for_seeds_incremental(sm, done_set, seeds, icfg)
+        else:
             reachable_methods = Scene.v().getReachableMethods()
             reachable_methods.update()
             for method in reachable_methods:
                 sm = method
                 if self.is_valid_seed_method(sm):
                     seeds.append(sm)
-        else:
-            before_seed_methods = time.time_ns()
-            done_set = set()
-            for sm in Scene.v().getEntryPoints():
-                self.get_methods_for_seeds_incremental(sm, done_set, seeds, icfg)
-            logger.info("Collecting seed methods took { seconds", (time.time_ns() - before_seed_methods) / 1E9)
 
         return seeds
 
     def get_methods_for_seeds_incremental(self, sm, done_set, seeds, icfg):
-        assert Scene.v().hasFastHierarchy()
+#        assert Scene.v().hasFastHierarchy()
         if not sm.isConcrete() or not sm.getDeclaringClass().isApplicationClass() or not done_set.add(sm):
             return
         seeds.append(sm)

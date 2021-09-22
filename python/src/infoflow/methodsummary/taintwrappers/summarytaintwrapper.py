@@ -760,7 +760,7 @@ class SummaryTaintWrapper:
 
     def get_flow_summaries_for_gap(self, gap):
         if Scene.v().containsMethod(gap.signature):
-            gap_method = Scene.v().getMethod(gap.signature)
+            gap_method = self.project.loader.main_object.get_soot_method(gap.signature)
             flows = self.get_flow_summaries_for_method(stmt=None, method=gap_method, class_supported=None)
             if flows is not None and not flows.is_empty():
                 summaries = MethodSummaries()
