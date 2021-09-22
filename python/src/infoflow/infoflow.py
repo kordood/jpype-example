@@ -22,9 +22,9 @@ logger = logging.getLogger(__file__)
 
 class Infoflow:
 
-    def __init__(self, project, config:InfoflowConfiguration, callgraph=None):
+    def __init__(self, project, config:InfoflowConfiguration=None, callgraph=None):
         self.native_call_handler = None
-        self.config = config
+        self.config = InfoflowConfiguration() if config is None else config
         self.results = None
         self.taint_wrapper = None
         self.hierarchy = None
