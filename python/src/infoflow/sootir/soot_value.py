@@ -27,7 +27,7 @@ class SootValue(object):
         if cls is None:
             raise NotImplementedError('Unsupported SootValue type %s.' % subtype)
 
-        return cls.from_ir(str(ir_value.getType()), ir_value)
+        return cls.from_ir(str(ir_value.type), ir_value)
 
 
 class SootLocal(SootValue):
@@ -113,7 +113,7 @@ class SootStaticFieldRef(SootValue):
     __slots__ = ['field']
 
     def __str__(self):
-        return "StaticFieldRef %s" % (self.field, )
+        return "StaticFieldRef %s" % (self.field,)
 
     @staticmethod
     def from_ir(type_, ir_value):

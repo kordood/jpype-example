@@ -1,6 +1,6 @@
 import AssignStmt
-import FieldRef
-import StaticFieldRef
+import SootInstanceFieldRef
+import SootStaticFieldRef
 import VirtualInvokeExpr
 import RefType
 import Scene
@@ -134,13 +134,13 @@ class InfoflowCFG:
                 if isinstance(u, AssignStmt):
                     assign = u
 
-                    if isinstance(assign.getLeftOp(), StaticFieldRef):
+                    if isinstance(assign.getLeftOp(), SootStaticFieldRef):
                         sf = assign.getLeftOp().getField()
                         self.register_static_variable_use(method, sf, self.StaticFieldUse.Write)
                         if variable == sf:
                             writes = True
 
-                    if isinstance(assign.getRightOp(), StaticFieldRef):
+                    if isinstance(assign.getRightOp(), SootStaticFieldRef):
                         sf = assign.getRightOp().getField()
                         self.register_static_variable_use(method, sf, self.StaticFieldUse.Read)
                         if variable == sf:
@@ -232,7 +232,7 @@ class InfoflowCFG:
             if isinstance(u, AssignStmt):
                 assign = u
 
-                if isinstance(assign.getLeftOp(), FieldRef):
+                if isinstance(assign.getLeftOp(), SootInstanceFieldRef):
                     self.static_field_uses[method] = True
                     return True
 
@@ -288,7 +288,7 @@ class InfoflowCFG:
             return False
 
         dests = eug.getExceptionDests(u1)
-        if dests is not None and not dests.isEmpty():
+        if dests is not None and not dests.is_empty():
             ts = Scene.v().getDefaultThrowAnalysis().mightThrow(u1)
             if ts is not None:
                 has_traps = False
@@ -296,7 +296,7 @@ class InfoflowCFG:
                     trap = dest.getTrap()
                     if trap is not None:
                         has_traps = True
-                        if not ts.catchableAs(trap.getException().getType()):
+                        if not ts.catchableAs(trap.getException().type):
                             return False
 
                 if not has_traps:
@@ -352,8 +352,8 @@ class InfoflowCFG:
         else:
             if isinstance(iexpr, VirtualInvokeExpr):
                 viexpr = iexpr
-                if isinstance(viexpr.getBase().getType(), RefType):
-                    if (viexpr.getBase().getType()).getSootClass().name == "java.lang.reflect.Method":
+                if isinstance(viexpr.base.type, RefType):
+                    if (viexpr.base.type).getSootClass().name == "java.lang.reflect.Method":
                         if viexpr.getMethod().name == "invoke":
                             return True
             return False

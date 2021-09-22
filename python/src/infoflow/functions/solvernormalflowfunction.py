@@ -31,7 +31,7 @@ class SolverNormalFlowFunction(FlowFunction):
 
 		kill_source = ByReferenceBoolean()
 		kill_all = ByReferenceBoolean()
-		res = self.propagation_rules.apply_normal_flow_function( d1, new_source, self.stmt, self.dest, kill_source, kill_all )
+		res = self.propagation_rules.apply_normal_flow_function(d1, new_source, self.stmt, self.dest, kill_source, kill_all)
 
 		if kill_all.value:
 			return Collections.emptySet()

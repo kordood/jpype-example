@@ -51,9 +51,6 @@ class AccessPathFragment:
             return None
         return self.field_types[-1]
 
-    def is_empty(self):
-        return self.fields is None or len(self.fields) == 0
-
     def append(self, to_append):
         if to_append is None or to_append.isEmpty():
             if self.is_empty():
@@ -356,7 +353,7 @@ class SummaryTaintWrapper:
             self.summary_taint_wrapper = summary_taint_wrapper
 
         def handle_follow_returns_past_seeds(self, d1, u, d2):
-            sm = self.summary_taint_wrapper.manager.icfg.get_method_of( u )
+            sm = self.summary_taint_wrapper.manager.icfg.get_method_of(u)
             propagators = self.summary_taint_wrapper.get_user_code_taints(d1, sm)
             if propagators is not None:
                 for propagator in propagators:
@@ -386,7 +383,7 @@ class SummaryTaintWrapper:
                         root_propagator = self.get_original_call_site(propagator)
                         for ap in result_aps:
                             new_abs = root_propagator.d2.deriveNewAbstraction(ap, root_propagator.stmt)
-                            for succ_unit in self.summary_taint_wrapper.manager.icfg.get_succs_of( root_propagator.stmt ):
+                            for succ_unit in self.summary_taint_wrapper.manager.icfg.get_succs_of(root_propagator.stmt):
                                 self.summary_taint_wrapper.manager.getForwardSolver().processEdge(
                                     PathEdge(root_propagator.d1, succ_unit, new_abs))
 
@@ -453,7 +450,7 @@ class SummaryTaintWrapper:
         return new_taints
 
     def create_taint_from_access_path_on_return(self, ap, stmt, gap):
-        sm = self.manager.icfg.get_method_of( stmt )
+        sm = self.manager.icfg.get_method_of(stmt)
         res = None
 
         if not sm.isStatic() and (
@@ -509,7 +506,7 @@ class SummaryTaintWrapper:
             iexpr = stmt.getInvokeExpr()
             if isinstance(iexpr, InstanceInvokeExpr):
                 iiexpr = iexpr
-                return self.manager.getAccessPathFactory().createAccessPath(iiexpr.getBase(), fields, base_type, types,
+                return self.manager.getAccessPathFactory().createAccessPath(iiexpr.base, fields, base_type, types,
                                                                             t.taint_sub_fields, False, True,
                                                                             ArrayTaintType.ContentsAndLength)
             elif isinstance(iexpr, StaticInvokeExpr):
@@ -701,7 +698,7 @@ class SummaryTaintWrapper:
         if not self.can_type_alias(flow.sink().get_last_field_type()):
             return None
 
-        if flow.source().gap is not None and flow.source().getType() == SourceSinkType.Return:
+        if flow.source().gap is not None and flow.source().type == SourceSinkType.Return:
             return None
 
         return flow.reverse()
@@ -748,7 +745,7 @@ class SummaryTaintWrapper:
 
             return outgoing_taints
 
-        for start_point in self.manager.icfg.get_start_points_of( implementor ):
+        for start_point in self.manager.icfg.get_start_points_of(implementor):
             edge = PathEdge(abstraction, start_point, abstraction)
             self.manager.getForwardSolver().processEdge(edge)
 
@@ -763,7 +760,7 @@ class SummaryTaintWrapper:
 
     def get_flow_summaries_for_gap(self, gap):
         if Scene.v().containsMethod(gap.signature):
-            gap_method = Scene.v().getMethod(gap.signature)
+            gap_method = self.project.loader.main_object.get_soot_method(gap.signature)
             flows = self.get_flow_summaries_for_method(stmt=None, method=gap_method, class_supported=None)
             if flows is not None and not flows.is_empty():
                 summaries = MethodSummaries()
@@ -783,7 +780,7 @@ class SummaryTaintWrapper:
         if not method.isConstructor() and not method.isStaticInitializer() and not method.isStatic():
             if stmt is not None:
 
-                for callee in self.manager.icfg.get_callees_of_call_at( stmt ):
+                for callee in self.manager.icfg.get_callees_of_call_at(stmt):
                     flows = self.flows.getMethodFlows(callee.declaring_class, subsig)
                     if flows is not None and len(flows) != 0:
                         if class_supported.value is not None:
@@ -810,7 +807,7 @@ class SummaryTaintWrapper:
         declared_class = None
         if stmt is not None and isinstance(stmt.getInvokeExpr(), InstanceInvokeExpr):
             iinv = stmt.getInvokeExpr()
-            base_type = iinv.getBase().getType()
+            base_type = iinv.base.type
             if isinstance(base_type, RefType):
                 declared_class = base_type.getSootClass()
 
@@ -1054,7 +1051,7 @@ class SummaryTaintWrapper:
                 if fields is not None and len(fields) > 0:
                     types = Type[len(fields)]
                     for i in range(0, len(fields)):
-                        types[i] = fields[i].getType()
+                        types[i] = fields[i].type
                     return types
 
                 return None
@@ -1085,7 +1082,7 @@ class SummaryTaintWrapper:
         if (check_types is None or check_types.booleanValue()) and sink_type is not None and taint_type is not None:
             if not (isinstance(sink_type, PrimType)) \
                     and not self.is_cast_compatible(taint_type, sink_type \
-                                                                and flow_sink.getType() == SourceSinkType.Field):
+                                                                and flow_sink.type == SourceSinkType.Field):
                 found = False
 
                 while isinstance(sink_type, ArrayType):
@@ -1103,10 +1100,10 @@ class SummaryTaintWrapper:
                 if not found:
                     return None
 
-        source_sink_type = flow_sink.getType()
-        if flow_sink.getType() == SourceSinkType.GapBaseType and remaining_fields is not None \
+        sink_source = flow_sink.type
+        if flow_sink.type == SourceSinkType.GapBaseType and remaining_fields is not None \
                 and len(remaining_fields) != 0:
-            source_sink_type = SourceSinkType.Field
+            sink_source = SourceSinkType.Field
 
         s_base_type = None if sink_type is None else "" + sink_type
         if not flow.getIgnoreTypes():
@@ -1121,7 +1118,7 @@ class SummaryTaintWrapper:
                                                                         str(new_base_type))
                 s_base_type = flow_sink.getBaseType()
 
-        return Taint(source_sink_type, flow_sink.parameter_index, s_base_type, appended_fields,
+        return Taint(sink_source, flow_sink.parameter_index, s_base_type, appended_fields,
                      taint_sub_fields or taint.taint_sub_fields, gap)
 
     def cut_sub_fields(self, flow, access_path):
@@ -1194,7 +1191,7 @@ class SummaryTaintWrapper:
             raise RuntimeError("Statement is not a method call: " + stmt)
         inv_expr = stmt.getInvokeExpr()
         if isinstance(inv_expr, InstanceInvokeExpr):
-            return inv_expr.getBase()
+            return inv_expr.base
         return None
 
     def is_exclusive(self, stmt, tainted_path):
@@ -1239,7 +1236,7 @@ class SummaryTaintWrapper:
                     return True
             else:
 
-                for callee in self.manager.icfg.get_callees_of_call_at( call_site ):
+                for callee in self.manager.icfg.get_callees_of_call_at(call_site):
                     if not callee.isStaticInitializer():
                         if self.supports_callee(callee):
                             return True

@@ -36,8 +36,8 @@ class SolverCallToReturnFlowFunction(FlowFunction):
 
         killSource = ByReferenceBoolean()
         killAll = ByReferenceBoolean()
-        res = self.propagation_rules.apply_call_to_return_flow_function( d1, new_source, self.i_call_stmt,
-                                                                         killSource, killAll, True )
+        res = self.propagation_rules.apply_call_to_return_flow_function(d1, new_source, self.i_call_stmt,
+                                                                         killSource, killAll, True)
         if killAll.value:
             return None
         pass_on = not killSource.value
@@ -61,9 +61,9 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                 and (self.manager.getConfig().getInspectSinks() or not self.isSink) \
                 and new_source.getAccessPath().is_instance_field_ref() \
                 and (self.hasValidCallees \
-                     or (self.taintWrapper is not None and self.taintWrapper.is_exclusive( self.i_call_stmt, new_source ))):
+                     or (self.taintWrapper is not None and self.taintWrapper.is_exclusive(self.i_call_stmt, new_source))):
 
-            callees = self.interprocedural_cfg().get_callees_of_call_at( self.call )
+            callees = self.interprocedural_cfg().get_callees_of_call_at(self.call)
             all_callees_read = not callees.is_empty()
             for callee in callees:
                 if callee.isConcrete() and callee.hasActiveBody():
@@ -71,7 +71,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     if callee_aps is not None:
                         for ap in callee_aps:
                             if ap is not None:
-                                if not self.interprocedural_cfg().method_reads_value( callee, ap.getPlainValue() ):
+                                if not self.interprocedural_cfg().method_reads_value(callee, ap.getPlainValue()):
                                     all_callees_read = False
                                     break
 
@@ -80,7 +80,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     break
 
             if all_callees_read:
-                if self.aliasing.mayAlias(self.invExpr.getBase(), new_source.getAccessPath().getPlainValue()):
+                if self.aliasing.mayAlias(self.invExpr.base, new_source.getAccessPath().getPlainValue()):
                     pass_on = False
                 if pass_on:
                     for i in range(self.call_args.length):
@@ -91,7 +91,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     pass_on = False
 
         if source.getAccessPath().is_static_field_ref():
-            if not self.interprocedural_cfg().is_static_field_used( callee, source.getAccessPath().get_first_field() ):
+            if not self.interprocedural_cfg().is_static_field_used(callee, source.getAccessPath().get_first_field()):
                 pass_on = True
 
         pass_on |= source.get_top_postdominator() is not None or source.getAccessPath().is_empty()
@@ -106,18 +106,18 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     if native_abs is not None:
                         res.add_all(native_abs)
 
-                        for abs in native_abs:
-                            if abs.getAccessPath().is_static_field_ref() \
+                        for abstraction in native_abs:
+                            if abstraction.getAccessPath().is_static_field_ref() \
                                     or self.aliasing.canHaveAliases(self.i_call_stmt,
-                                                                abs.getAccessPath().get_complete_value(),
-                                                                abs):
+                                                                abstraction.getAccessPath().get_complete_value(),
+                                                                abstraction):
                                 self.aliasing.computeAliases(d1, self.i_call_stmt,
-                                                         abs.getAccessPath().getPlainValue(), res,
-                                                         self.interprocedural_cfg().get_method_of(self.call), abs)
+                                                         abstraction.getAccessPath().getPlainValue(), res,
+                                                         self.interprocedural_cfg().get_method_of(self.call), abstraction)
                     break
 
-        for abs in res:
-            if abs != new_source:
-                abs.setCorrespondingCallSite(self.i_call_stmt)
+        for abstraction in res:
+            if abstraction != new_source:
+                abstraction.setCorrespondingCallSite(self.i_call_stmt)
 
         return res

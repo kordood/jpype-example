@@ -4,9 +4,9 @@ import ReturnStmt, ReturnVoidStmt
 import AtomicInteger
 from ..misc.pyenum import PyEnum
 
-logger = logging.getLogger( __file__ )
+logger = logging.getLogger(__file__)
 
-PathDataErasureMode = PyEnum( 'EraseNothing', 'KeepOnlyContextData', 'EraseAll' )
+PathDataErasureMode = PyEnum('EraseNothing', 'KeepOnlyContextData', 'EraseAll')
 
 
 class FlowDroidMemoryManager:
@@ -14,7 +14,7 @@ class FlowDroidMemoryManager:
     class AbstractionCacheKey:
 
         def __init__(self, _abs):
-            self.abs = _abs
+            self.abstraction = _abs
 
         def __eq__(self, other):
             if self == other:
@@ -22,13 +22,13 @@ class FlowDroidMemoryManager:
             if other is None:
                 return False
 
-            if not self.abs == other.abs:
+            if not self.abstraction == other.abstraction:
                 return False
-            if self.abs.predecessor != other.abs.predecessor:
+            if self.abstraction.predecessor != other.abstraction.predecessor:
                 return False
-            if self.abs.current_stmt != other.abs.current_stmt:
+            if self.abstraction.current_stmt != other.abstraction.current_stmt:
                 return False
-            if self.abs.corresponding_call_site != other.abs.corresponding_call_site:
+            if self.abstraction.corresponding_call_site != other.abstraction.corresponding_call_site:
                 return False
 
             return True
@@ -42,14 +42,14 @@ class FlowDroidMemoryManager:
         self.tracing_enabled = tracing_enabled
         self.erase_path_data = erase_path_data
 
-        logger.info( "Initializing FlowDroid memory manager..." )
+        logger.info("Initializing FlowDroid memory manager...")
         if self.tracing_enabled:
-            logger.info( "FDMM: Tracing enabled. This may negatively affect performance." )
+            logger.info("FDMM: Tracing enabled. This may negatively affect performance.")
         if self.erase_path_data != PathDataErasureMode.EraseNothing:
-            logger.info( "FDMM: Path data erasure enabled" )
+            logger.info("FDMM: Path data erasure enabled")
 
     def get_cached_access_path(self, ap):
-        old_ap = self.ap_cache.putIfAbsent( ap, ap )
+        old_ap = self.ap_cache.putIfAbsent(ap, ap)
 
         if old_ap is None:
             return ap
@@ -58,9 +58,9 @@ class FlowDroidMemoryManager:
             self.reuse_counter.incrementAndGet()
         return old_ap
 
-    def get_cached_abstraction(self, abs):
-        old_abs = self.abs_cache.putIfAbsent( self.AbstractionCacheKey( abs ), abs )
-        if old_abs is not None and old_abs != abs:
+    def get_cached_abstraction(self, abstraction):
+        old_abs = self.abs_cache.putIfAbsent(self.AbstractionCacheKey(abstraction), abstraction)
+        if old_abs is not None and old_abs != abstraction:
             if self.tracing_enabled:
                 self.reuse_counter.incrementAndGet()
         return old_abs
@@ -76,7 +76,7 @@ class FlowDroidMemoryManager:
             if output.current_stmt is None or _input.current_stmt == output.current_stmt:
                 return _input
 
-        new_ap = self.get_cached_access_path( output.access_path )
+        new_ap = self.get_cached_access_path(output.access_path)
         output.access_path = new_ap
 
         if self.erase_path_data != PathDataErasureMode.EraseNothing:
@@ -88,10 +88,10 @@ class FlowDroidMemoryManager:
                         output = pred_pred
 
                 cur_abs = pred_pred
-        self.erase_path_data( output )
+        self.erase_path_data(output)
 
         if self.use_abstraction_cache:
-            cached_abs = self.get_cached_abstraction( output )
+            cached_abs = self.get_cached_abstraction(output)
             if cached_abs is not None:
                 return cached_abs
 

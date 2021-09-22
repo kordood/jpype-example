@@ -8,7 +8,19 @@ from ..infoflowconfiguration import InfoflowConfiguration
 class Abstraction:
 
     def __init__(self, ap_to_taint=None, definition=None, source_val=None, source_stmt=None, user_data=None,
-                 souce_context=None, exception_thrown=None, is_implicit=None, p=None, original=None):
+                 source_context=None, exception_thrown=None, is_implicit=None, p=None, original=None):
+        """
+        :param AccessPath ap_to_taint:
+        :param definition:
+        :param AccessPath source_val:
+        :param source_stmt:
+        :param user_data:
+        :param SourceContext source_context:
+        :param bool exception_thrown:
+        :param bool is_implicit:
+        :param AccessPath p:
+        :param Abstraction original:
+        """
         self.flow_sensitive_aliasing = True
         self.predecessor = None
         self.corresponding_call_site = None
@@ -18,29 +30,31 @@ class Abstraction:
         self.propagation_path_length = 0
 
         if p is None:
-            self.souce_context = souce_context if souce_context else SourceContext( definition, source_val, source_stmt,
-                                                                                    user_data )
+            self.source_context = source_context if source_context else SourceContext(definition,
+                                                                                      source_val,
+                                                                                      source_stmt,
+                                                                                      user_data)
             self.access_path = ap_to_taint if ap_to_taint else source_val
             self.activation_unit = None
             self.exception_thrown = exception_thrown
 
             self.neighbors = None
             self.is_implicit = is_implicit
-            self.current_stmt = None if souce_context is None else souce_context.getStmt()
+            self.current_stmt = None if source_context is None else source_context.stmt
 
         else:
             if original is None:
-                self.souce_context = None
+                self.source_context = None
                 self.exception_thrown = False
                 self.activation_unit = None
                 self.is_implicit = False
             else:
-                self.souce_context = original.souce_context
+                self.source_context = original.source_context
                 self.exception_thrown = original.exception_thrown
                 self.activation_unit = original.activation_unit
                 assert self.activation_unit is None or self.flow_sensitive_aliasing
 
-                self.postdominators = None if original.postdominators is None else list( original.postdominators )
+                self.postdominators = None if original.postdominators is None else list(original.postdominators)
 
                 self.depends_on_cut_ap = original.depends_on_cut_ap
                 self.is_implicit = original.is_implicit
@@ -50,9 +64,19 @@ class Abstraction:
             self.current_stmt = None
 
     def initialize(self, config):
-        flow_sensitive_aliasing = config.getFlowSensitiveAliasing()
+        """
+
+        :param InfoflowConfiguration config:
+        :return:
+        """
+        self.flow_sensitive_aliasing = config.flow_sensitive_aliasing
 
     def derive_inactive_abstraction(self, activation_unit):
+        """
+
+        :param activation_unit:
+        :return:
+        """
         if not self.flow_sensitive_aliasing:
             assert self.is_abstraction_active()
             return self
@@ -60,65 +84,77 @@ class Abstraction:
         if not self.is_abstraction_active():
             return self
 
-        a = self.derive_new_abstraction_mutable( self.access_path, None )
+        a = self.derive_new_abstraction_mutable(self.access_path, None)
         if a is None:
             return None
 
         a.postdominators = None
         a.activation_unit = activation_unit
-        a.depends_on_cut_ap |= a.access_path.isCutOffApproximation()
+        a.depends_on_cut_ap |= a.access_path.cut_off_approximation
         return a
 
     def derive_new_abstraction(self, p, current_stmt, is_implicit=None):
+        """
+
+        :param AccessPath p:
+        :param current_stmt:
+        :param is_implicit:
+        :return:
+        """
         is_implicit = is_implicit if is_implicit else self.is_implicit
         if self.access_path == p and self.current_stmt == current_stmt and self.is_implicit == is_implicit:
             return self
 
-        abs = self.derive_new_abstraction_mutable( p, current_stmt )
-        if abs is None:
+        abstraction = self.derive_new_abstraction_mutable(p, current_stmt)
+        if abstraction is None:
             return None
 
-        abs.is_implicit = is_implicit
-        return abs
+        abstraction.is_implicit = is_implicit
+        return abstraction
 
     def derive_new_abstraction_mutable(self, p, current_stmt):
         if p is None:
             return None
 
         if self.access_path == p and self.current_stmt == current_stmt:
-            abs = copy(self)
-            abs.current_stmt = current_stmt
-            return abs
+            abstraction = copy(self)
+            abstraction.current_stmt = current_stmt
+            return abstraction
 
-        abs = Abstraction( p, self )
-        abs.predecessor = self
-        abs.current_stmt = current_stmt
-        abs.propagation_path_length = self.propagation_path_length + 1
+        abstraction = Abstraction(p, self)
+        abstraction.predecessor = self
+        abstraction.current_stmt = current_stmt
+        abstraction.propagation_path_length = self.propagation_path_length + 1
 
-        if not abs.access_path.is_empty():
-            abs.postdominators = None
-        if not abs.is_abstraction_active():
-            abs.depends_on_cut_ap = abs.depends_on_cut_ap or p.isCutOffApproximation()
+        if not abstraction.access_path.is_empty():
+            abstraction.postdominators = None
+        if not abstraction.is_abstraction_active():
+            abstraction.depends_on_cut_ap = abstraction.depends_on_cut_ap or p.cut_off_approximation
 
-        abs.souce_context = None
-        return abs
+        abstraction.source_context = None
+        return abstraction
 
     def derive_new_abstraction_on_throw(self, throw_stmt):
-        abs = copy(self)
+        abstraction = copy(self)
 
-        abs.current_stmt = throw_stmt
-        abs.souce_context = None
-        abs.exception_thrown = True
-        return abs
+        abstraction.current_stmt = throw_stmt
+        abstraction.source_context = None
+        abstraction.exception_thrown = True
+        return abstraction
 
     def derive_new_abstraction_on_catch(self, ap):
+        """
+
+        :param AccessPath ap:
+        :return:
+        """
         assert self.exception_thrown
-        abs = self.derive_new_abstraction_mutable( ap, None )
-        if abs is None:
+        abstraction = self.derive_new_abstraction_mutable(ap, None)
+        if abstraction is None:
             return None
 
-        abs.exception_thrown = False
-        return abs
+        abstraction.exception_thrown = False
+        return abstraction
 
     def is_abstraction_active(self):
         return self.activation_unit is None
@@ -128,51 +164,51 @@ class Abstraction:
             return self
 
         a = copy(self)
-        a.souce_context = None
+        a.source_context = None
         a.activation_unit = None
         return a
 
     def derive_conditional_abstraction_enter(self, postdom, conditional_unit):
         assert self.is_abstraction_active()
 
-        if self.postdominators is not None and self.postdominators.contains( postdom ):
+        if self.postdominators is not None and postdom in self.postdominators:
             return self
 
-        abs = self.derive_new_abstraction_mutable( AccessPath.getEmptyAccessPath(), conditional_unit )
-        if abs is None:
+        abstraction = self.derive_new_abstraction_mutable(AccessPath(), conditional_unit)
+        if abstraction is None:
             return None
 
-        if abs.postdominators is None:
-            abs.postdominators = list( postdom )
+        if abstraction.postdominators is None:
+            abstraction.postdominators = list(postdom)
         else:
-            abs.postdominators.add( 0, postdom )
-        return abs
+            abstraction.postdominators[0] = postdom
+        return abstraction
 
     def derive_conditional_abstraction_call(self, conditional_call_site):
         assert self.is_abstraction_active()
         assert conditional_call_site is not None
 
-        abs = self.derive_new_abstraction_mutable( AccessPath.getEmptyAccessPath(), conditional_call_site )
-        if abs is None:
+        abstraction = self.derive_new_abstraction_mutable(AccessPath(), conditional_call_site)
+        if abstraction is None:
             return None
 
-        abs.postdominators = None
+        abstraction.postdominators = None
 
-        return abs
+        return abstraction
 
     def drop_top_postdominator(self):
-        if self.postdominators is None or self.postdominators.isEmpty():
+        if self.postdominators is None or len(self.postdominators) <= 0:
             return self
 
-        abs = copy(self)
-        abs.souce_context = None
-        abs.postdominators.remove( 0 )
-        return abs
+        abstraction = copy(self)
+        abstraction.source_context = None
+        abstraction.postdominators.remove(0)
+        return abstraction
 
     def get_top_postdominator(self):
-        if self.postdominators is None or self.postdominators.isEmpty():
+        if self.postdominators is None or len(self.postdominators) <= 0:
             return None
-        return self.postdominators.get( 0 )
+        return self.postdominators[0]
 
     def is_top_postdominator(self, sm):
         uc = self.get_top_postdominator()
@@ -181,15 +217,15 @@ class Abstraction:
         return uc.getMethod() == sm
 
     def copy(self):
-        abs = Abstraction( self.access_path, self )
-        abs.predecessor = self
-        abs.neighbors = None
-        abs.current_stmt = None
-        abs.corresponding_call_site = None
-        abs.propagation_path_length = self.propagation_path_length + 1
+        abstraction = Abstraction(self.access_path, self)
+        abstraction.predecessor = self
+        abstraction.neighbors = None
+        abstraction.current_stmt = None
+        abstraction.corresponding_call_site = None
+        abstraction.propagation_path_length = self.propagation_path_length + 1
 
-        assert abs == self
-        return abs
+        assert abstraction == self
+        return abstraction
 
     def __eq__(self, other):
         if self == other:
@@ -207,13 +243,13 @@ class Abstraction:
         elif not self.access_path == other.access_path:
             return False
 
-        return self.local_equals( other )
+        return self.local_equals(other)
 
     def local_equals(self, other):
-        if self.souce_context is None:
-            if other.souce_context is not None:
+        if self.source_context is None:
+            if other.source_context is not None:
                 return False
-        elif not self.souce_context == other.souce_context:
+        elif not self.source_context == other.source_context:
             return False
         if self.activation_unit is None:
             if other.activation_unit is not None:
@@ -239,9 +275,14 @@ class Abstraction:
                 return False
         elif not self.access_path.entails(other.access_path):
             return False
-        return self.local_equals( other )
+        return self.local_equals(other)
 
     def add_neighbor(self, original_abstraction):
+        """
+
+        :param Abstraction original_abstraction:
+        :return:
+        """
         InfoflowConfiguration().mergeNeighbors = False
         if original_abstraction == self:
             return False
@@ -258,42 +299,45 @@ class Abstraction:
                 if nb == original_abstraction:
                     return False
                 if original_abstraction.predecessor == nb.predecessor \
-                    and original_abstraction.current_stmt == nb.current_stmt \
-                    and original_abstraction.corresponding_call_site == nb.corresponding_call_site:
+                        and original_abstraction.current_stmt == nb.current_stmt \
+                        and original_abstraction.corresponding_call_site == nb.corresponding_call_site:
                     return False
 
-        return self.neighbors.add( original_abstraction )
+        return self.neighbors.add(original_abstraction)
 
-    def get_zero_abstraction(self, flow_sensitive_aliasing):
-        zero_value = Abstraction( AccessPath.get_zero_access_path(), None, False, False )
+    @staticmethod
+    def get_zero_abstraction(flow_sensitive_aliasing):
+        zero_value = Abstraction(ap_to_taint=AccessPath(),
+                                 source_context=None,
+                                 exception_thrown=False,
+                                 is_implicit=False)
         Abstraction.flow_sensitive_aliasing = flow_sensitive_aliasing
         return zero_value
-    
-    
+
     """
     def register_path_flag(self, id, max_size):
         if self.path_flags is None or self.path_flags.size() < max_size:
             if self.path_flags is None:
-                pf = set( max_size )
+                pf = set(max_size)
                 path_flags = pf
             elif self.path_flags.size() < max_size:
-                pf = AtomicBitSet( max_size )
-                for i in range( 0, self.path_flags.size() ):
-                    if self.path_flags.get( i ):
-                        pf.set( i )
+                pf = AtomicBitSet(max_size)
+                for i in range(0, self.path_flags.size()):
+                    if self.path_flags.get(i):
+                        pf.set(i)
     
                 path_flags = pf
     
-        return self.path_flags.set( id )
+        return self.path_flags.set(id)
     """
 
-    def inject_source_context(self, souce_context):
-        if self.souce_context is not None and self.souce_context == souce_context:
+    def inject_source_context(self, source_context):
+        if self.source_context is not None and self.source_context == source_context:
             return self
-    
-        abs = copy(self)
-        abs.predecessor = None
-        abs.neighbors = None
-        abs.souce_context = souce_context
-        abs.current_stmt = self.current_stmt
-        return abs
+
+        abstraction = copy(self)
+        abstraction.predecessor = None
+        abstraction.neighbors = None
+        abstraction.source_context = source_context
+        abstraction.current_stmt = self.current_stmt
+        return abstraction

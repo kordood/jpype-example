@@ -43,7 +43,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         self.nc_handler = handler
 
     def is_initial_method(self, sm):
-        for u in self.initial_seeds.keySet():
+        for u in self.initial_seeds.keys():
             if self.interprocedural_cfg().get_method_of(u) == sm:
                 return True
         return False
@@ -55,7 +55,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         return False
 
     def is_call_site_activating_taint(self, call_site, activation_unit):
-        if not self.manager.getConfig().getFlowSensitiveAliasing():
+        if not self.manager.getConfig().flow_sensitive_aliasing:
             return False
 
         if activation_unit is None:
@@ -64,7 +64,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         return call_sites is not None and call_sites.contains(call_site)
 
     def register_activation_call_site(self, call_site, callee, activation_abs):
-        if not self.manager.getConfig().getFlowSensitiveAliasing():
+        if not self.manager.getConfig().flow_sensitive_aliasing:
             return False
         activation_unit = activation_abs.getactivation_unit()
         if activation_unit is None:
@@ -109,7 +109,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
 
     def create_zero_value(self):
         if self.zero_value is None:
-            self.zero_value = Abstraction.get_zero_abstraction( self.manager.getConfig().getFlowSensitiveAliasing() )
+            self.zero_value = Abstraction.get_zero_abstraction(self.manager.getConfig().flow_sensitive_aliasing)
         return self.zero_value
 
     def get_zero_value(self):
@@ -150,7 +150,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
 
         if self.manager.getConfig().getIgnoreFlowsInSystemPackages():
             self.decl_class = sm.getDeclaringClass()
-            if self.decl_class is not None and SystemClassHandler.v().is_class_in_system_package( self.decl_class.getName() ):
+            if self.decl_class is not None and SystemClassHandler.v().is_class_in_system_package(self.decl_class.getName()):
                 return True
 
         return False

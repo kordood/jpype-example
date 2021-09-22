@@ -1,6 +1,6 @@
-import Local, InstanceFieldRef, StaticFieldRef, ArrayRef
 import Jimple
-import NoneType
+
+from ..sootir.soot_value import SootValue, SootLocal, SootInstanceFieldRef, SootStaticFieldRef, SootArrayRef
 
 
 class ArrayTaintType:
@@ -11,30 +11,51 @@ class ArrayTaintType:
 
 class AccessPath:
 
-    def __init__(self, val=None, appending_fields=None, val_type=None, appending_field_types=None, taint_sub_fields=True,
-                 is_cut_off_approximation=False, array_taint_type=None, can_have_immutable_aliases=False):
+    def __init__(self, val=None, appending_fields=None, val_type=None, appending_field_types=None,
+                 taint_sub_fields=True, is_cut_off_approximation=False, array_taint_type=None,
+                 can_have_immutable_aliases=False):
+        """
+
+        :param SootLocal val:
+        :param list[SootField] appending_fields:
+        :param val_type:
+        :param list[Type] appending_field_types:
+        :param bool taint_sub_fields:
+        :param bool is_cut_off_approximation:
+        :param ArrayTaintType or int array_taint_type:
+        :param bool can_have_immutable_aliases:
+        """
         self.value = val
         self.fields = appending_fields
-        self.baseType = val_type
-        self.fieldTypes = appending_field_types
+        self.base_type = val_type
+        self.field_types = appending_field_types
         self.taint_sub_fields = taint_sub_fields
-        self.cutOffApproximation = is_cut_off_approximation
+        self.cut_off_approximation = is_cut_off_approximation
         self.array_taint_type = array_taint_type if array_taint_type else ArrayTaintType.ContentsAndLength
         self.can_have_immutable_aliases = can_have_immutable_aliases
 
         self.array_taint_type = ArrayTaintType
-        self.zeroAccessPath = None
-        self.emptyAccessPath = AccessPath()
+        self.zero_access_path = None
+        self.empty_access_path = AccessPath()
 
     @staticmethod
     def can_contain_value(val):
+        """
+
+        :param SootValue val:
+        :return: bool
+        """
         if val is None:
             return False
 
-        return isinstance(val, Local) or isinstance(val, InstanceFieldRef) or isinstance(val, StaticFieldRef) \
-               or isinstance(val, ArrayRef)
+        return isinstance(val, SootLocal) or isinstance(val, SootInstanceFieldRef) \
+               or isinstance(val, SootStaticFieldRef) or isinstance(val, SootArrayRef)
 
     def get_complete_value(self):
+        """
+
+        :return: SootValue
+        """
         f = self.get_first_field()
         if self.value is None:
             if f is None:
@@ -52,9 +73,9 @@ class AccessPath:
         return self.fields[len(self.fields) - 1]
 
     def get_last_field_type(self):
-        if self.fieldTypes is None or len(self.fieldTypes) == 0:
-            return self.baseType
-        return self.fieldTypes[len(self.fieldTypes) - 1]
+        if self.field_types is None or len(self.field_types) == 0:
+            return self.base_type
+        return self.field_types[len(self.field_types) - 1]
 
     def get_first_field(self):
         if self.fields is None or len(self.fields) == 0:
@@ -69,9 +90,9 @@ class AccessPath:
         return False
 
     def get_first_field_type(self):
-        if self.fieldTypes is None or len(self.fieldTypes) == 0:
+        if self.field_types is None or len(self.field_types) == 0:
             return None
-        return self.fieldTypes[0]
+        return self.field_types[0]
 
     def get_field_count(self):
         return 0 if self.fields is None else len(self.fields)
@@ -87,15 +108,15 @@ class AccessPath:
                 return False
         elif not self.value == other.value:
             return False
-        if self.baseType is None:
+        if self.base_type is None:
             if other.baseType is not None:
                 return False
-        elif not self.baseType == other.baseType:
+        elif not self.base_type == other.baseType:
             return False
 
         if self.fields != other.fields:
             return False
-        if self.fieldTypes != other.fieldTypes:
+        if self.field_types != other.fieldTypes:
             return False
 
         if self.taint_sub_fields != other.taint_sub_fields:
@@ -118,20 +139,26 @@ class AccessPath:
         return self.fields is not None and len(self.fields) > 0
 
     def is_local(self):
-        return self.value is not None and isinstance(self.value, Local) and (self.fields is None or len(self.fields) == 0)
+        return self.value is not None and isinstance(self.value, SootLocal) \
+               and (self.fields is None or len(self.fields) == 0)
 
     def clone(self):
-        if self == self.emptyAccessPath:
+        if self == self.empty_access_path:
             return self
 
-        a = AccessPath(self.value, self.fields, self.baseType, self.fieldTypes, self.taint_sub_fields,
-                       self.cutOffApproximation, self.array_taint_type, self.can_have_immutable_aliases)
+        a = AccessPath(self.value, self.fields, self.base_type, self.field_types, self.taint_sub_fields,
+                       self.cut_off_approximation, self.array_taint_type, self.can_have_immutable_aliases)
         return a
 
     def is_empty(self):
         return self.value is None and (self.fields is None or len(self.fields) == 0)
 
     def entails(self, a2):
+        """
+
+        :param AccessPath a2:
+        :return:
+        """
         if self.is_empty() or a2.is_empty():
             return False
 
@@ -142,7 +169,7 @@ class AccessPath:
             return False
 
         if self.fields is not None and a2.fields is not None:
-            if len(self.fields) > a2.len(self.fields):
+            if len(self.fields) > len(a2.fields):
                 return False
 
             for i in range(0, len(self.fields)):
@@ -159,33 +186,33 @@ class AccessPath:
         new_types = None
         if len(self.fields) > 1:
             new_fields = self.fields[:-1]
-            new_types = self.fieldTypes[:-1]
+            new_types = self.field_types[:-1]
 
-        return AccessPath(self.value, new_fields, self.baseType, new_types, self.taint_sub_fields,
-                          self.cutOffApproximation, self.array_taint_type, self.can_have_immutable_aliases)
+        return AccessPath(self.value, new_fields, self.base_type, new_types, self.taint_sub_fields,
+                          self.cut_off_approximation, self.array_taint_type, self.can_have_immutable_aliases)
 
     def is_cut_off_approximation(self):
-        return self.cutOffApproximation
+        return self.cut_off_approximation
 
     def starts_with(self, val):
-        if not self.can_contain_value( val ):
+        if not self.can_contain_value(val):
             return False
 
-        if isinstance(val, Local) and self.value == val:
+        if isinstance(val, SootLocal) and self.value == val:
             return True
-        elif isinstance(val, StaticFieldRef):
+        elif isinstance(val, SootStaticFieldRef):
             return self.value is None and self.fields is not None and len(self.fields) > 0 \
-                   and self.fields[0] == val.get_field()
-        elif isinstance(val, InstanceFieldRef):
+                   and self.fields[0] == val.field
+        elif isinstance(val, SootInstanceFieldRef):
             iref = val
-            return self.value == iref.getBase() and self.fields is not None and len(self.fields) > 0 \
-                   and self.fields[0] == iref.get_field()
+            return self.value == iref.base and self.fields is not None and len(self.fields) > 0 \
+                   and self.fields[0] == iref.field
         else:
             return False
 
     def get_zero_access_path(self):
         zero_access_path = None
-        if self.zeroAccessPath is None:
-            zero_access_path = AccessPath(Jimple.v().newLocal("zero", NoneType.v()), None, NoneType.v(), None, False,
+        if self.zero_access_path is None:
+            zero_access_path = AccessPath(Jimple.v().newLocal("zero", None), list(), None, list(), False,
                                           False, self.array_taint_type.ContentsAndLength, False)
         return zero_access_path

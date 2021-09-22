@@ -256,10 +256,10 @@ class InfoflowConfiguration:
         self.enable_line_numbers = config.enable_line_numbers
         self.enable_original_names = config.enable_original_names
 
-        self.path_configuration.merge( config.path_configuration )
-        self.output_configuration.merge( config.output_configuration )
-        self.solver_configuration.merge( config.solver_configuration )
-        self.access_path_configuration.merge( config.access_path_configuration )
+        self.path_configuration.merge(config.path_configuration)
+        self.output_configuration.merge(config.output_configuration)
+        self.solver_configuration.merge(config.solver_configuration)
+        self.access_path_configuration.merge(config.access_path_configuration)
 
         self.callgraph_algorithm = config.callgraph_algorithm
         self.aliasing_algorithm = config.aliasing_algorithm
@@ -295,7 +295,7 @@ class InfoflowConfiguration:
             logger.info("Exceptional flow tracking is enabled")
         else:
             logger.info("Exceptional flow tracking is NOT enabled")
-        logger.info("Running with a maximum access path length of " + str( self.access_path_configuration.access_path_length ) )
+        logger.info("Running with a maximum access path length of " + str(self.access_path_configuration.access_path_length))
         if self.pathAgnosticResults:
             logger.info("Using path-agnostic result collection")
         else:
@@ -304,7 +304,7 @@ class InfoflowConfiguration:
             logger.info("Recursive access path shortening is enabled")
         else:
             logger.info("Recursive access path shortening is NOT enabled")
-        logger.info("Taint analysis enabled: " + str( self.taint_analysis_enabled ) )
+        logger.info("Taint analysis enabled: " + str(self.taint_analysis_enabled))
         if self.one_source_at_a_time:
             logger.info("Running with one source at a time")
-        logger.info("Using alias algorithm " + self.aliasing_algorithm )
+        logger.info("Using alias algorithm " + self.aliasing_algorithm)

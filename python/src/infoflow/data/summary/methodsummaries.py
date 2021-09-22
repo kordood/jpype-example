@@ -68,7 +68,7 @@ class MethodSummaries:
             if new_flows.flows is not None and not new_flows.flows.is_empty():
                 for key in new_flows.flows.keys():
                     for flow in new_flows.flows[key]:
-                        replaced_flow = flow.replace_gaps( renumbered_gaps )
+                        replaced_flow = flow.replace_gaps(renumbered_gaps)
                         self.ensure_flows()
                         if self.flows[key] == replaced_flow:
                             new_data = True
@@ -76,7 +76,7 @@ class MethodSummaries:
             if new_flows.clears is not None and not new_flows.clears.is_empty():
                 for key in new_flows.clears.keys():
                     for clear in new_flows.clears[key]:
-                        replaced_flow = clear.replace_gaps( renumbered_gaps )
+                        replaced_flow = clear.replace_gaps(renumbered_gaps)
                         self.ensure_clears()
                         if self.clears[key] == replaced_flow:
                             new_data = True
@@ -193,13 +193,13 @@ class MethodSummaries:
                 if not flow.is_custom():
 
                     if flow.source().get_gap() is not None:
-                        if flow.source().getType() == SourceSinkType.GapBaseObject:
+                        if flow.source().type == SourceSinkType.GapBaseObject:
                             gaps_with_bases.update(flow.source().get_gap())
                         else:
                             gaps_with_flows.update(flow.source().get_gap())
 
                     if flow.sink().get_gap() is not None:
-                        if flow.sink().getType() == SourceSinkType.GapBaseObject:
+                        if flow.sink().type == SourceSinkType.GapBaseObject:
                             gaps_with_bases.update(flow.sink().get_gap())
                         else:
                             gaps_with_flows.update(flow.sink().get_gap())
@@ -257,7 +257,7 @@ class MethodSummaries:
         if flows_for_method is not None:
             flows_for_method.remove(to_remove)
             if flows_for_method.is_empty():
-                self.flows.remove( to_remove.method_sig() )
+                self.flows.remove(to_remove.method_sig())
 
     def remove_all(self, to_remove):
         for i, flow in enumerate(self.flows):

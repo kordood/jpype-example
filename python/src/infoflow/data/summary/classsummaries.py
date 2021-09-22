@@ -100,9 +100,6 @@ class ClassSummaries:
                 else:
                     return existing_summaries.merge(summaries)
 
-    def is_empty(self):
-        return len(self.summaries) != 0
-
     def get_classes(self):
         return self.summaries.keys()
 
