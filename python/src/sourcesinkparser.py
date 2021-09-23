@@ -22,13 +22,14 @@ class SourceSinkParser:
 
     def __init__(self, sourcesinks):
         self.sourcesinks_file = open(sourcesinks)
-        self.sourcesinks = self.sourcesinks_file.readlines()
+        self.sourcesinks = [ ]
         self.sources = [ ]
         self.sinks = [ ]
         self.parse()
+        self.sourcesinks = self.sources + self.sinks
 
     def parse(self):
-        for line in self.sourcesinks:
+        for line in self.sourcesinks_file.readlines():
             line = line.replace('\n', '')
 
             if any(key in line for key in self.signature.keys()):
