@@ -1,7 +1,7 @@
 import logging
 from .misc.pyenum import PyEnum
 
-logger = Logging.getLogger(__file__)
+logger = logging.getLogger(__file__)
 
 
 SootIntegrationMode = PyEnum('CreateNewInstance', 'UseExistingInstance', 'UseExistingCallgraph')
