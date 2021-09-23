@@ -1,8 +1,7 @@
 import logging
 
-import ReturnStmt, ReturnVoidStmt
-import AtomicInteger
 from ..misc.pyenum import PyEnum
+from ..sootir.soot_statement import ReturnStmt, ReturnVoidStmt
 
 logger = logging.getLogger(__file__)
 
@@ -34,9 +33,9 @@ class FlowDroidMemoryManager:
             return True
 
     def __init__(self, tracing_enabled=False, erase_path_data=PathDataErasureMode.EraseNothing):
-        self.ap_cache = list()
-        self.abs_cache = list()
-        self.reuse_counter = AtomicInteger()
+        self.ap_cache = dict()
+        self.abs_cache = dict()
+        self.reuse_counter = 0
         self.use_abstraction_cache = False
 
         self.tracing_enabled = tracing_enabled
@@ -49,20 +48,28 @@ class FlowDroidMemoryManager:
             logger.info("FDMM: Path data erasure enabled")
 
     def get_cached_access_path(self, ap):
-        old_ap = self.ap_cache.putIfAbsent(ap, ap)
+        key = ap
+        if self.ap_cache.get(key) is None:
+            self.ap_cache[key] = ap
+
+        old_ap = self.ap_cache[key]
 
         if old_ap is None:
             return ap
 
         if self.tracing_enabled and old_ap != ap:
-            self.reuse_counter.incrementAndGet()
+            self.reuse_counter += 1
         return old_ap
 
     def get_cached_abstraction(self, abstraction):
-        old_abs = self.abs_cache.putIfAbsent(self.AbstractionCacheKey(abstraction), abstraction)
+        key = self.AbstractionCacheKey(abstraction)
+        if self.abs_cache.get(key) is None:
+            self.abs_cache[key] = abstraction
+
+        old_abs = self.abs_cache[key]
         if old_abs is not None and old_abs != abstraction:
             if self.tracing_enabled:
-                self.reuse_counter.incrementAndGet()
+                self.reuse_counter += 1
         return old_abs
 
     def handle_memory_object(self, obj):

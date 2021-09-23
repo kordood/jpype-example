@@ -97,7 +97,10 @@ class IFDSSolver:
             self.schedule_edge_processing(edge)
 
     def add_function(self, edge):
-        return self.jump_functions.putIfAbsent(edge, edge.d_target)
+        key = edge
+        if self.jump_functions.get(key) is None:
+            self.jump_functions[key] = edge.d_target
+        return self.jump_functions[key]
 
     def schedule_edge_processing(self, edge):
         if self.kill_flag is not None:
