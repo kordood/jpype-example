@@ -1,12 +1,11 @@
 import logging
 from defaultjimpleifdstabulationproblem import DefaultJimpleIFDSTabulationProblem
-import HashSet, HashMap, MyConcurrentHashMap
-import ConcurrentHashSet
-import DefinitionStmt
-import CaughtExceptionRef
-import FlowDroidEssentialMethodTag
-import Abstraction
-import SystemClassHandler
+#import FlowDroidEssentialMethodTag
+
+from ..sootir.soot_statement import DefinitionStmt
+from ..sootir.soot_value import SootCaughtExceptionRef
+from ..data.abstraction import Abstraction
+from ..util.systemclasshandler import SystemClassHandler
 
 logger = logging.getLogger(__file__)
 
@@ -16,13 +15,13 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
     def __init__(self, manager):
         super().__init__(manager.getICFG())
         self.manager = manager
-        self.initial_seeds = HashMap()
+        self.initial_seeds = list()
         self.taint_wrapper = None
         self.nc_handler = None
         self.zero_value = None
         self.solver = None
         self.taint_propagation_handler = None
-        self.activation_units_to_call_sites = MyConcurrentHashMap()
+        self.activation_units_to_call_sites = list()
 
         self.def_stmt = None
         self.decl_class = None
@@ -70,7 +69,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         if activation_unit is None:
             return False
 
-        call_sites = self.activation_units_to_call_sites.putIfAbsentElseGet(activation_unit, ConcurrentHashSet())
+        call_sites = self.activation_units_to_call_sites.putIfAbsentElseGet(activation_unit, list())
         if call_sites.contains(call_site):
             return False
 
@@ -96,7 +95,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         if self.initial_seeds.containsKey(unit):
             self.initial_seeds.get(unit).add_all(seeds)
         else:
-            self.initial_seeds.put(unit, HashSet(seeds))
+            self.initial_seeds.put(unit, list(seeds))
 
     def has_initial_seeds(self):
         return not self.initial_seeds.is_empty()
@@ -118,7 +117,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
     def is_exception_handler(self, u):
         if isinstance(u, DefinitionStmt):
             self.def_stmt = u
-            return isinstance(self.def_stmt.getRightOp(), CaughtExceptionRef)
+            return isinstance(self.def_stmt.getRightOp(), SootCaughtExceptionRef)
         return False
 
     def notify_out_flow_handlers(self, stmt, d1, incoming, outgoing, function_type):

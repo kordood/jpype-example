@@ -1,8 +1,7 @@
-import Scene
-import Stmt
+#import Scene
 
+from ..sootir.soot_statement import SootStmt
 from ..sootir.soot_value import SootStaticFieldRef
-
 from ..data.abstraction import Abstraction
 from ..solver.pathedge import PathEdge
 
@@ -22,7 +21,7 @@ class GlobalTaintManager:
                 sm = mmoc.method()
                 if sm is not None and sm.isConcrete():
                     for u in sm.getActiveBody().getUnits():
-                        if isinstance(u, Stmt):
+                        if isinstance(u, SootStmt):
                             stmt = u
                             for vb in stmt.getUseBoxes():
                                 if isinstance(vb.getValue(), SootStaticFieldRef):

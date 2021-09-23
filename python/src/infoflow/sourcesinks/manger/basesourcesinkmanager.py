@@ -1,6 +1,6 @@
-import Scene
+"""import Scene
 import VoidType, CallType
-
+"""
 import logging
 
 from .sinkinfo import SinkInfo

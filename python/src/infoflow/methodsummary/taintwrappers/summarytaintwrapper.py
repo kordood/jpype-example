@@ -1,17 +1,11 @@
 import re
 
-import ArrayType
-import PrimType
-import RefType
-import Scene
-import SootClass
-import SootField
-import Type
-import VoidType
-import DefinitionStmt
-import InstanceInvokeExpr
-import ReturnStmt
-import StaticInvokeExpr
+#import ArrayType, PrimType, RefType, SootField, Type, VoidType
+#import Scene
+
+from ...sootir.soot_class import SootClass
+from ...sootir.soot_statement import DefinitionStmt, ReturnStmt
+from ...sootir.soot_expr import SootInvokeExpr, SootStaticInvokeExpr
 
 from .taint import Taint
 from ...data.abstraction import Abstraction
@@ -504,12 +498,12 @@ class SummaryTaintWrapper:
 
         if t.is_field() and stmt.containsInvokeExpr():
             iexpr = stmt.getInvokeExpr()
-            if isinstance(iexpr, InstanceInvokeExpr):
+            if isinstance(iexpr, SootInvokeExpr):
                 iiexpr = iexpr
                 return self.manager.getAccessPathFactory().createAccessPath(iiexpr.base, fields, base_type, types,
                                                                             t.taint_sub_fields, False, True,
                                                                             ArrayTaintType.ContentsAndLength)
-            elif isinstance(iexpr, StaticInvokeExpr):
+            elif isinstance(iexpr, SootStaticInvokeExpr):
                 siexpr = iexpr
                 if not isinstance(siexpr.getMethodRef().getReturnType(), VoidType):
                     if isinstance(stmt, DefinitionStmt):
@@ -805,7 +799,7 @@ class SummaryTaintWrapper:
     @staticmethod
     def get_summary_declaring_class(stmt):
         declared_class = None
-        if stmt is not None and isinstance(stmt.getInvokeExpr(), InstanceInvokeExpr):
+        if stmt is not None and isinstance(stmt.getInvokeExpr(), SootInvokeExpr):
             iinv = stmt.getInvokeExpr()
             base_type = iinv.base.type
             if isinstance(base_type, RefType):
@@ -1190,7 +1184,7 @@ class SummaryTaintWrapper:
         if not stmt.containsInvokeExpr():
             raise RuntimeError("Statement is not a method call: " + stmt)
         inv_expr = stmt.getInvokeExpr()
-        if isinstance(inv_expr, InstanceInvokeExpr):
+        if isinstance(inv_expr, SootInvokeExpr):
             return inv_expr.base
         return None
 

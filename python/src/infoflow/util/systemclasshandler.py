@@ -1,6 +1,6 @@
-import RefType
+"""import RefType
 import SootClass
-
+"""
 
 class SystemClassHandler:
 

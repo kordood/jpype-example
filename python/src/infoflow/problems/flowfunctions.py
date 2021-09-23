@@ -1,13 +1,10 @@
-import SootStaticFieldRef, StaticFieldTrackingMode, SootArrayRef, SootInstanceFieldRef, SootInstanceFieldRef
-import CastExpr, InstanceOfExpr, LengthExpr, NewArrayExpr, InstanceInvokeExpr
-import Stmt, ReturnStmt
-import TypeUtils, BooleanType, ArrayTaintType, RefType, NoneType, PrimType
-import Collections
-import Aliasing
-import SootLocal
-import HashSet
-import KillAll
-import Value
+#import BooleanType, ArrayTaintType, RefType, NoneType, PrimType
+#import Aliasing
+
+from ..util.typeutils import TypeUtils
+from ..sootir.soot_value import SootLocal, SootStaticFieldRef, SootArrayRef, SootInstanceFieldRef
+from ..sootir.soot_statement import SootStmt, ReturnStmt
+from ..sootir.soot_expr import SootCastExpr, SootInstanceOfExpr, SootLengthExpr, SootNewArrayExpr, SootInvokeExpr
 from ..infoflow import Infoflow
 from ..functions.solvernormalflowfunction import SolverNormalFlowFunction
 from ..functions.solvercallflowfunction import SolverCallFlowFunction
@@ -41,7 +38,7 @@ class FlowFunctions:
         right_value = assign_stmt.getRightOp()
 
         if isinstance(left_value, SootStaticFieldRef) \
-            and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode._None:
+                and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode._None:
             return
 
         new_abs = None
@@ -50,10 +47,10 @@ class FlowFunctions:
                 array_ref = left_value
                 target_type = TypeUtils.build_array_or_add_dimension(target_type, array_ref.type.getArrayType())
 
-            if isinstance(right_value, CastExpr):
+            if isinstance(right_value, SootCastExpr):
                 cast = assign_stmt.getRightOp()
                 target_type = cast.type
-            elif isinstance(right_value, InstanceOfExpr):
+            elif isinstance(right_value, SootInstanceOfExpr):
                 new_abs = source.derive_new_abstraction(self.manager.getAccessPathFactory().create_access_path(
                     left_value, BooleanType.v(), True, ArrayTaintType.ContentsAndLength), assign_stmt)
         else:
@@ -99,7 +96,7 @@ class FlowFunctions:
         right_value = assign_stmt.getRightOp()
         add_left_value = False
 
-        if isinstance(right_value, LengthExpr):
+        if isinstance(right_value, SootLengthExpr):
             return set(new_source)
 
         implicit_taint = new_source.get_top_postdominator() is not None \
@@ -163,9 +160,9 @@ class FlowFunctions:
                         add_left_value = True
                         target_type = new_source.getAccessPath().getBaseType()
                 elif aliasing.mayAlias(rightVal, new_source.getAccessPath().getPlainValue()):
-                    if not isinstance(assign_stmt.getRightOp(), NewArrayExpr):
+                    if not isinstance(assign_stmt.getRightOp(), SootNewArrayExpr):
                         if self.manager.getConfig().getEnableArraySizeTainting() \
-                                or not isinstance(right_value, NewArrayExpr):
+                                or not isinstance(right_value, SootNewArrayExpr):
                             add_left_value = True
                             target_type = new_source.getAccessPath().getBaseType()
 
@@ -181,16 +178,16 @@ class FlowFunctions:
                 and not new_source.getAccessPath().getCanHaveImmutableAliases():
             return set(new_source)
 
-        res = HashSet()
+        res = list()
         target_ab = new_source if mapped_ap == new_source.getAccessPath() \
             else new_source.derive_new_abstraction(mapped_ap, None)
         self.add_taint_via_stmt(d1, assign_stmt, target_ab, res, cut_first_field,
                                  self.interprocedural_cfg().get_method_of(assign_stmt), target_type)
-        res.add(new_source)
+        res.append(new_source)
         return res
 
     def get_normal_flow_function(self, src, dest):
-        if not isinstance(src, Stmt):
+        if not isinstance(src, SootStmt):
             return self.KillAll.v()
 
         return SolverNormalFlowFunction(self, src, dest)
@@ -203,7 +200,7 @@ class FlowFunctions:
         stmt = src
         ie = stmt.getInvokeExpr() if stmt is not None and stmt.containsInvokeExpr() else None
 
-        paramLocals = dest.getActiveBody().getParameterLocals().toArray(Local[0])
+        paramLocals = dest.getActiveBody().getParameterLocals().toArray(SootLocal[0])
 
         this_local = None if dest.isStatic() else dest.getActiveBody().getThisLocal()
 
@@ -214,7 +211,7 @@ class FlowFunctions:
         return SolverCallFlowFunction(self, src, dest)
 
     def get_return_flow_function(self, call_site, callee, exit_stmt, retSite):
-        if call_site is not None and not isinstance(call_site, Stmt):
+        if call_site is not None and not isinstance(call_site, SootStmt):
             return KillAll.v()
         i_call_stmt = call_site
         is_reflective_call_site = call_site is not None \
@@ -222,7 +219,7 @@ class FlowFunctions:
 
         return_stmt = exit_stmt if isinstance(exit_stmt, ReturnStmt) else None
 
-        paramLocals = callee.getActiveBody().getParameterLocals().toArray(Local[0])
+        paramLocals = callee.getActiveBody().getParameterLocals().toArray(SootLocal[0])
 
         aliasing = self.manager.getAliasing()
         if (aliasing is None):
@@ -233,7 +230,7 @@ class FlowFunctions:
         return SolverReturnFlowFunction(self, call_site, callee, exit_stmt, retSite)
 
     def get_call_to_return_flow_function(self, call, returnSite):
-        if not isinstance(call, Stmt):
+        if not isinstance(call, SootStmt):
             return KillAll.v()
 
         i_call_stmt = call
@@ -272,7 +269,7 @@ class FlowFunctions:
             return None
 
         if aliasing.getAliasingStrategy().isLazyAnalysis() and Aliasing.canHaveAliases(ap):
-            res = HashSet()
+            res = list()
             res.add(ap)
 
         base_local = None
@@ -282,7 +279,7 @@ class FlowFunctions:
             if self.interprocedural_cfg().is_reflective_call_site(ie):
                 base_local = ie.getArg(0)
             else:
-                assert isinstance(ie, InstanceInvokeExpr)
+                assert isinstance(ie, SootInvokeExpr)
                 vie = ie
                 base_local = vie.base
 
@@ -290,25 +287,25 @@ class FlowFunctions:
             if aliasing.mayAlias(base_local, ap.getPlainValue()):
                 if self.manager.getTypeUtils().has_compatible_types_for_call(ap, callee.getDeclaringClass()):
                     if res is None:
-                        res = HashSet()
+                        res = list()
 
                     if this_local is None:
                         this_local = callee.getActiveBody().getThisLocal()
 
-                    res.add(self.manager.getAccessPathFactory().copy_with_new_value(ap, this_local))
+                    res.append(self.manager.getAccessPathFactory().copy_with_new_value(ap, this_local))
 
         if is_executor_execute:
             if aliasing.mayAlias(ie.getArg(0), ap.getPlainValue()):
                 if res is None:
-                    res = HashSet()
-                res.add(self.manager.getAccessPathFactory().copy_with_new_value(ap, callee.getActiveBody().getThisLocal()))
+                    res = list()
+                res.append(self.manager.getAccessPathFactory().copy_with_new_value(ap, callee.getActiveBody().getThisLocal()))
         elif callee.getParameterCount() > 0:
             is_reflective_call_site = self.interprocedural_cfg().is_reflective_call_site(ie)
 
             for i in range(1 if is_reflective_call_site else 0, ie.getArgCount()):
                 if aliasing.mayAlias(ie.getArg(i), ap.getPlainValue()):
                     if res is None:
-                        res = HashSet()
+                        res = list()
 
                     if param_locals is None:
                         param_locals = callee.getActiveBody().getParameterLocals().toArray(SootLocal[callee.getParameterCount()])
@@ -317,9 +314,9 @@ class FlowFunctions:
                         for j in range(param_locals.length):
                             new_ap = self.manager.getAccessPathFactory().copy_with_new_value(ap, param_locals[j], None, False)
                             if new_ap is not None:
-                                res.add(new_ap)
+                                res.append(new_ap)
                     else:
                         new_ap = self.manager.getAccessPathFactory().copy_with_new_value(ap, param_locals[i])
                         if new_ap is not None:
-                            res.add(new_ap)
+                            res.append(new_ap)
         return res

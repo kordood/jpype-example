@@ -1,8 +1,6 @@
-import AssignStmt
-import Collections
-import ByReferenceBoolean
-import BaseSelector
-import FlowFunctionType
+from ..sootir.soot_statement import AssignStmt
+#import BaseSelector
+#import FlowFunctionType
 from ..problems.flowfunction import FlowFunction
 from ..misc.copymember import copy_member
 
@@ -29,12 +27,12 @@ class SolverNormalFlowFunction(FlowFunction):
 		else:
 			new_source = source
 
-		kill_source = ByReferenceBoolean()
-		kill_all = ByReferenceBoolean()
+		kill_source = False
+		kill_all = False
 		res = self.propagation_rules.apply_normal_flow_function(d1, new_source, self.stmt, self.dest, kill_source, kill_all)
 
 		if kill_all.value:
-			return Collections.emptySet()
+			return list()
 
 		if isinstance(self.src, AssignStmt):
 			assign_stmt = self.src
@@ -49,4 +47,4 @@ class SolverNormalFlowFunction(FlowFunction):
 				else:
 					res = res_assign
 
-		return Collections.emptySet() if res is None or res.is_empty() else res
+		return list() if res is None or res.is_empty() else res

@@ -1,29 +1,29 @@
-import InstanceInvokeExpr
-import Collections
-import HashSet
-import ByReferenceBoolean
-import FlowFunctionType
+
+#import FlowFunctionType
+
+from ..sootir.soot_expr import SootInvokeExpr
 from ..problems.flowfunction import FlowFunction
+from ..problems.flowfunctions import FlowFunctions
 from ..misc.copymember import copy_member
 
 
 class SolverCallToReturnFlowFunction(FlowFunction):
 
-    def __init__(self, flowfunctions, call, return_site):
-        copy_member(self, flowfunctions)
+    def __init__(self, flowfunctions: FlowFunctions, call, return_site):
+        self.flowfunctions = flowfunctions
         self.call = call
         self.return_site = return_site
 
     def compute_targets(self, d1, source):
-        res = self.computeTargetsInternal(d1, source)
+        res = self.compute_targets_internal( d1, source )
         return self.notify_out_flow_handlers(self.call, d1, source, res, FlowFunctionType.CallToReturnFlowFunction)
 
-    def computeTargetsInternal(self, d1, source):
-        if self.manager.getConfig().getStopAfterFirstFlow() and not self.results.is_empty():
+    def compute_targets_internal(self, d1, source):
+        if self.flowfunctions.manager.getConfig().getStopAfterFirstFlow() and not self.flowfunctions.results.is_empty():
             return None
 
         if self.taint_propagation_handler is not None:
-            self.taint_propagation_handler.notify_flow_in(self.call, source, self.manager,
+            self.taint_propagation_handler.notify_flow_in(self.call, source, self.flowfunctions.manager,
                                                        FlowFunctionType.CallToReturnFlowFunction)
 
         new_source = None
@@ -34,19 +34,19 @@ class SolverCallToReturnFlowFunction(FlowFunction):
         else:
             new_source = source
 
-        killSource = ByReferenceBoolean()
-        killAll = ByReferenceBoolean()
+        killSource = False
+        killAll = False
         res = self.propagation_rules.apply_call_to_return_flow_function(d1, new_source, self.i_call_stmt,
                                                                          killSource, killAll, True)
-        if killAll.value:
+        if killAll:
             return None
-        pass_on = not killSource.value
+        pass_on = not killSource
 
-        if source == self.get_zero_value():
-            return Collections.emptySet() if res is None or res.is_empty() else res
+        if source == self.flowfunctions.get_zero_value():
+            return list() if res is None or res.is_empty() else res
 
         if res is None:
-            res = HashSet()
+            res = list()
 
         if new_source.getTopPostdominator() is not None \
                 and new_source.getTopPostdominator().getUnit() is None:
@@ -56,14 +56,14 @@ class SolverCallToReturnFlowFunction(FlowFunction):
             pass_on = False
 
         if pass_on \
-                and isinstance(self.invExpr, InstanceInvokeExpr) \
-                and (self.manager.getConfig().getInspectSources() or not self.isSource) \
-                and (self.manager.getConfig().getInspectSinks() or not self.isSink) \
+                and isinstance(self.invExpr, SootInvokeExpr) \
+                and (self.flowfunctions.manager.getConfig().getInspectSources() or not self.isSource) \
+                and (self.flowfunctions.manager.getConfig().getInspectSinks() or not self.isSink) \
                 and new_source.getAccessPath().is_instance_field_ref() \
                 and (self.hasValidCallees \
                      or (self.taintWrapper is not None and self.taintWrapper.is_exclusive(self.i_call_stmt, new_source))):
 
-            callees = self.interprocedural_cfg().get_callees_of_call_at(self.call)
+            callees = self.flowfunctions.interprocedural_cfg().get_callees_of_call_at(self.call)
             all_callees_read = not callees.is_empty()
             for callee in callees:
                 if callee.isConcrete() and callee.hasActiveBody():

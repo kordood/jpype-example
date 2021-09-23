@@ -1,11 +1,10 @@
-import InstanceInvokeExpr
-import DefinitionStmt
-import TypeUtils, PrimType
-import Aliasing
-import HashSet
-import ByReferenceBoolean
-import FlowFunctionType
-import AccessPath
+from ..sootir.soot_expr import SootInvokeExpr
+from ..sootir.soot_statement import DefinitionStmt
+from ..util.typeutils import TypeUtils
+#import PrimType
+#import Aliasing
+#import FlowFunctionType
+from ..data.accesspath import AccessPath
 from ..problems.flowfunction import FlowFunction
 from ..misc.copymember import copy_member
 
@@ -48,13 +47,13 @@ class SolverReturnFlowFunction(FlowFunction):
             if self.interprocedural_cfg().get_method_of(new_source.getActivationUnit()) == self.callee:
                 return None
 
-        kill_all = ByReferenceBoolean()
+        kill_all = False
         res = self.propagation_rules.apply_return_flow_function(caller_d1s, new_source, self.exit_stmt, self.retSite,
                                                                  self.call_site, kill_all)
         if kill_all.value:
             return None
         if res is None:
-            res = HashSet()
+            res = list()
 
         if self.call_site is None:
             return None
@@ -132,7 +131,7 @@ class SolverReturnFlowFunction(FlowFunction):
                     this_aliases = True
 
             if not parameter_aliases and not this_aliases and source.getAccessPath().getTaintSubFields() \
-                    and isinstance(self.i_call_stmt.getInvokeExpr(), InstanceInvokeExpr) \
+                    and isinstance(self.i_call_stmt.getInvokeExpr(), SootInvokeExpr) \
                     and self.aliasing.mayAlias(self.this_local, source_base):
 
                 if self.manager.getTypeUtils().check_cast(source.getAccessPath(), self.this_local.type):

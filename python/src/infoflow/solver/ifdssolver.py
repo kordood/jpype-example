@@ -29,10 +29,10 @@ class IFDSSolver:
 #            multiprocessing.cpu_count()).initialCapacity(10000).softValues()
         self.executor = None
         self.num_threads = None
-        self.jump_functions = MyConcurrentHashMap()
+        self.jump_functions = list()
         self.icfg = None
-        self.end_summary = MyConcurrentHashMap()
-        self.incoming = MyConcurrentHashMap()
+        self.end_summary = list()
+        self.incoming = list()
         self.flow_functions = None
         self.initial_seeds = None
 

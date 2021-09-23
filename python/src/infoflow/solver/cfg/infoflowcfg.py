@@ -1,10 +1,9 @@
-import AssignStmt
-import SootInstanceFieldRef
-import SootStaticFieldRef
-import VirtualInvokeExpr
-import RefType
+from ...sootir.soot_statement import AssignStmt
+from ...sootir.soot_value import SootInstanceFieldRef, SootStaticFieldRef
+from ...sootir.soot_expr import SootVirtualInvokeExpr
+"""import RefType
 import Scene
-
+"""
 # import ExceptionalUnitGraph
 # import JimpleBasedInterproceduralCFG
 
@@ -350,7 +349,7 @@ class InfoflowCFG:
                 return self.is_reflective_call_site(iexpr)
             return False
         else:
-            if isinstance(iexpr, VirtualInvokeExpr):
+            if isinstance(iexpr, SootVirtualInvokeExpr):
                 viexpr = iexpr
                 if isinstance(viexpr.base.type, RefType):
                     if (viexpr.base.type).getSootClass().name == "java.lang.reflect.Method":

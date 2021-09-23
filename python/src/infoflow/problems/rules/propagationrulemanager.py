@@ -1,6 +1,7 @@
-import InfoflowManager
-import Abstraction
-import TaintPropagationResults
+from ...infoflowmanager import InfoflowManager
+from ...data.abstraction import Abstraction
+
+"""import TaintPropagationResults
 import SourcePropagationRule
 import SinkPropagationRule
 import StaticPropagationRule
@@ -12,9 +13,7 @@ import StrongUpdatePropagationRule
 import TypingPropagationRule
 import SkipSystemClassRule
 import StopAfterFirstKFlowsPropagationRule
-import ITaintPropagationRule
-import ByReferenceBoolean
-import HashSet
+import ITaintPropagationRule"""
 
 
 class PropagationRuleManager:
@@ -61,7 +60,7 @@ class PropagationRuleManager:
 	def apply_normal_flow_function(self, d1, source, stmt, dest_stmt, kill_source=None, kill_all=None):
 		res = set([])
 		if kill_source is None:
-			kill_source = ByReferenceBoolean()
+			kill_source = False
 		for rule in self.rules:
 			rule_out = rule.propagate_normal_flow(d1, source, stmt, dest_stmt, kill_source, kill_all)
 			if kill_all is not None and kill_all.value:
@@ -69,14 +68,14 @@ class PropagationRuleManager:
 
 			if rule_out is not None and not rule_out.is_empty():
 				if res is None:
-					res = HashSet(rule_out)
+					res = list(rule_out)
 
 				else:
 					res.update(rule_out)
 
 		if (kill_all is None or not kill_all.value) and not kill_source.value:
 			if res is None:
-				res = HashSet()
+				res = list()
 				res.append(source)
 			else:
 				res = list(source)
@@ -92,7 +91,7 @@ class PropagationRuleManager:
 
 			if rule_out is not None and not rule_out.is_empty():
 				if res is None:
-					res = HashSet(rule_out)
+					res = list()
 				else:
 					res.extend(rule_out)
 		return res
@@ -111,7 +110,7 @@ class PropagationRuleManager:
 
 		if not no_append_source and not kill_source.value:
 			if res is None:
-				res = HashSet()
+				res = list()
 				res.append(source)
 			else:
 				res.append(source)
@@ -126,7 +125,7 @@ class PropagationRuleManager:
 				return None
 			if rule_out is not None and not rule_out.is_empty():
 				if res is None:
-					res = HashSet(rule_out)
+					res = list()
 				else:
 					res.extend(rule_out)
 		return res

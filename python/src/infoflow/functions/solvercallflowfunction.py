@@ -1,6 +1,5 @@
-import HashSet
-import ByReferenceBoolean
-import FlowFunctionType
+#import ByReferenceBoolean
+#import FlowFunctionType
 from ..problems.flowfunction import FlowFunction
 from ..problems.flowfunctions import FlowFunctions
 from ..misc.copymember import copy_member
@@ -8,7 +7,7 @@ from ..misc.copymember import copy_member
 
 class SolverCallFlowFunction(FlowFunction):
     
-    def __init__(self, flow_functions:FlowFunctions, src, dest):
+    def __init__(self, flow_functions: FlowFunctions, src, dest):
         self.flow_functions = flow_functions
         self.manager = flow_functions.manager
         self.results = flow_functions.results
@@ -40,9 +39,9 @@ class SolverCallFlowFunction(FlowFunction):
         if not source.is_abstraction_active() and source.getActivationUnit() == self.src:
             source = source.get_active_copy()
 
-        kill_all = ByReferenceBoolean()
+        kill_all = False
         res = self.propagation_rules.apply_call_flow_function(d1, source, self.stmt, self.dest, kill_all)
-        if kill_all.value:
+        if kill_all:
             return None
 
         res_mapping = self.map_access_path_to_callee(self.dest, self.ie,

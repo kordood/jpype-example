@@ -1,4 +1,4 @@
-import ArrayType
+"""import ArrayType
 import BooleanType
 import ByteType
 import CharType
@@ -10,7 +10,7 @@ import PrimType
 import RefType
 import Scene
 import ShortType
-
+"""
 
 class TypeUtils:
 

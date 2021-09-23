@@ -1,7 +1,7 @@
-import PrimType
+"""import PrimType
 import RefType
 import Scene
-
+"""
 from .sourcesinktype import SourceSinkType
 from ...data.accesspath import ArrayTaintType
 from ...data.summary.sourcesinktype import SourceSinkType

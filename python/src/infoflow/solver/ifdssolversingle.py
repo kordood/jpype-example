@@ -1,11 +1,6 @@
 import logging
 
-import MyConcurrentHashMap
-import PredecessorShorteningMode
-import ZeroedFlowFunctions
-import Pair
-import ConcurrentHashMap
-import AlwaysShorten, ShortenIfEqual
+#import ZeroedFlowFunctions
 
 from .pathedge import PathEdge
 
@@ -24,9 +19,9 @@ class IFDSSolver:
         # self.DEFAULT_CACHE_BUILDER = CacheBuilder.newBuilder().concurrencyLevel(multiprocessing.cpu_count())
         # .initialCapacity(10000).softValues()
         self.solver_id = solver_id
-        self.jump_functions = MyConcurrentHashMap()
-        self.end_summary = MyConcurrentHashMap()
-        self.incoming = MyConcurrentHashMap()
+        self.jump_functions = list()
+        self.end_summary = list()
+        self.incoming = list()
 
         self.propagation_count = None
         self.ff_cache = None

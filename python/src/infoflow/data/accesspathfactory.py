@@ -1,7 +1,7 @@
-from soot.ArrayType import ArrayType
+"""from soot.ArrayType import ArrayType
 from soot.PrimType import PrimType
 from soot.RefLikeType import RefLikeType
-from soot.RefType import RefType
+from soot.RefType import RefType"""
 from ..sootir.soot_value import SootValue
 
 from ..sootir.soot_value import SootArrayRef, SootInstanceFieldRef, SootInstanceFieldRef,  SootStaticFieldRef

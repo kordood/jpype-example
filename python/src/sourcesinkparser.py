@@ -85,3 +85,10 @@ class SourceSinkParser:
             params = tuple()
 
         return ret_type, method_name, params
+
+
+if __name__ == '__main__':
+    path = "F:\\연구실\\중견\\개발\\fd\\FlowDroid\\SourcesAndSinks.txt"
+    ssp = SourceSinkParser(path)
+    print(ssp.sources)
+    print(ssp.sinks)
