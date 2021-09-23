@@ -1,7 +1,7 @@
 import logging
-from defaultjimpleifdstabulationproblem import DefaultJimpleIFDSTabulationProblem
 #import FlowDroidEssentialMethodTag
 
+from .defaultjimpleifdstabulationproblem import DefaultJimpleIFDSTabulationProblem
 from ..sootir.soot_statement import DefinitionStmt
 from ..sootir.soot_value import SootCaughtExceptionRef
 from ..data.abstraction import Abstraction
