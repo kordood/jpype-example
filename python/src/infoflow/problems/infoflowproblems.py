@@ -1,5 +1,5 @@
-from abstractinfoflowproblem import AbstractInfoflowProblem
-from flowfunctions import FlowFunctions
+from .abstractinfoflowproblem import AbstractInfoflowProblem
+from .flowfunctions import FlowFunctions
 
 
 class InfoflowProblem(AbstractInfoflowProblem):

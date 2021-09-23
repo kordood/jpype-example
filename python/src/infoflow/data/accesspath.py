@@ -1,4 +1,4 @@
-import Jimple
+#import Jimple
 
 from ..sootir.soot_value import SootValue, SootLocal, SootInstanceFieldRef, SootStaticFieldRef, SootArrayRef
 
