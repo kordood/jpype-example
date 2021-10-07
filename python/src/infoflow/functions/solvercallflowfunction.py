@@ -1,13 +1,13 @@
 #import ByReferenceBoolean
 #import FlowFunctionType
 from ..problems.flowfunction import FlowFunction
-from ..problems.flowfunctions import FlowFunctions
+# from ..problems.flowfunctions import FlowFunctions
 from ..misc.copymember import copy_member
 
 
 class SolverCallFlowFunction(FlowFunction):
     
-    def __init__(self, flow_functions: FlowFunctions, src, dest):
+    def __init__(self, flow_functions, src, dest):
         self.flow_functions = flow_functions
         self.manager = flow_functions.manager
         self.results = flow_functions.results

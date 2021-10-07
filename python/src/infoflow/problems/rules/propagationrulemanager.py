@@ -19,15 +19,12 @@ import ITaintPropagationRule"""
 class PropagationRuleManager:
 
 	def __init__(self, manager, zero_value, results):
-		self.manager = InfoflowManager()
-		self.zero_value = Abstraction()
-		self.results = TaintPropagationResults()
 		self.rules = []
 		self.manager = manager
 		self.zero_value = zero_value
 		self.results = results
 
-		rule_list = []
+		rule_list = list()
 
 		rule_list.append(SourcePropagationRule(manager, zero_value, results))
 		rule_list.append(SinkPropagationRule(manager, zero_value, results))

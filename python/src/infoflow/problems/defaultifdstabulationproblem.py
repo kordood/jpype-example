@@ -1,9 +1,8 @@
-from ..cfg.interproceduralcfg import InterproceduralCFG
 from .ifdstabulationproblem import IFDSTabulationProblem
 import os
 
 
-class DefaultIFDSTabulationProblem(InterproceduralCFG, IFDSTabulationProblem):
+class DefaultIFDSTabulationProblem(IFDSTabulationProblem):
 
     def __init__(self, icfg):
         self.icfg = icfg

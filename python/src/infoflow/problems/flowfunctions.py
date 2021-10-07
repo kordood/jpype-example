@@ -5,7 +5,7 @@ from ..util.typeutils import TypeUtils
 from ..sootir.soot_value import SootLocal, SootStaticFieldRef, SootArrayRef, SootInstanceFieldRef
 from ..sootir.soot_statement import SootStmt, ReturnStmt
 from ..sootir.soot_expr import SootCastExpr, SootInstanceOfExpr, SootLengthExpr, SootNewArrayExpr, SootInvokeExpr
-from ..infoflow import Infoflow
+#from ..infoflow import Infoflow
 from ..functions.solvernormalflowfunction import SolverNormalFlowFunction
 from ..functions.solvercallflowfunction import SolverCallFlowFunction
 from ..functions.solverreturnflowfuntion import SolverReturnFlowFunction
@@ -15,7 +15,7 @@ from ..misc.copymember import copy_member
 
 class FlowFunctions:
 
-    def __init__(self, infoflow:Infoflow):
+    def __init__(self, infoflow):
         self.infoflow = infoflow
         self.manager = infoflow.manager
 

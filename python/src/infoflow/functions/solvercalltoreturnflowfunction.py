@@ -3,13 +3,13 @@
 
 from ..sootir.soot_expr import SootInvokeExpr
 from ..problems.flowfunction import FlowFunction
-from ..problems.flowfunctions import FlowFunctions
+#from ..problems.flowfunctions import FlowFunctions
 from ..misc.copymember import copy_member
 
 
 class SolverCallToReturnFlowFunction(FlowFunction):
 
-    def __init__(self, flowfunctions: FlowFunctions, call, return_site):
+    def __init__(self, flowfunctions, call, return_site):
         self.flowfunctions = flowfunctions
         self.call = call
         self.return_site = return_site
