@@ -15,6 +15,9 @@ import SkipSystemClassRule
 import StopAfterFirstKFlowsPropagationRule
 import ITaintPropagationRule"""
 
+from .sourcepropagationrule import SourcePropagationRule
+from .sinkpropagationrule import SinkPropagationRule
+
 
 class PropagationRuleManager:
 
