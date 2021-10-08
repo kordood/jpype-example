@@ -6,9 +6,10 @@ from ...util.baseselector import BaseSelector
 
 
 class SinkPropagationRule(AbstractTaintPropagationRule):
-    def __init__(self, **kwarg):
+
+    def __init__(self, manager, zero_value, results):
+        super().__init__(manager, zero_value, results)
         self.kill_state = False
-        super().__init__(**kwarg)
 
     def propagate_normal_flow(self, d1, source, stmt, dest_stmt, kill_source, kill_all):
         if isinstance(stmt, ReturnStmt):
