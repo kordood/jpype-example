@@ -27,23 +27,23 @@ class StrongUpdatePropagationRule(AbstractTaintPropagationRule):
                 left_ref = assign_stmt.left_op
 
                 if source.isAbstractionActive():
-                    base_aliases = self.manager.aliasing.mustAlias(left_ref.base, source.getAccessPath().getPlainValue(), assign_stmt)
+                    base_aliases = self.manager.aliasing.must_alias( left_ref.base, source.getAccessPath().getPlainValue(), assign_stmt )
                 else:
                     base_aliases = left_ref.base == source.getAccessPath().getPlainValue()
 
                 if base_aliases:
-                    if self.manager.aliasing.mustAlias(left_ref.field, source.getAccessPath().getFirstField()):
+                    if self.manager.aliasing.must_alias( left_ref.field, source.getAccessPath().getFirstField() ):
                         kill_all.value = True
                         return None
 
             elif isinstance(assign_stmt.left_op, SootLocal):
-                if self.manager.aliasing.mustAlias(assign_stmt.left_op, source.getAccessPath().getPlainValue(), stmt):
+                if self.manager.aliasing.must_alias( assign_stmt.left_op, source.getAccessPath().getPlainValue(), stmt ):
                     kill_all.value = True
                     return None
 
         elif source.getAccessPath().isStaticFieldRef():
             if isinstance(assign_stmt.left_op, SootStaticFieldRef) \
-                    and self.manager.aliasing.mustAlias(assign_stmt.left_op.field, source.getAccessPath().getFirstField()):
+                    and self.manager.aliasing.must_alias( assign_stmt.left_op.field, source.getAccessPath().getFirstField() ):
                 kill_all.value = True
                 return None
 
@@ -74,7 +74,7 @@ class StrongUpdatePropagationRule(AbstractTaintPropagationRule):
                 aliasing = self.manager.aliasing
 
                 if aliasing is not None and not ap.isStaticFieldRef() and isinstance(assign_stmt.left_op, SootLocal) \
-                        and aliasing.mayAlias(assign_stmt.left_op, ap.getPlainValue()):
+                        and aliasing.may_alias( assign_stmt.left_op, ap.getPlainValue() ):
                     kill_source.value = True
 
         return None

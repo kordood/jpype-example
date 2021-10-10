@@ -37,7 +37,7 @@ class SinkPropagationRule(AbstractTaintPropagationRule):
 
         if ap is not None and source_sink_manager is not None and aliasing is not None and source.isAbstractionActive():
             for val in BaseSelector().select_base_list(ret_val, False):
-                if aliasing.mayAlias(val, ap.getPlainValue()):
+                if aliasing.may_alias( val, ap.getPlainValue() ):
                     sink_info = source_sink_manager.getSinkInfo(stmt, self.manager, source.getAccessPath())
                     if sink_info is not None:
                         if self.results.addResult(AbstractionAtSink(sink_info.getDefinition(), source, stmt)):
@@ -59,7 +59,7 @@ class SinkPropagationRule(AbstractTaintPropagationRule):
         ap_base_value = source.getAccessPath().getPlainValue()
         if ap_base_value is not None:
             for i in range(0, iexpr.getArgCount()):
-                if self.manager.aliasing.mayAlias(iexpr.getArg(i), ap_base_value):
+                if self.manager.aliasing.may_alias( iexpr.getArg( i ), ap_base_value ):
                     if source.getAccessPath().getTaintSubFields() or source.getAccessPath().isLocal():
                         return True
 
@@ -95,7 +95,7 @@ class SinkPropagationRule(AbstractTaintPropagationRule):
             matches = source.getAccessPath().isLocal() or source.getAccessPath().getTaintSubFields()
 
             if matches and source.isAbstractionActive() and ssm is not None and aliasing is not None \
-                    and aliasing.mayAlias(source.getAccessPath().getPlainValue(), return_stmt.getOp()):
+                    and aliasing.may_alias( source.getAccessPath().getPlainValue(), return_stmt.getOp() ):
                 sink_info = ssm.getSinkInfo(return_stmt, self.manager, source.getAccessPath())
                 if sink_info is not None and not self.results.addResult(
                         AbstractionAtSink(sink_info.getDefinition(), source, return_stmt)):

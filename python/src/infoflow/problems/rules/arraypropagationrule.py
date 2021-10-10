@@ -18,7 +18,7 @@ class ArrayPropagationRule(AbstractTaintPropagationRule):
 
         if isinstance(right_val, SootLengthExpr):
             length_expr = right_val
-            if self.manager.aliasing.mayAlias(source.getAccessPath().getPlainValue(), length_expr.getOp()):
+            if self.manager.aliasing.may_alias( source.getAccessPath().getPlainValue(), length_expr.getOp() ):
                 if source.getAccessPath().getArrayTaintType() == ArrayTaintType.Contents:
                     return None
 
@@ -31,7 +31,7 @@ class ArrayPropagationRule(AbstractTaintPropagationRule):
             right_index = right_val.index
 
             if source.getAccessPath().getArrayTaintType() != ArrayTaintType.Length \
-                    and self.manager.aliasing.mayAlias(right_base, source.getAccessPath().getPlainValue()):
+                    and self.manager.aliasing.may_alias( right_base, source.getAccessPath().getPlainValue() ):
                 target_type = source.getAccessPath().getBaseType()
                 assert isinstance(target_type, ArrayType)
                 target_type = target_type.getElementType()
@@ -51,7 +51,7 @@ class ArrayPropagationRule(AbstractTaintPropagationRule):
         elif isinstance(right_val, SootNewArrayExpr) and self.manager.config.getEnableArraySizeTainting():
             new_array_expr = right_val
 
-            if self.manager.aliasing.mayAlias(source.getAccessPath().getPlainValue(), new_array_expr.size):
+            if self.manager.aliasing.may_alias( source.getAccessPath().getPlainValue(), new_array_expr.size ):
                 ap = self.manager.getAccessPathFactory().copyWithNewValue(source.getAccessPath(), left_val, None, False,
                                                                           True, ArrayTaintType.Length)
                 new_abs = source.deriveNewAbstraction(ap, assign_stmt)
@@ -62,9 +62,9 @@ class ArrayPropagationRule(AbstractTaintPropagationRule):
         res = list()
         res.append(new_abs)
 
-        if self.manager.aliasing.canHaveAliases(assign_stmt, left_val, new_abs):
-            self.manager.aliasing.computeAliases(d1, assign_stmt, left_val, res,
-                                                 self.manager.icfg.getMethodOf(assign_stmt), new_abs)
+        if self.manager.aliasing.can_have_aliases( assign_stmt, left_val, new_abs ):
+            self.manager.aliasing.compute_aliases( d1, assign_stmt, left_val, res,
+                                                   self.manager.icfg.getMethodOf(assign_stmt), new_abs )
 
         return res
 

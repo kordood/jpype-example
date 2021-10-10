@@ -59,7 +59,7 @@ class SolverReturnFlowFunction(FlowFunction):
             return None
 
         if self.aliasing.getAliasingStrategy().isLazyAnalysis() \
-                and Aliasing.canHaveAliases(new_source.getAccessPath()):
+                and Aliasing.can_have_aliases( new_source.getAccessPath() ):
             res.add(new_source)
 
         if not new_source.getAccessPath().is_static_field_ref() and not self.callee.isStaticInitializer():
@@ -68,7 +68,7 @@ class SolverReturnFlowFunction(FlowFunction):
                 defn_stmt = self.call_site
                 left_op = defn_stmt.getLeftOp()
 
-                if self.aliasing.mayAlias(ret_local, new_source.getAccessPath().getPlainValue()) \
+                if self.aliasing.may_alias( ret_local, new_source.getAccessPath().getPlainValue() ) \
                         and not self.isExceptionHandler(self.retSite):
                     ap = self.manager.getAccessPathFactory().copy_with_new_value(new_source.getAccessPath(), left_op)
                     abstraction = new_source.deriveNewAbstraction(ap, self.exit_stmt)
@@ -76,9 +76,9 @@ class SolverReturnFlowFunction(FlowFunction):
                         res.add(abstraction)
                         if self.aliasing.getAliasingStrategy().requires_analysis_on_return():
                             for d1 in caller_d1s:
-                                self.aliasing.computeAliases(d1, self.i_call_stmt, left_op, res,
-                                                              self.interprocedural_cfg().get_method_of(self.call_site),
-                                                              abstraction)
+                                self.aliasing.compute_aliases( d1, self.i_call_stmt, left_op, res,
+                                                               self.interprocedural_cfg().get_method_of(self.call_site),
+                                                               abstraction )
 
             source_base = new_source.getAccessPath().getPlainValue()
             parameter_aliases = False
@@ -91,7 +91,7 @@ class SolverReturnFlowFunction(FlowFunction):
                     if original_call_arg == left_op:
                         continue
 
-                if self.aliasing.mayAlias(self.paramLocals[i], source_base):
+                if self.aliasing.may_alias( self.paramLocals[i], source_base ):
                     parameter_aliases = True
                     original_call_arg = self.i_call_stmt.getInvokeExpr().getArg(1 if self.is_reflective_call_site else i)
 
@@ -132,7 +132,7 @@ class SolverReturnFlowFunction(FlowFunction):
 
             if not parameter_aliases and not this_aliases and source.getAccessPath().getTaintSubFields() \
                     and isinstance(self.i_call_stmt.getInvokeExpr(), SootInvokeExpr) \
-                    and self.aliasing.mayAlias(self.this_local, source_base):
+                    and self.aliasing.may_alias( self.this_local, source_base ):
 
                 if self.manager.getTypeUtils().check_cast(source.getAccessPath(), self.this_local.type):
                     i_i_expr = self.i_call_stmt.getInvokeExpr()
@@ -151,8 +151,8 @@ class SolverReturnFlowFunction(FlowFunction):
             if abstraction.isImplicit() and not caller_d1s_conditional \
                     or self.aliasing.getAliasingStrategy().requires_analysis_on_return():
                 for d1 in caller_d1s:
-                    self.aliasing.computeAliases(d1, self.i_call_stmt, None, res,
-                                                  self.interprocedural_cfg().get_method_of(self.call_site), abstraction)
+                    self.aliasing.compute_aliases( d1, self.i_call_stmt, None, res,
+                                                   self.interprocedural_cfg().get_method_of(self.call_site), abstraction )
 
             if abstraction != new_source:
                 abstraction.setCorrespondingCallSite(self.i_call_stmt)

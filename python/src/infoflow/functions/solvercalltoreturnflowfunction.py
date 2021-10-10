@@ -80,11 +80,11 @@ class SolverCallToReturnFlowFunction(FlowFunction):
                     break
 
             if all_callees_read:
-                if self.aliasing.mayAlias(self.invExpr.base, new_source.getAccessPath().getPlainValue()):
+                if self.aliasing.may_alias( self.invExpr.base, new_source.getAccessPath().getPlainValue() ):
                     pass_on = False
                 if pass_on:
                     for i in range(self.call_args.length):
-                        if self.aliasing.mayAlias(self.call_args[i], new_source.getAccessPath().getPlainValue()):
+                        if self.aliasing.may_alias( self.call_args[i], new_source.getAccessPath().getPlainValue() ):
                             pass_on = False
                             break
                 if new_source.getAccessPath().is_static_field_ref():
@@ -108,12 +108,12 @@ class SolverCallToReturnFlowFunction(FlowFunction):
 
                         for abstraction in native_abs:
                             if abstraction.getAccessPath().is_static_field_ref() \
-                                    or self.aliasing.canHaveAliases(self.i_call_stmt,
-                                                                abstraction.getAccessPath().get_complete_value(),
-                                                                abstraction):
-                                self.aliasing.computeAliases(d1, self.i_call_stmt,
-                                                         abstraction.getAccessPath().getPlainValue(), res,
-                                                         self.interprocedural_cfg().get_method_of(self.call), abstraction)
+                                    or self.aliasing.can_have_aliases( self.i_call_stmt,
+                                                                       abstraction.getAccessPath().get_complete_value(),
+                                                                       abstraction ):
+                                self.aliasing.compute_aliases( d1, self.i_call_stmt,
+                                                               abstraction.getAccessPath().getPlainValue(), res,
+                                                               self.interprocedural_cfg().get_method_of(self.call), abstraction )
                     break
 
         for abstraction in res:

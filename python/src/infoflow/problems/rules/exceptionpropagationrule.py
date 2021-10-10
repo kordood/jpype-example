@@ -19,7 +19,7 @@ class ExceptionPropagationRule(AbstractTaintPropagationRule):
 
         if isinstance(stmt, ThrowStmt):
             throw_stmt = stmt
-            if self.manager.aliasing.mayAlias(throw_stmt.getOp(), source.getAccessPath().getPlainValue()):
+            if self.manager.aliasing.may_alias( throw_stmt.getOp(), source.getAccessPath().getPlainValue() ):
                 kill_source.value = True
                 return list(source.deriveNewAbstractionOnThrow(throw_stmt))
 
@@ -33,7 +33,7 @@ class ExceptionPropagationRule(AbstractTaintPropagationRule):
             def_ret_stmt = ret_site
             if isinstance(def_ret_stmt.right_op, SootCaughtExceptionRef):
                 throw_stmt = stmt
-                if self.manager.aliasing.mayAlias(throw_stmt.getOp(), source.getAccessPath().getPlainValue()):
+                if self.manager.aliasing.may_alias( throw_stmt.getOp(), source.getAccessPath().getPlainValue() ):
                     return list(source.deriveNewAbstractionOnThrow(throw_stmt))
 
         return None

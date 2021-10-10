@@ -17,6 +17,15 @@ import ITaintPropagationRule"""
 
 from .sourcepropagationrule import SourcePropagationRule
 from .sinkpropagationrule import SinkPropagationRule
+from .staticpropagationrule import StaticPropagationRule
+from .arraypropagationrule import ArrayPropagationRule
+from .exceptionpropagationrule import ExceptionPropagationRule
+from .wrapperpropagationrule import WrapperPropagationRule
+from .implicitpropagtionrule import ImplicitPropagtionRule
+from .strongupdatepropagationrule import StrongUpdatePropagationRule
+from .typingpropagationrule import TypingPropagationRule
+from .skipsystemclassrule import SkipSystemClassRule
+from .stopafterfirstkflowspropagationrule import StopAfterFirstKFlowsPropagationRule
 
 
 class PropagationRuleManager:

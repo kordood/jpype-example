@@ -80,8 +80,8 @@ class FlowFunctions:
             else:
                 taint_set.add(new_abs)
                 aliasing = self.manager.getAliasing()
-                if aliasing is not None and aliasing.canHaveAliases(assign_stmt, left_value, new_abs):
-                    aliasing.computeAliases(d1, assign_stmt, left_value, taint_set, method, new_abs)
+                if aliasing is not None and aliasing.can_have_aliases( assign_stmt, left_value, new_abs ):
+                    aliasing.compute_aliases( d1, assign_stmt, left_value, taint_set, method, new_abs )
 
     def has_valid_callees(self, call):
         callees = self.interprocedural_cfg().get_callees_of_call_at(call)
@@ -112,7 +112,7 @@ class FlowFunctions:
 
         alias_overwritten = not add_left_value \
                            and not new_source.is_abstraction_active() \
-                           and Aliasing.baseMatchesStrict(right_value, new_source) \
+                           and Aliasing.base_matches_strict( right_value, new_source ) \
                            and isinstance(right_value.type, RefType) \
                            and not new_source.dependsOnCutAP()
 
@@ -131,7 +131,7 @@ class FlowFunctions:
                             and isinstance(right_ref.base.type, NoneType):
                         return None
 
-                    mapped_ap = aliasing.mayAlias(new_source.getAccessPath(), right_ref)
+                    mapped_ap = aliasing.may_alias( new_source.getAccessPath(), right_ref )
 
                     if isinstance(rightVal, SootStaticFieldRef):
                         if self.manager.getConfig().getStaticFieldTrackingMode() is not StaticFieldTrackingMode._None \
@@ -147,7 +147,7 @@ class FlowFunctions:
                             add_left_value = True
                             cut_first_field = (mapped_ap.get_field_count() > 0
                                                and mapped_ap.get_first_field() == right_field)
-                        elif (aliasing.mayAlias(right_base, source_base)
+                        elif (aliasing.may_alias( right_base, source_base )
                               and new_source.getAccessPath().get_field_count() == 0
                               and new_source.getAccessPath().getTaintSubFields()):
                             add_left_value = True
@@ -156,10 +156,10 @@ class FlowFunctions:
                                 mapped_ap = self.manager.getAccessPathFactory().create_access_path(right_base, True)
                 elif isinstance(rightVal, SootLocal) and new_source.getAccessPath().is_instance_field_ref():
                     base = new_source.getAccessPath().getPlainValue()
-                    if aliasing.mayAlias(rightVal, base):
+                    if aliasing.may_alias( rightVal, base ):
                         add_left_value = True
                         target_type = new_source.getAccessPath().getBaseType()
-                elif aliasing.mayAlias(rightVal, new_source.getAccessPath().getPlainValue()):
+                elif aliasing.may_alias( rightVal, new_source.getAccessPath().getPlainValue() ):
                     if not isinstance(assign_stmt.getRightOp(), SootNewArrayExpr):
                         if self.manager.getConfig().getEnableArraySizeTainting() \
                                 or not isinstance(right_value, SootNewArrayExpr):
@@ -268,7 +268,7 @@ class FlowFunctions:
         if aliasing is None:
             return None
 
-        if aliasing.getAliasingStrategy().isLazyAnalysis() and Aliasing.canHaveAliases(ap):
+        if aliasing.getAliasingStrategy().isLazyAnalysis() and Aliasing.can_have_aliases( ap ):
             res = list()
             res.add(ap)
 
@@ -284,7 +284,7 @@ class FlowFunctions:
                 base_local = vie.base
 
         if base_local is not None:
-            if aliasing.mayAlias(base_local, ap.getPlainValue()):
+            if aliasing.may_alias( base_local, ap.getPlainValue() ):
                 if self.manager.getTypeUtils().has_compatible_types_for_call(ap, callee.getDeclaringClass()):
                     if res is None:
                         res = list()
@@ -295,7 +295,7 @@ class FlowFunctions:
                     res.append(self.manager.getAccessPathFactory().copy_with_new_value(ap, this_local))
 
         if is_executor_execute:
-            if aliasing.mayAlias(ie.getArg(0), ap.getPlainValue()):
+            if aliasing.may_alias( ie.getArg( 0 ), ap.getPlainValue() ):
                 if res is None:
                     res = list()
                 res.append(self.manager.getAccessPathFactory().copy_with_new_value(ap, callee.getActiveBody().getThisLocal()))
@@ -303,7 +303,7 @@ class FlowFunctions:
             is_reflective_call_site = self.interprocedural_cfg().is_reflective_call_site(ie)
 
             for i in range(1 if is_reflective_call_site else 0, ie.getArgCount()):
-                if aliasing.mayAlias(ie.getArg(i), ap.getPlainValue()):
+                if aliasing.may_alias( ie.getArg( i ), ap.getPlainValue() ):
                     if res is None:
                         res = list()
 

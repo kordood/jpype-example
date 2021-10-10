@@ -46,7 +46,7 @@ class ImplicitPropagtionRule(AbstractTaintPropagationRule):
 
         res = None
         for val in values:
-            if self.manager.aliasing.mayAlias(val, source.getAccessPath().getPlainValue()):
+            if self.manager.aliasing.may_alias( val, source.getAccessPath().getPlainValue() ):
                 postdom = self.manager.getICFG().getPostdominatorOfstmt
 
                 if not (postdom.getMethod() is None and source.getTopPostdominator() is not None
@@ -118,7 +118,7 @@ class ImplicitPropagtionRule(AbstractTaintPropagationRule):
             else:
                 cur_method = self.manager.getICFG().getMethodOfstmt
                 if not cur_method.isStatic() and source.getAccessPath().getFirstField() is None \
-                        and self.manager.aliasing.mayAlias(cur_method.getActiveBody().getThisLocal(), source.getAccessPath().getPlainValue()):
+                        and self.manager.aliasing.may_alias( cur_method.getActiveBody().getThisLocal(), source.getAccessPath().getPlainValue() ):
                     sink_info = self.manager.getSourceSinkManager().getSinkInfo(stmt, self.manager, None)
                     if sink_info is not None:
                         self.results.addResult(AbstractionAtSink(sink_info.getDefinition(), source, stmt))
@@ -160,10 +160,10 @@ class ImplicitPropagtionRule(AbstractTaintPropagationRule):
                     res = list()
                     res.append(abstraction)
 
-                    if self.manager.aliasing.canHaveAliases(define, define.left_op, abstraction) \
+                    if self.manager.aliasing.can_have_aliases( define, define.left_op, abstraction ) \
                             and not caller_d1s_conditional:
                         for d1 in caller_d1s:
-                            self.manager.aliasing.computeAliases(d1, return_stmt, define.left_op, res, self.manager.getICFG().getMethodOf(call_site), abstraction)
+                            self.manager.aliasing.compute_aliases( d1, return_stmt, define.left_op, res, self.manager.getICFG().getMethodOf( call_site ), abstraction )
                         return res
 
         if source.getAccessPath().isEmpty():
