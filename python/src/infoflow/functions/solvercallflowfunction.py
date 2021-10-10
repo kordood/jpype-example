@@ -18,9 +18,9 @@ class SolverCallFlowFunction(FlowFunction):
         res = self.compute_targets_internal(d1, source)
         if res is not None and not res.isEmpty() and d1 is not None:
             for abstraction in res:
-                self.flow_functions.aliasing.getAliasingStrategy().injectCallingContext(abstraction, self.flow_functions.solver, self.dest, self.src, source,
-                                                                         d1
-                                                                        )
+                self.flow_functions.aliasing.getAliasingStrategy().inject_calling_context( abstraction, self.flow_functions.solver, self.dest, self.src, source,
+                                                                                           d1
+                                                                                           )
         return self.flow_functions.notify_out_flow_handlers(self.flow_functions.stmt, d1, source, res, FlowFunctionType.CallFlowFunction)
 
     def compute_targets_internal(self, d1, source):

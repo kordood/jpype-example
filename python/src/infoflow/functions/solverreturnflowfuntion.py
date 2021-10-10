@@ -74,7 +74,7 @@ class SolverReturnFlowFunction(FlowFunction):
                     abstraction = new_source.deriveNewAbstraction(ap, self.exit_stmt)
                     if abstraction is not None:
                         res.add(abstraction)
-                        if self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
+                        if self.aliasing.getAliasingStrategy().requires_analysis_on_return():
                             for d1 in caller_d1s:
                                 self.aliasing.computeAliases(d1, self.i_call_stmt, left_op, res,
                                                               self.interprocedural_cfg().get_method_of(self.call_site),
@@ -149,7 +149,7 @@ class SolverReturnFlowFunction(FlowFunction):
 
         for abstraction in res:
             if abstraction.isImplicit() and not caller_d1s_conditional \
-                    or self.aliasing.getAliasingStrategy().requiresAnalysisOnReturn():
+                    or self.aliasing.getAliasingStrategy().requires_analysis_on_return():
                 for d1 in caller_d1s:
                     self.aliasing.computeAliases(d1, self.i_call_stmt, None, res,
                                                   self.interprocedural_cfg().get_method_of(self.call_site), abstraction)
