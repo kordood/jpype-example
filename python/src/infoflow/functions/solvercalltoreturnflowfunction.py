@@ -19,7 +19,7 @@ class SolverCallToReturnFlowFunction(FlowFunction):
         return self.notify_out_flow_handlers(self.call, d1, source, res, FlowFunctionType.CallToReturnFlowFunction)
 
     def compute_targets_internal(self, d1, source):
-        if self.flowfunctions.manager.getConfig().getStopAfterFirstFlow() and not self.flowfunctions.results.is_empty():
+        if self.flowfunctions.manager.config.getStopAfterFirstFlow() and not self.flowfunctions.results.is_empty():
             return None
 
         if self.taint_propagation_handler is not None:
@@ -57,8 +57,8 @@ class SolverCallToReturnFlowFunction(FlowFunction):
 
         if pass_on \
                 and isinstance(self.invExpr, SootInvokeExpr) \
-                and (self.flowfunctions.manager.getConfig().getInspectSources() or not self.isSource) \
-                and (self.flowfunctions.manager.getConfig().getInspectSinks() or not self.isSink) \
+                and (self.flowfunctions.manager.config.getInspectSources() or not self.isSource) \
+                and (self.flowfunctions.manager.config.getInspectSinks() or not self.isSink) \
                 and new_source.getAccessPath().is_instance_field_ref() \
                 and (self.hasValidCallees \
                      or (self.taintWrapper is not None and self.taintWrapper.is_exclusive(self.i_call_stmt, new_source))):

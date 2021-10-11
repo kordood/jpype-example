@@ -25,26 +25,26 @@ class PropagationRuleManager:
 		rule_list.append(SinkPropagationRule(manager, zero_value, results))
 		rule_list.append(StaticPropagationRule(manager, zero_value, results))
 
-		if manager.getConfig().getEnableArrayTracking():
+		if manager.config.getEnableArrayTracking():
 			rule_list.append(ArrayPropagationRule(manager, zero_value, results))
 
-		if manager.getConfig().getEnableExceptionTracking():
+		if manager.config.getEnableExceptionTracking():
 			rule_list.append(ExceptionPropagationRule(manager, zero_value, results))
 
 		if manager.getTaintWrapper() is not None:
 			rule_list.append(WrapperPropagationRule(manager, zero_value, results))
 			
-		if manager.getConfig().getImplicitFlowMode().trackControlFlowDependencies():
+		if manager.config.getImplicitFlowMode().trackControlFlowDependencies():
 			rule_list.append(ImplicitPropagtionRule(manager, zero_value, results))
 		
 		rule_list.append(StrongUpdatePropagationRule(manager, zero_value, results))
 		
-		if manager.getConfig().getEnableTypeChecking():
+		if manager.config.getEnableTypeChecking():
 			rule_list.append(TypingPropagationRule(manager, zero_value, results))
 		
 		rule_list.append(SkipSystemClassRule(manager, zero_value, results))
 		
-		if manager.getConfig().getStopAfterFirstKFlows() > 0:
+		if manager.config.getStopAfterFirstKFlows() > 0:
 			rule_list.append(StopAfterFirstKFlowsPropagationRule(manager, zero_value, results))
 
 		self.rules = rule_list

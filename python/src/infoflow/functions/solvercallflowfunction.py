@@ -24,7 +24,7 @@ class SolverCallFlowFunction(FlowFunction):
         return self.flow_functions.notify_out_flow_handlers(self.flow_functions.stmt, d1, source, res, FlowFunctionType.CallFlowFunction)
 
     def compute_targets_internal(self, d1, source):
-        if self.flow_functions.manager.getConfig().getStopAfterFirstFlow() and not self.results.is_empty():
+        if self.flow_functions.manager.config.getStopAfterFirstFlow() and not self.results.is_empty():
             return None
         if source == self.flow_functions.get_zero_value():
             return None

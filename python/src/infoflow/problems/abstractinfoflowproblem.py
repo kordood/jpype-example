@@ -54,7 +54,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         return False
 
     def is_call_site_activating_taint(self, call_site, activation_unit):
-        if not self.manager.getConfig().flow_sensitive_aliasing:
+        if not self.manager.config.flow_sensitive_aliasing:
             return False
 
         if activation_unit is None:
@@ -63,7 +63,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         return call_sites is not None and call_sites.contains(call_site)
 
     def register_activation_call_site(self, call_site, callee, activation_abs):
-        if not self.manager.getConfig().flow_sensitive_aliasing:
+        if not self.manager.config.flow_sensitive_aliasing:
             return False
         activation_unit = activation_abs.getactivation_unit()
         if activation_unit is None:
@@ -108,7 +108,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
 
     def create_zero_value(self):
         if self.zero_value is None:
-            self.zero_value = Abstraction.get_zero_abstraction(self.manager.getConfig().flow_sensitive_aliasing)
+            self.zero_value = Abstraction.get_zero_abstraction(self.manager.config.flow_sensitive_aliasing)
         return self.zero_value
 
     def get_zero_value(self):
@@ -142,12 +142,12 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
         if sm.hasTag(FlowDroidEssentialMethodTag.TAG_NAME):
             return False
 
-        if self.manager.getConfig().getExcludeSootLibraryClasses():
+        if self.manager.config.getExcludeSootLibraryClasses():
             self.decl_class = sm.getDeclaringClass()
             if self.decl_class is not None and self.decl_class.isLibraryClass():
                 return True
 
-        if self.manager.getConfig().getIgnoreFlowsInSystemPackages():
+        if self.manager.config.getIgnoreFlowsInSystemPackages():
             self.decl_class = sm.getDeclaringClass()
             if self.decl_class is not None and SystemClassHandler.v().is_class_in_system_package(self.decl_class.getName()):
                 return True

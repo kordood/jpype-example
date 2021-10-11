@@ -38,7 +38,7 @@ class FlowFunctions:
         right_value = assign_stmt.getRightOp()
 
         if isinstance(left_value, SootStaticFieldRef) \
-                and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode._None:
+                and self.manager.config.getStaticFieldTrackingMode() == StaticFieldTrackingMode._None:
             return
 
         new_abs = None
@@ -57,7 +57,7 @@ class FlowFunctions:
             assert target_type is None
 
         array_taint_type = source.getAccessPath().getArrayTaintType()
-        if isinstance(left_value, SootArrayRef) and self.manager.getConfig().getEnableArraySizeTainting():
+        if isinstance(left_value, SootArrayRef) and self.manager.config.getEnableArraySizeTainting():
             array_taint_type = ArrayTaintType.Contents
 
         if new_abs is None:
@@ -75,7 +75,7 @@ class FlowFunctions:
 
         if new_abs is not None:
             if isinstance(left_value, SootStaticFieldRef) \
-                and self.manager.getConfig().getStaticFieldTrackingMode() == StaticFieldTrackingMode.ContextFlowInsensitive:
+                and self.manager.config.getStaticFieldTrackingMode() == StaticFieldTrackingMode.ContextFlowInsensitive:
                 self.manager.getGlobalTaintManager().add_to_global_taint_state(new_abs)
             else:
                 taint_set.add(new_abs)
@@ -134,7 +134,7 @@ class FlowFunctions:
                     mapped_ap = aliasing.may_alias( new_source.getAccessPath(), right_ref )
 
                     if isinstance(rightVal, SootStaticFieldRef):
-                        if self.manager.getConfig().getStaticFieldTrackingMode() is not StaticFieldTrackingMode._None \
+                        if self.manager.config.getStaticFieldTrackingMode() is not StaticFieldTrackingMode._None \
                                 and mapped_ap is not None:
                             add_left_value = True
                             cut_first_field = True
@@ -161,7 +161,7 @@ class FlowFunctions:
                         target_type = new_source.getAccessPath().getBaseType()
                 elif aliasing.may_alias( rightVal, new_source.getAccessPath().getPlainValue() ):
                     if not isinstance(assign_stmt.getRightOp(), SootNewArrayExpr):
-                        if self.manager.getConfig().getEnableArraySizeTainting() \
+                        if self.manager.config.getEnableArraySizeTainting() \
                                 or not isinstance(right_value, SootNewArrayExpr):
                             add_left_value = True
                             target_type = new_source.getAccessPath().getBaseType()
