@@ -1,20 +1,3 @@
-from ...infoflowmanager import InfoflowManager
-from ...data.abstraction import Abstraction
-
-"""import TaintPropagationResults
-import SourcePropagationRule
-import SinkPropagationRule
-import StaticPropagationRule
-import ArrayPropagationRule
-import ExceptionPropagationRule
-import WrapperPropagationRule
-import ImplicitPropagtionRule
-import StrongUpdatePropagationRule
-import TypingPropagationRule
-import SkipSystemClassRule
-import StopAfterFirstKFlowsPropagationRule
-import ITaintPropagationRule"""
-
 from .sourcepropagationrule import SourcePropagationRule
 from .sinkpropagationrule import SinkPropagationRule
 from .staticpropagationrule import StaticPropagationRule
@@ -64,7 +47,7 @@ class PropagationRuleManager:
 		if manager.getConfig().getStopAfterFirstKFlows() > 0:
 			rule_list.append(StopAfterFirstKFlowsPropagationRule(manager, zero_value, results))
 
-		self.rules = rule_list.toArray(ITaintPropagationRule[rule_list.size()])
+		self.rules = rule_list
 
 	def apply_normal_flow_function(self, d1, source, stmt, dest_stmt, kill_source=None, kill_all=None):
 		res = set([])
@@ -94,7 +77,7 @@ class PropagationRuleManager:
 	def apply_call_flow_function(self, d1, source, stmt, dest, kill_all):
 		res = []
 		for rule in self.rules:
-			rule_out = rule.propagate_call_flow( d1, source, stmt, dest, kill_all )
+			rule_out = rule.propagate_call_flow(d1, source, stmt, dest, kill_all)
 			if kill_all.value:
 				return None
 
@@ -108,12 +91,12 @@ class PropagationRuleManager:
 	def apply_call_to_return_flow_function(self, d1, source, stmt, kill_source, kill_all=None, no_append_source=False):
 		res = []
 		for rule in self.rules:
-			rule_out = rule.propagate_call_to_return_flow( d1, source, stmt, kill_source, kill_all )
+			rule_out = rule.propagate_call_to_return_flow(d1, source, stmt, kill_source, kill_all)
 			if kill_all is not None and kill_all.value:
 				return None
 			if rule_out is not None and not rule_out.is_empty():
 				if res is None:
-					res = HashSet(rule_out)
+					res = list(rule_out)
 				else:
 					res.extend(rule_out)
 
@@ -129,7 +112,7 @@ class PropagationRuleManager:
 	def apply_return_flow_function(self, caller_d1s, source, stmt, ret_site, call_site, kill_all):
 		res = []
 		for rule in self.rules:
-			rule_out = rule.propagate_return_flow( caller_d1s, source, stmt, ret_site, call_site, kill_all )
+			rule_out = rule.propagate_return_flow(caller_d1s, source, stmt, ret_site, call_site, kill_all)
 			if kill_all is not None and kill_all.value:
 				return None
 			if rule_out is not None and not rule_out.is_empty():
@@ -138,6 +121,3 @@ class PropagationRuleManager:
 				else:
 					res.extend(rule_out)
 		return res
-
-	def getRules(self):
-		return self.rules
