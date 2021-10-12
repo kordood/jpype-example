@@ -15,7 +15,7 @@ class WrapperPropagationRule(AbstractTaintPropagationRule):
         if source == self.zero_value:
             return None
 
-        if self.manager.getTaintWrapper() is None:
+        if self.manager.taint_wrapper is None:
             return None
 
         aliasing = self.manager.aliasing
@@ -40,7 +40,7 @@ class WrapperPropagationRule(AbstractTaintPropagationRule):
             if source_info is not None:
                 return None
 
-        res = self.manager.getTaintWrapper().getTaintsForMethod(i_stmt, d1, source)
+        res = self.manager.taint_wrapper.getTaintsForMethod(i_stmt, d1, source)
 
         if res is not None:
             res_with_aliases = res
@@ -62,7 +62,7 @@ class WrapperPropagationRule(AbstractTaintPropagationRule):
 
         if not tainted_value_overwritten:
             if taints_static_field or (taints_object_value and abstraction.getAccessPath().getTaintSubFields()) or self.manager.aliasing.can_have_aliases( i_stmt, val.getCompleteValue(), abstraction ):
-                self.manager.aliasing.compute_aliases( d1, i_stmt, val.getPlainValue(), res_with_aliases, self.manager.getICFG().getMethodOf( i_stmt ), abstraction )
+                self.manager.aliasing.compute_aliases( d1, i_stmt, val.getPlainValue(), res_with_aliases, self.manager.icfg.getMethodOf( i_stmt ), abstraction )
 
     def propagate_call_to_return_flow(self, d1, source, stmt, kill_source, kill_all):
         wrapper_taints = self.compute_wrapper_taints( d1, stmt, source )
@@ -79,7 +79,7 @@ class WrapperPropagationRule(AbstractTaintPropagationRule):
         return None
 
     def propagate_call_flow(self, d1, source, stmt, dest, kill_all):
-        if self.manager.getTaintWrapper() is not None and self.manager.getTaintWrapper().isExclusive(stmt, source):
+        if self.manager.taint_wrapper is not None and self.manager.taint_wrapper.isExclusive(stmt, source):
             kill_all.value = True
         
         return None

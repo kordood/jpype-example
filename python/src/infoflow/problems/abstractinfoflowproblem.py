@@ -13,7 +13,7 @@ logger = logging.getLogger(__file__)
 class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
     
     def __init__(self, manager):
-        super().__init__(manager.getICFG())
+        super().__init__(manager.icfg)
         self.manager = manager
         self.initial_seeds = list()
         self.taint_wrapper = None

@@ -9,11 +9,19 @@ from .strongupdatepropagationrule import StrongUpdatePropagationRule
 from .typingpropagationrule import TypingPropagationRule
 from .skipsystemclassrule import SkipSystemClassRule
 from .stopafterfirstkflowspropagationrule import StopAfterFirstKFlowsPropagationRule
+from ...infoflowconfiguration import ImplicitFlowMode
+from ...infoflowmanager import InfoflowManager
 
 
 class PropagationRuleManager:
 
 	def __init__(self, manager, zero_value, results):
+		"""
+
+		:param InfoflowManager manager:
+		:param zero_value:
+		:param results:
+		"""
 		self.rules = []
 		self.manager = manager
 		self.zero_value = zero_value
@@ -25,26 +33,26 @@ class PropagationRuleManager:
 		rule_list.append(SinkPropagationRule(manager, zero_value, results))
 		rule_list.append(StaticPropagationRule(manager, zero_value, results))
 
-		if manager.config.getEnableArrayTracking():
+		if manager.config.enable_arrays:
 			rule_list.append(ArrayPropagationRule(manager, zero_value, results))
 
-		if manager.config.getEnableExceptionTracking():
+		if manager.config.enable_exceptions:
 			rule_list.append(ExceptionPropagationRule(manager, zero_value, results))
 
-		if manager.getTaintWrapper() is not None:
+		if manager.taint_wrapper is not None:
 			rule_list.append(WrapperPropagationRule(manager, zero_value, results))
 			
-		if manager.config.getImplicitFlowMode().trackControlFlowDependencies():
+		if manager.config.implicit_flow_mode is ImplicitFlowMode.AllImplicitFlows:
 			rule_list.append(ImplicitPropagtionRule(manager, zero_value, results))
 		
 		rule_list.append(StrongUpdatePropagationRule(manager, zero_value, results))
 		
-		if manager.config.getEnableTypeChecking():
+		if manager.config.enable_type_checking:
 			rule_list.append(TypingPropagationRule(manager, zero_value, results))
 		
 		rule_list.append(SkipSystemClassRule(manager, zero_value, results))
 		
-		if manager.config.getStopAfterFirstKFlows() > 0:
+		if manager.config.stop_after_first_k_flows > 0:
 			rule_list.append(StopAfterFirstKFlowsPropagationRule(manager, zero_value, results))
 
 		self.rules = rule_list

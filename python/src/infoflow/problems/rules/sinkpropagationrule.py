@@ -40,7 +40,7 @@ class SinkPropagationRule(AbstractTaintPropagationRule):
                 if aliasing.may_alias( val, ap.getPlainValue() ):
                     sink_info = source_sink_manager.getSinkInfo(stmt, self.manager, source.getAccessPath())
                     if sink_info is not None:
-                        if self.results.addResult(AbstractionAtSink(sink_info.getDefinition(), source, stmt)):
+                        if self.results.add_result(AbstractionAtSink(sink_info.getDefinition(), source, stmt)):
                             self.kill_state = True
 
     def propagate_call_flow(self, d1, source, stmt, dest, kill_all):
@@ -77,7 +77,7 @@ class SinkPropagationRule(AbstractTaintPropagationRule):
                 if ssm is not None:
                     sinkInfo = ssm.getSinkInfo(stmt, self.manager, source.getAccessPath())
 
-                    if sinkInfo is not None and not self.results.addResult(
+                    if sinkInfo is not None and not self.results.add_result(
                             AbstractionAtSink(sinkInfo.getDefinition(), source, stmt)):
                         self.kill_state = True
 
@@ -97,7 +97,7 @@ class SinkPropagationRule(AbstractTaintPropagationRule):
             if matches and source.isAbstractionActive() and ssm is not None and aliasing is not None \
                     and aliasing.may_alias( source.getAccessPath().getPlainValue(), return_stmt.getOp() ):
                 sink_info = ssm.getSinkInfo(return_stmt, self.manager, source.getAccessPath())
-                if sink_info is not None and not self.results.addResult(
+                if sink_info is not None and not self.results.add_result(
                         AbstractionAtSink(sink_info.getDefinition(), source, return_stmt)):
                     self.kill_state = True
 

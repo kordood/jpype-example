@@ -137,7 +137,7 @@ class Aliasing:
         if not isinstance(val1.type, RefLikeType) or not isinstance(val2.type, RefLikeType):
             return False
 
-        method = self.manager.getICFG().getMethodOf(position)
+        method = self.manager.icfg.getMethodOf(position)
         if method in self.excluded_from_must_alias_analysis:
             return False
 
@@ -147,7 +147,7 @@ class Aliasing:
         try:
             if method in self.strong_alias_analysis:
                 self.strong_alias_analysis[method] = None     # dummy
-                #self.strongAliasAnalysis[method] = StrongLocalMustAliasAnalysis(self.manager.getICFG().getOrCreateUnitGraph(method))
+                #self.strongAliasAnalysis[method] = StrongLocalMustAliasAnalysis(self.manager.icfg.getOrCreateUnitGraph(method))
             lmaa = method
             return lmaa.must_alias(val1, position, val2, position)
         except Exception as e:
@@ -199,7 +199,7 @@ class Aliasing:
 
     def is_string_constructor_call(self, i_stmt):
         sc_string = Scene.v().getSootClassUnsafe("java.lang.String")
-        callees = self.manager.getICFG().getCalleesOfCallAt(i_stmt)
+        callees = self.manager.icfg.getCalleesOfCallAt(i_stmt)
         if callees is not None and not callees.isEmpty():
             for callee in callees:
                 if callee.getDeclaringClass() == sc_string and callee.isConstructor():

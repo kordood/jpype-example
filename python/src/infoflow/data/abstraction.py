@@ -7,8 +7,8 @@ from ..infoflowconfiguration import InfoflowConfiguration
 
 class Abstraction:
 
-    def __init__(self, ap_to_taint=None, definition=None, source_val=None, source_stmt=None, user_data=None,
-                 source_context=None, exception_thrown=None, is_implicit=None, p=None, original=None):
+    def __init__(self, definition=None, source_val=None, source_stmt=None, user_data=None, exception_thrown=None,
+                 is_implicit=None):
         """
         :param AccessPath ap_to_taint:
         :param definition:
@@ -29,20 +29,20 @@ class Abstraction:
         self.path_flags = None
         self.propagation_path_length = 0
 
-        if p is None:
-            self.source_context = source_context if source_context else SourceContext(definition,
-                                                                                      source_val,
-                                                                                      source_stmt,
-                                                                                      user_data)
-            self.access_path = ap_to_taint if ap_to_taint else source_val
-            self.activation_unit = None
-            self.exception_thrown = exception_thrown
+        if not isinstance(definition, AccessPath):
+            arg1 = source_val
+            arg2 = SourceContext(definition, source_val, source_stmt, user_data)
+            arg3 = exception_thrown
+            arg4 = is_implicit
+            definition = arg1
+            source_val = arg2
+            source_stmt = arg3
+            user_data = arg4
 
-            self.neighbors = None
-            self.is_implicit = is_implicit
-            self.current_stmt = None if source_context is None else source_context.stmt
+        if isinstance(source_val, Abstraction):
+            p = definition
+            original = source_val
 
-        else:
             if original is None:
                 self.source_context = None
                 self.exception_thrown = False
@@ -53,15 +53,30 @@ class Abstraction:
                 self.exception_thrown = original.exception_thrown
                 self.activation_unit = original.activation_unit
                 assert self.activation_unit is None or self.flow_sensitive_aliasing
-
+    
                 self.postdominators = None if original.postdominators is None else list(original.postdominators)
-
+    
                 self.depends_on_cut_ap = original.depends_on_cut_ap
                 self.is_implicit = original.is_implicit
-
+    
             self.access_path = p
             self.neighbors = None
             self.current_stmt = None
+
+        else:
+            ap_to_taint = definition
+            source_context = source_val
+            exception_thrown = source_stmt
+            is_implicit = user_data
+    
+            self.sourceContext = source_context
+            self.accessPath = ap_to_taint
+            self.activationUnit = None
+            self.exception_thrown = exception_thrown
+
+            self.neighbors = None
+            self.is_implicit = is_implicit
+            self.currentStmt = None if source_context is None else source_context.stmt
 
     def initialize(self, config):
         """
@@ -307,10 +322,10 @@ class Abstraction:
 
     @staticmethod
     def get_zero_abstraction(flow_sensitive_aliasing):
-        zero_value = Abstraction(ap_to_taint=AccessPath(),
-                                 source_context=None,
-                                 exception_thrown=False,
-                                 is_implicit=False)
+        zero_value = Abstraction(AccessPath(),
+                                 None,
+                                 False,
+                                 False)
         Abstraction.flow_sensitive_aliasing = flow_sensitive_aliasing
         return zero_value
 

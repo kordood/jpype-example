@@ -32,7 +32,7 @@ class SourcePropagationRule(AbstractTaintPropagationRule):
                             if not TypeUtils(self.manager).is_string_type(vb.getValue().getType()) \
                                     or ap.getCanHaveImmutableAliases():
                                 self.manager.aliasing.compute_aliases( d1, stmt, vb.getValue(), res,
-                                                                       self.manager.getICFG().getMethodOf(stmt), abs )
+                                                                       self.manager.icfg.getMethodOf(stmt), abs )
 
                     if stmt.containsInvokeExpr():
                         abs.corresponding_call_site = stmt

@@ -25,7 +25,7 @@ class ImplicitPropagtionRule(AbstractTaintPropagationRule):
             return None
 
         values = list()
-        if self.manager.getICFG().isExceptionalEdgeBetween(stmt, dest_stmt):
+        if self.manager.icfg.isExceptionalEdgeBetween(stmt, dest_stmt):
             for box in stmt.getUseBoxes():
                 values.append(box.getValue())
         else:            
@@ -47,10 +47,10 @@ class ImplicitPropagtionRule(AbstractTaintPropagationRule):
         res = None
         for val in values:
             if self.manager.aliasing.may_alias( val, source.getAccessPath().getPlainValue() ):
-                postdom = self.manager.getICFG().getPostdominatorOfstmt
+                postdom = self.manager.icfg.getPostdominatorOfstmt
 
                 if not (postdom.getMethod() is None and source.getTopPostdominator() is not None
-                        and self.manager.getICFG().getMethodOf(postdom.getUnit()) == source.getTopPostdominator().getMethod()):
+                        and self.manager.icfg.getMethodOf(postdom.getUnit()) == source.getTopPostdominator().getMethod()):
                     new_abs = source.deriveConditionalAbstractionEnter(postdom, stmt)
 
                     if res is None:
@@ -114,14 +114,14 @@ class ImplicitPropagtionRule(AbstractTaintPropagationRule):
             if source.getAccessPath().isEmpty() or source.getTopPostdominator() is not None:
                 sink_info = self.manager.getSourceSinkManager().getSinkInfo(stmt, self.manager, None)
                 if sink_info is not None:
-                    self.results.addResult(AbstractionAtSink(sink_info.getDefinition(), source, stmt))
+                    self.results.add_result(AbstractionAtSink(sink_info.getDefinition(), source, stmt))
             else:
-                cur_method = self.manager.getICFG().getMethodOfstmt
+                cur_method = self.manager.icfg.getMethodOfstmt
                 if not cur_method.isStatic() and source.getAccessPath().getFirstField() is None \
                         and self.manager.aliasing.may_alias( cur_method.getActiveBody().getThisLocal(), source.getAccessPath().getPlainValue() ):
                     sink_info = self.manager.getSourceSinkManager().getSinkInfo(stmt, self.manager, None)
                     if sink_info is not None:
-                        self.results.addResult(AbstractionAtSink(sink_info.getDefinition(), source, stmt))
+                        self.results.add_result(AbstractionAtSink(sink_info.getDefinition(), source, stmt))
 
         if isinstance(stmt, DefinitionStmt):
             implicit_taint = source.getTopPostdominator() is not None and source.getTopPostdominator().getUnit() is not None
@@ -163,7 +163,7 @@ class ImplicitPropagtionRule(AbstractTaintPropagationRule):
                     if self.manager.aliasing.can_have_aliases( define, define.left_op, abstraction ) \
                             and not caller_d1s_conditional:
                         for d1 in caller_d1s:
-                            self.manager.aliasing.compute_aliases( d1, return_stmt, define.left_op, res, self.manager.getICFG().getMethodOf( call_site ), abstraction )
+                            self.manager.aliasing.compute_aliases( d1, return_stmt, define.left_op, res, self.manager.icfg.getMethodOf( call_site ), abstraction )
                         return res
 
         if source.getAccessPath().isEmpty():

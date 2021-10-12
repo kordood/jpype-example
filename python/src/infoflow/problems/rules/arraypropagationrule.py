@@ -42,7 +42,7 @@ class ArrayPropagationRule(AbstractTaintPropagationRule):
 
             elif source.getAccessPath().getArrayTaintType() != ArrayTaintType.Length \
                     and right_index == source.getAccessPath().getPlainValue() \
-                    and self.manager.config.getImplicitFlowMode().trackArrayAccesses():
+                    and self.manager.config.implicit_flow_mode.trackArrayAccesses():
                 array_taint_type = ArrayTaintType.ContentsAndLength
                 ap = self.manager.getAccessPathFactory().copyWithNewValue(source.getAccessPath(), left_val, None, False,
                                                                           True, array_taint_type)

@@ -3,16 +3,16 @@ import logging
 #import ZeroedFlowFunctions
 
 from .pathedge import PathEdge
+from ..misc.pyenum import PyEnum
+
 
 l = logging.getLogger(name=__name__)
+
+PredecessorShorteningMode = PyEnum('NeverShorten', 'ShortenIfEqual', 'AlwaysShorten')
 
 
 class IFDSSolver:
 
-    PredecessorShorteningMode = {'NeverShorten': 0,
-                                 'ShortenIfEqual': 1,
-                                 'AlwaysShorten': 2
-                                 }
 
     def __init__(self, tabulation_problem, solver_id):
 
@@ -35,12 +35,12 @@ class IFDSSolver:
 
         self.max_callees_per_call_site = 75
         self.max_abstraction_path_length = 100
-        self.initial_seeds = tabulation_problem.initial_seeds()
+        self.initial_seeds = tabulation_problem.initial_seeds
         self.follow_returns_past_seeds = tabulation_problem.follow_returns_past_seeds()
-        self.zero_value = tabulation_problem.zero_value()
+        self.zero_value = tabulation_problem.zero_value
         self.icfg = tabulation_problem.interprocedural_cfg()
-        self.flow_functions = ZeroedFlowFunctions(tabulation_problem.flowFunctions(), self.zero_value) \
-            if tabulation_problem.auto_add_zero() else tabulation_problem.flowFunctions()
+        self.flow_functions = ZeroedFlowFunctions(tabulation_problem.flowFunctions, self.zero_value) \
+            if tabulation_problem.auto_add_zero else tabulation_problem.flowFunctions
 
     def solve(self):
         self.reset()

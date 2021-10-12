@@ -36,7 +36,7 @@ class AccessPath:
 
         self.array_taint_type = ArrayTaintType
         self.zero_access_path = None
-        self.empty_access_path = AccessPath()
+        # self.empty_access_path = AccessPath()
 
     @staticmethod
     def can_contain_value(val):

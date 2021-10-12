@@ -4,7 +4,7 @@ from .abstracttaintpropagationrule import AbstractTaintPropagationRule
 class StopAfterFirstKFlowsPropagationRule(AbstractTaintPropagationRule):
 
     def check_stop(self, kill_all):
-        if self.manager.config.getStopAfterFirstKFlows() == len(self.results):
+        if self.manager.config.stop_after_first_k_flows == len(self.results):
             kill_all.value = True
 
     def propagate_normal_flow(self, d1, source, stmt, dest_stmt, kill_source, kill_all):
