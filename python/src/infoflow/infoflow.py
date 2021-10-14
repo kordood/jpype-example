@@ -150,8 +150,7 @@ class Infoflow:
                 logger.info("Taint_wrapper misses: " + self.taint_wrapper.getWrapperMisses())
 
             res = propagation_results.get_results()
-        """
-            if self.config.getIncrementalResultReporting():
+            if self.config.incremental_result_reporting:
                 builder.run_incremental_path_compuation()
             else:
                 builder.compute_taint_paths(res)
@@ -177,7 +176,6 @@ class Infoflow:
                         for p in source.get_path():
                             logger.info("\t -> " + icfg.get_method_of(p))
                             logger.info("\t\t -> " + p)
-        """
 
     def get_methods_for_seeds(self, icfg):
         seeds = list()
