@@ -98,14 +98,14 @@ class ContextInsensitivePathBuilder:
         return True
 
     def run_incremental_path_compuation(self):
-        incremental_abs = set()
+        incremental_abs = list()
         for abstraction in self.path_cache.keys():
             for scap in self.path_cache.get(abstraction):
                 if abstraction.neighbors is not None and abstraction.neighbors.size() is not len(scap.neighbors):
                     scap.setNeighborCounter(abstraction.neighbors.size())
 
                     for neighbor in abstraction.neighbors:
-                        incremental_abs.add(AbstractionAtSink(scap.definition, neighbor, scap.stmt))
+                        incremental_abs.append(AbstractionAtSink(scap.definition, neighbor, scap.stmt))
 
         if len(incremental_abs) > 0:
             self.compute_taint_paths(incremental_abs)
