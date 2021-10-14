@@ -11,8 +11,40 @@ l = logging.getLogger(name=__name__)
 PredecessorShorteningMode = PyEnum('NeverShorten', 'ShortenIfEqual', 'AlwaysShorten')
 
 
-class IFDSSolver:
+class ZeroedFlowFunctions:
 
+    def __init__(self, delegate, zero_value):
+        self.delegate = delegate
+        self.zero_value = zero_value
+
+    def get_normal_flow_function(self, curr, succ):
+        return self.ZeroedFlowFunction(self.delegate.get_normal_flow_function(curr, succ), self.zero_value)
+
+    def get_call_flow_function(self, call_stmt, destination_method):
+        return self.ZeroedFlowFunction(self.delegate.get_call_flow_function(call_stmt, destination_method), self.zero_value)
+
+    def get_return_flow_function(self, call_site, callee_method, exit_stmt, return_site):
+        return self.ZeroedFlowFunction(self.delegate.get_return_flow_function(call_site, callee_method, exit_stmt, return_site), self.zero_value)
+
+    def get_call_to_return_flow_function(self, call_site, return_site):
+        return self.ZeroedFlowFunction(self.delegate.get_call_to_return_flow_function(call_site, return_site), self.zero_value)
+
+    class ZeroedFlowFunction:
+
+        def __init__(self, delegate, zero_value):
+            self.delegate = delegate
+            self.zero_value = zero_value
+
+        def compute_targets(self, source):
+            if source == self.zero_value:
+                res = list(self.delegate.compute_targets(source))
+                res.append(self.zero_value)
+                return res
+            else:
+                return self.delegate.compute_targets(source)
+
+
+class IFDSSolver:
 
     def __init__(self, tabulation_problem, solver_id):
 
@@ -39,8 +71,8 @@ class IFDSSolver:
         self.follow_returns_past_seeds = tabulation_problem.follow_returns_past_seeds()
         self.zero_value = tabulation_problem.zero_value
         self.icfg = tabulation_problem.interprocedural_cfg()
-        self.flow_functions = ZeroedFlowFunctions(tabulation_problem.flowFunctions, self.zero_value) \
-            if tabulation_problem.auto_add_zero else tabulation_problem.flowFunctions
+        self.flow_functions = ZeroedFlowFunctions(tabulation_problem.flow_functions, self.zero_value) \
+            if tabulation_problem.auto_add_zero else tabulation_problem.flow_functions
 
     def solve(self):
         self.reset()
@@ -192,11 +224,11 @@ class IFDSSolver:
                                 d5 = self.memory_manager.handle_generated_memory_object(d4, d5)
 
                             d5p = d5
-                            if self.shortening_mode == AlwaysShorten:
+                            if self.shortening_mode == PredecessorShorteningMode.AlwaysShorten:
                                 if d5p != d2:
                                     d5p = d5p.clone()
                                     d5p.setPredecessor(d2)
-                            elif self.shortening_mode == ShortenIfEqual:
+                            elif self.shortening_mode == PredecessorShorteningMode.ShortenIfEqual:
                                 if d5 == d2:
                                     d5p = d2
 
