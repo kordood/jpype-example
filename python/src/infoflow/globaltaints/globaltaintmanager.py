@@ -14,7 +14,7 @@ class GlobalTaintManager:
     def add_to_global_taint_state(self, abstraction:Abstraction):
         if self.global_taint_state.append(abstraction) and self.solvers is not None and len(self.solvers) > 0:
             injection_points = list()
-            method_listener = Scene.v().getReachableMethods().listener()
+            method_listener = Scene.v().get_reachable_methods().listener()
             for mmoc in method_listener:
                 if mmoc is None:
                     continue
@@ -32,7 +32,7 @@ class GlobalTaintManager:
             if len(injection_points) > 0:
                 for solver in self.solvers:
                     for stmt in injection_points:
-                        solver.processEdge(PathEdge(solver.getTabulationProblem().zeroValue(), stmt, abstraction))
+                        solver.processEdge(PathEdge(solver.getTabulationProblem().zero_value, stmt, abstraction))
 
             return True
         return False

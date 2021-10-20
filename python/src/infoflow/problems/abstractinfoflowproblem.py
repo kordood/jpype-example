@@ -98,7 +98,7 @@ class AbstractInfoflowProblem(DefaultJimpleIFDSTabulationProblem):
             self.initial_seeds.put(unit, list(seeds))
 
     def has_initial_seeds(self):
-        return not self.initial_seeds.is_empty()
+        return len(self.initial_seeds) > 0
 
     def get_initial_seeds(self):
         return self.initial_seeds

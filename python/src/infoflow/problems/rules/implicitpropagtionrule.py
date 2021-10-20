@@ -112,14 +112,14 @@ class ImplicitPropagtionRule(AbstractTaintPropagationRule):
 
         if source.isAbstractionActive():
             if source.getAccessPath().isEmpty() or source.getTopPostdominator() is not None:
-                sink_info = self.manager.getSourceSinkManager().getSinkInfo(stmt, self.manager, None)
+                sink_info = self.manager.getSourceSinkManager().get_sink_info(stmt, self.manager, None)
                 if sink_info is not None:
                     self.results.add_result(AbstractionAtSink(sink_info.getDefinition(), source, stmt))
             else:
                 cur_method = self.manager.icfg.getMethodOfstmt
                 if not cur_method.isStatic() and source.getAccessPath().getFirstField() is None \
                         and self.manager.aliasing.may_alias( cur_method.getActiveBody().getThisLocal(), source.getAccessPath().getPlainValue() ):
-                    sink_info = self.manager.getSourceSinkManager().getSinkInfo(stmt, self.manager, None)
+                    sink_info = self.manager.getSourceSinkManager().get_sink_info(stmt, self.manager, None)
                     if sink_info is not None:
                         self.results.add_result(AbstractionAtSink(sink_info.getDefinition(), source, stmt))
 

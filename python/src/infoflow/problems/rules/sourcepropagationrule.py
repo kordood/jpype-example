@@ -61,8 +61,8 @@ class SourcePropagationRule(AbstractTaintPropagationRule):
                 kill_all.value = True
 
         if not self.manager.config.getInspectSinks() and self.manager.source_sink_manager is not None:
-            isSink = self.manager.source_sink_manager.getSinkInfo(stmt, self.manager,
-                                                                  source.getAccessPath()) is not None
+            isSink = self.manager.source_sink_manager.get_sink_info(stmt, self.manager,
+                                                                    source.getAccessPath()) is not None
             if isSink:
                 kill_all.value = True
 
