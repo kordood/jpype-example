@@ -170,7 +170,7 @@ class AndroidSourceSinkManager(BaseSourceSinkManager):
         return control
 
     def get_ui_source_definition(self, s_call_site, cfg):
-        if self.source_sink_config.getLayoutMatchingMode() == LayoutMatchingMode.NoMatch \
+        if self.source_sink_config.layout_matching_mode == LayoutMatchingMode.NoMatch \
                 or not contains_invoke_expr(s_call_site):
             return None
 
