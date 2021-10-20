@@ -19,3 +19,6 @@ class AbstractSourceSinkDefinition:
         elif not self.category.__eq__(other.category):
             return False
         return True
+
+    def is_empty(self):
+        pass

@@ -64,6 +64,9 @@ class FieldSourceSinkDefinition(AbstractSourceSinkDefinition):
         define.category = self.category
         return define
 
+    def is_empty(self):
+        return self.access_paths is None or not len(self.access_paths) > 0
+
     def __eq__(self, other):
         if self == other:
             return True
