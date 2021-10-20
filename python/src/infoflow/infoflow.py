@@ -1,6 +1,6 @@
 import logging
 import time
-
+from builtins import hasattr
 
 from .data.flowdroidmemorymanager import PathDataErasureMode
 #pathBuilderFactory
@@ -15,6 +15,7 @@ from .problems.rules.propagationrulemanager import PropagationRuleManager
 from .solver.ifdssolversingle import IFDSSolver
 #from .solver.memory.defaultmemorymanagerfactory import DefaultMemoryManagerFactory
 from .data.pathbuilders.contextinsensitivepathbulder import ContextInsensitivePathBuilder as DefaultPathBuilder
+from .scene.scene import Scene
 
 
 logger = logging.getLogger(__file__)
@@ -29,8 +30,8 @@ class Infoflow:
         self.taint_wrapper = None
         self.hierarchy = None
 
-        self.collected_sources = set()
-        self.collected_sinks = set()
+        self.collected_sources = list()
+        self.collected_sinks = list()
         self.manager = None
         self.dummy_main_method = None
         self.memory_manager_factory = None # DefaultMemoryManagerFactory()
@@ -110,7 +111,7 @@ class Infoflow:
             before_path_reconstruction = 0
             sink_count = 0
 
-            for sm in self.get_methods_for_seeds(icfg):
+            for sm in self.get_methods_for_seeds(icfg):     # Hint: methods are entrypoint or dummy main callees
                 sink_count += self.scan_method_for_sources_sinks(sources_sinks, forward_problem, sm)
 
             if additional_seeds is not None:
@@ -120,10 +121,10 @@ class Infoflow:
                         logger.warn("Seed method { has no active body", m)
                         continue
 
-                    forward_problem.addInitialSeeds(m.getActiveBody().getUnits().getFirst(),
-                                                    [forward_problem.zeroValue()])
+                    forward_problem.add_initial_seeds(m.getActiveBody().getUnits().getFirst(),
+                                                    [forward_problem.zero_value])
 
-            if not forward_problem.hasInitialSeeds():
+            if not forward_problem.has_initial_seeds():
                 logger.error("No sources found, aborting analysis")
                 continue
 
@@ -180,14 +181,13 @@ class Infoflow:
     def get_methods_for_seeds(self, icfg):
         seeds = list()
         if self.callgraph is None:
-            done_set = set()
+            done_set = list()
 #            for sm in Scene.v().getEntryPoints():
 #                self.get_methods_for_seeds_incremental(sm, done_set, seeds, icfg)
             sm = self.project.entry
             self.get_methods_for_seeds_incremental(sm, done_set, seeds, icfg)
         else:
-            reachable_methods = Scene.v().getReachableMethods()
-            reachable_methods.update()
+            reachable_methods = Scene.get_reachable_methods(icfg, [self.project.entry])
             for method in reachable_methods:
                 sm = method
                 if self.is_valid_seed_method(sm):
@@ -197,7 +197,7 @@ class Infoflow:
 
     def get_methods_for_seeds_incremental(self, sm, done_set, seeds, icfg):
 #        assert Scene.v().hasFastHierarchy()
-        if not sm.isConcrete() or not sm.getDeclaringClass().isApplicationClass() or not done_set.add(sm):
+        if not sm.isConcrete() or not sm.getDeclaringClass().isApplicationClass() or not done_set.append(sm):
             return
         seeds.append(sm)
         for u in sm.retrieveActiveBody().getUnits():
@@ -209,28 +209,34 @@ class Infoflow:
 
     def scan_method_for_sources_sinks(self, sources_sinks, forward_problem, m):
         if self.collected_sources is None:
-            self.collected_sources = set()
-            self.collected_sinks = set()
+            self.collected_sources = list()
+            self.collected_sinks = list()
 
         sink_count = 0
-        if m.hasActiveBody():
+        if hasattr(m, "block"):     # Hint: ActiveBody means method block
             if not self.is_valid_seed_method(m):
                 return sink_count
 
-            units = m.getActiveBody().getUnits()
-            for u in units:
-                s = u
-                if sources_sinks.get_source_info(s, self.manager) is not None:
-                    forward_problem.add_initial_seeds(u, forward_problem.zeroValue())
-                    if self.config.getLogSourcesAndSinks():
-                        self.collected_sources.add(s)
-                    logger.debug("Source found: { in {", u, m.get_signature())
+            # units = m.getActiveBody().getUnits()  # Original
+            blocks = [m.block_by_label.values()]    # Hint: get units
+            blocks.sort(key=lambda x: x.idx)        # Hint
+            units = list()                          # Hint
+            for block in blocks:                    # Hint
+                units.extend(block.statements)      # Hint
+
+            for unit in units:
+                stmt = unit
+                if sources_sinks.get_source_info(stmt, self.manager) is not None:
+                    forward_problem.add_initial_seeds(unit, forward_problem.zero_value)
+                    if self.config.log_sources_and_sinks:
+                        self.collected_sources.append(stmt)
+                    logger.debug("Source found: { in {", unit, m.get_signature())
                 
-                if sources_sinks.get_sink_info(s, self.manager, None) is not None:
+                if sources_sinks.get_sink_info(stmt, self.manager, None) is not None:
                     sink_count += 1
-                    if self.config.getLogSourcesAndSinks():
-                        self.collected_sinks.add(s)
-                    logger.debug("Sink found: { in {", u, m.get_signature())
+                    if self.config.log_sources_and_sinks:
+                        self.collected_sinks.append(stmt)
+                    logger.debug("Sink found: { in {", unit, m.get_signature())
                 
         return sink_count
 
@@ -241,11 +247,11 @@ class Infoflow:
             return False
 
         class_name = sm.getDeclaringClass().getName()
-        if self.config.getIgnoreFlowsInSystemPackages() and SystemClassHandler().is_class_in_system_package(class_name)\
+        if self.config.ignore_flows_in_system_packages and SystemClassHandler().is_class_in_system_package(class_name)\
                 and not self.is_user_code_class(class_name):
             return False
 
-        if self.config.getExcludeSootLibraryClasses() and sm.getDeclaringClass().isLibraryClass():
+        if self.config.exclude_soot_library_classes and sm.getDeclaringClass().isLibraryClass():
             return False
 
         return True

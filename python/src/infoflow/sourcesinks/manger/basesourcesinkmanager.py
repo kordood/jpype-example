@@ -13,10 +13,12 @@ from ...infoflowconfiguration import InfoflowConfiguration, CallbackSourceMode
 from ...infoflowmanager import InfoflowManager
 from ...solver.cfg.infoflowcfg import InfoflowCFG
 from ...sootir.soot_class import SootClass, SootMethod
-from ...sootir.soot_value import SootInstanceFieldRef as SootInstanceFieldRef, SootParamRef as ParameterRef
+from ...sootir.soot_value import SootInstanceFieldRef, SootParamRef as ParameterRef, SootStaticFieldRef
 from ...sootir.soot_statement import SootStmt as Stmt, AssignStmt, ReturnStmt, DefinitionStmt, IdentityStmt
 from ...sootir.soot_expr import SootInvokeExpr as InstanceInvokeExpr
 
+from ...misc import contains_invoke_expr, get_invoke_expr, find_method_by_expr, get_sub_signature,\
+    get_callees_of_call_at
 from ...misc.pyenum import PyEnum
 from ...util.systemclasshandler import SystemClassHandler
 
@@ -30,6 +32,9 @@ class SimpleConstantValueProvider:
         return value
 
 
+SourceType = PyEnum('NoSource', 'MethodCall', 'Callback', 'UISource')
+
+
 class BaseSourceSinkManager:
     """
     4 fields are in soot class
@@ -40,8 +45,6 @@ class BaseSourceSinkManager:
     BODIES = 3
 
     GLOBAL_SIG = "--GLOBAL--"
-
-    SourceType = PyEnum('NoSource', 'MethodCall', 'Callback', 'UISource')
 
     def __init__(self, sources, sinks, callback_methods=None, config=None):
         """
@@ -79,14 +82,14 @@ class BaseSourceSinkManager:
         self.excluded_methods = list()
 
         self.one_source_at_a_time = False
-        self.osaat_type = self.SourceType.MethodCall
+        self.osaat_type = SourceType.MethodCall
         self.osaat_iterator = None
         self.current_source = None
         self.value_provider = SimpleConstantValueProvider()
 
         self.interfaces_of = list()
 
-    def load(self, sc):
+    def load(self, sc):     # Todo: breakpoint to this method in flowdroid
         """
 
         :param SootClass sc:
@@ -242,22 +245,22 @@ class BaseSourceSinkManager:
 
     def get_source_method(self, method: SootMethod):
         if self.one_source_at_a_time \
-                and (self.osaat_type != self.SourceType.MethodCall or self.current_source != method):
+                and (self.osaat_type != SourceType.MethodCall or self.current_source != method):
             return None
-        return self.source_methods.get(method)
+        return self.source_methods[method]
 
     def get_source_definition(self, method: SootMethod):
         if self.one_source_at_a_time:
-            if self.osaat_type == self.SourceType.MethodCall and self.current_source == method:
-                return self.source_methods.get(method)
+            if self.osaat_type == SourceType.MethodCall and self.current_source == method:
+                return self.source_methods[method]
             else:
                 return None
         else:
-            return self.source_methods.get(method)
+            return self.source_methods[method]
 
     def get_callback_definition(self, method: SootMethod):
         if self.one_source_at_a_time:
-            if self.osaat_type == self.SourceType.Callback and self.current_source == method:
+            if self.osaat_type == SourceType.Callback and self.current_source == method:
                 return self.callback_methods.get(method)
             else:
                 return None
@@ -267,18 +270,22 @@ class BaseSourceSinkManager:
     def get_source(self, s_call_site, cfg: InfoflowCFG):
         assert cfg is not None
 
-        define = self.source_statements.get(s_call_site)
+        define = self.source_statements[s_call_site]
         if define is not None:
             return define
 
-        if (not self.one_source_at_a_time or self.osaat_type == self.SourceType.MethodCall) \
-                and s_call_site.containsInvokeExpr():
-            callee = s_call_site.getInvokeExpr().method
+        if (not self.one_source_at_a_time or self.osaat_type == SourceType.MethodCall) \
+                and contains_invoke_expr(s_call_site):              # Hint
+            invoke_expr = get_invoke_expr(s_call_site)              # Hint
+            callee = find_method_by_expr(invoke_expr, cfg.nodes())  # Hint
+            if callee is None:                                      # Hint
+                return None                                         # Hint
+
             define = self.get_source_definition(callee)
             if define is not None:
                 return define
 
-            sub_sig = callee.name
+            sub_sig = get_sub_signature(callee)
             for i in self.load(callee.class_name):
                 m = i.getMethodUnsafe(sub_sig)
                 if m is not None:
@@ -286,17 +293,19 @@ class BaseSourceSinkManager:
                     if define is not None:
                         return define
 
-            for sm in cfg.get_callees_of_call_at(s_call_site):
+            for sm in get_callees_of_call_at(s_call_site, cfg):  # Todo: Hint: get callee of the statement
                 define = self.get_source_definition(sm)
                 if define is not None:
                     return define
 
+            """ Todo: know how go get phantom class
             if callee.class_name.isPhantom():
                 define = self.find_definition_in_hierarchy(callee, self.source_methods)
                 if define is not None:
                     return define
+            """
 
-        if not self.one_source_at_a_time or self.osaat_type == self.SourceType.UISource:
+        if not self.one_source_at_a_time or self.osaat_type == SourceType.UISource:
             define = self.get_ui_source_definition(s_call_site, cfg)
             if define is not None:
                 return define
@@ -314,7 +323,8 @@ class BaseSourceSinkManager:
     def check_field_source(self, stmt: Stmt, cfg: InfoflowCFG):
         if isinstance(stmt, AssignStmt):
             assign_stmt = stmt
-            if isinstance(assign_stmt.right_op, SootInstanceFieldRef):
+            if isinstance(assign_stmt.right_op, SootInstanceFieldRef) \
+                    or isinstance(assign_stmt.right_op, SootStaticFieldRef) :
                 field_ref = assign_stmt.right_op
                 return self.source_fields.get(field_ref.field)
             return None
@@ -322,7 +332,7 @@ class BaseSourceSinkManager:
     def check_callback_param_source(self, s_call_site, cfg: InfoflowCFG):
         if self.source_sink_config.callback_source_mode == CallbackSourceMode.NoParametersAsSources:
             return None
-        if self.one_source_at_a_time and self.osaat_type != self.SourceType.Callback:
+        if self.one_source_at_a_time and self.osaat_type != SourceType.Callback:
             return None
 
         if not isinstance(s_call_site, IdentityStmt):
@@ -345,7 +355,7 @@ class BaseSourceSinkManager:
         if self.source_sink_config.getCallbackSourceMode() == CallbackSourceMode.AllParametersAsSources:
             return MethodSourceSinkDefinition().create_parameter_source(param_ref.index, CallType.Callback)
 
-        source_sink_def = self.source_methods.get(define.getParentMethod())
+        source_sink_def = self.source_methods[define.getParentMethod()]
         if isinstance(source_sink_def, MethodSourceSinkDefinition):
             method_def = source_sink_def
             if self.source_sink_config.getCallbackSourceMode() == CallbackSourceMode.SourceListOnly \
@@ -458,31 +468,31 @@ class BaseSourceSinkManager:
 
     def reset_current_source(self):
         self.osaat_iterator = self.source_methods.keys()
-        self.osaat_type = self.SourceType.MethodCall
+        self.osaat_type = SourceType.MethodCall
 
     def next_source(self):
-        if self.osaat_type == self.SourceType.MethodCall or self.osaat_type == self.SourceType.Callback:
+        if self.osaat_type == SourceType.MethodCall or self.osaat_type == SourceType.Callback:
             self.current_source = self.osaat_iterator[0]
             self.osaat_iterator = self.osaat_iterator[1:]
 
     def has_next_source(self):
-        if self.osaat_type == self.SourceType.MethodCall:
+        if self.osaat_type == SourceType.MethodCall:
             if len(self.osaat_iterator) > 2:
                 return True
             else:
-                self.osaat_type = self.SourceType.Callback
+                self.osaat_type = SourceType.Callback
                 self.osaat_iterator = self.callback_methods.keys()
                 return self.has_next_source()
 
-        elif self.osaat_type == self.SourceType.Callback:
+        elif self.osaat_type == SourceType.Callback:
             if len(self.osaat_iterator) > 2:
                 return True
             else:
-                self.osaat_type = self.SourceType.UISource
+                self.osaat_type = SourceType.UISource
                 return True
 
-        elif self.osaat_type == self.SourceType.UISource:
-            self.osaat_type = self.SourceType.NoSource
+        elif self.osaat_type == SourceType.UISource:
+            self.osaat_type = SourceType.NoSource
             return False
 
         return False
